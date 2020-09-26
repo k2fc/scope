@@ -660,7 +660,7 @@ namespace scope
                 OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
-                text_bmp.Save($"{text_texture}.bmp");
+                //text_bmp.Save($"{text_texture}.bmp");
             }
             GL.Enable(EnableCap.Texture2D);
             GL.BindTexture(TextureTarget.Texture2D, text_texture);
