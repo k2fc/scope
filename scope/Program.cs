@@ -15,15 +15,41 @@ namespace DGScope
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
             {
-                radarWindow = XmlSerializer<RadarWindow>.DeserializeFromFile(settingsPath);
+                radarWindow = TryLoad(settingsPath);
             }
             else
             {
+                MessageBox.Show("No config file found. Starting a new config.");
                 radarWindow = new RadarWindow();
                 PropertyForm propertyForm = new PropertyForm(radarWindow);
                 propertyForm.ShowDialog();
             }
             radarWindow.Run();
+        }
+
+        static RadarWindow TryLoad(string settingsPath)
+        {
+            try
+            {
+                return XmlSerializer<RadarWindow>.DeserializeFromFile(settingsPath);
+            }
+            catch (Exception ex)
+            {
+                RadarWindow radarWindow = new RadarWindow();
+                var mboxresult = MessageBox.Show("Error reading settings file.\n" + ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy the file and start a new config.", "Error reading settings file", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
+                if (mboxresult == DialogResult.Abort)
+                    Environment.Exit(1);
+                else if (mboxresult == DialogResult.Retry)
+                    return TryLoad(settingsPath);
+                else
+                {
+                    radarWindow = new RadarWindow();
+                    PropertyForm propertyForm = new PropertyForm(radarWindow);
+                    propertyForm.ShowDialog();
+                    return radarWindow;
+                }
+            }
+            return new RadarWindow();
         }
         
     }
