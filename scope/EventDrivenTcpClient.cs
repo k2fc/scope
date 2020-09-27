@@ -4,7 +4,7 @@ using System.Text;
 /// <summary>
 /// Event driven TCP client wrapper
 /// </summary>
-namespace scope
+namespace DGScope
 {
 
 

@@ -1,7 +1,7 @@
 ﻿using System.Windows.Forms;
 using System.Drawing;
 
-namespace scope
+namespace DGScope
 {
     public static class Input
     {

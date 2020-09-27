@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 
-namespace scope
+namespace DGScope.Receivers
 {
     class VatsimReceiver : IReceiver
     {

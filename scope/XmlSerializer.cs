@@ -4,7 +4,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace scope
+namespace DGScope
 {
     /// <summary>
     /// XML serializer helper class. Serializes and deserializes objects from/to XML

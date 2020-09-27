@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 
-namespace scope
+namespace DGScope
 {
     public static class VSTARSFileParser
     {

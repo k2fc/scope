@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-namespace scope
+namespace DGScope
 {
     public static class VRCFileParser
     {

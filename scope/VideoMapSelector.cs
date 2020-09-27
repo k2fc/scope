@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Windows.Forms.Design;
 
-namespace scope
+namespace DGScope
 {
     
     public partial class VideoMapSelector : Form

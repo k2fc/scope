@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace scope
+namespace DGScope
 {
     public class Runway : Line
     {

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace scope.Properties
+namespace DGScope.Properties
 {
 
 

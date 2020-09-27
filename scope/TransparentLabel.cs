@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace scope
+namespace DGScope
 {
     /// <summary>
     /// A label that can be transparent.

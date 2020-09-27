@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Design;
 
-namespace scope
+namespace DGScope.Receivers
 {
     public class ReceiverCollectionEditor : CollectionEditor
     {

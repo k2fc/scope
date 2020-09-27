@@ -13,8 +13,9 @@ using System.Xml.Serialization;
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Drawing.Design;
+using DGScope.Receivers;
 
-namespace scope
+namespace DGScope
 {
     public class RadarWindow
     {
