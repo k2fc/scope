@@ -87,7 +87,7 @@ namespace DGScope
                 lock(Aircraft)
                 TargetsScanned.AddRange(from x in Aircraft
                                         where x.Bearing(receiver.Location) >= lastazimuth &&
-                                        x.Bearing(receiver.Location) <= newazimuth && x.LocationReceivedBy == receiver && x.Altitude <= MaxAltitude && x.Location.DistanceTo(this.Location) <= this.Range
+                                        x.Bearing(receiver.Location) <= newazimuth && x.LocationReceivedBy == receiver  && x.Location.DistanceTo(this.Location) <= this.Range
                                         select x);
             }
 

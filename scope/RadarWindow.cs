@@ -80,6 +80,8 @@ namespace DGScope
         public int LostTargetSeconds { get; set; } = 10;
         [DisplayName("Screen Rotation"), Description("The number of degrees to rotate the image"), Category("Display Properties")]
         public double ScreenRotation { get; set; } = 0;
+        [DisplayName("Hide Data Tags"), Category("Display Properties")]
+        public bool HideDataTags { get; set; } = false;
         [DisplayName("Window State"), Category("Display Properties")]
         public WindowState WindowState
         {
@@ -304,9 +306,8 @@ namespace DGScope
             var oldscale = scale;
             switch (e.Key)
             {
-                case Key.A:
-                    lock(radar.Aircraft)
-                        XmlSerializer<List<Aircraft>>.SerializeToFile(radar.Aircraft, "aircraft.xml");
+                case Key.D:
+                    HideDataTags = !HideDataTags;
                     break;
                 case Key.F11:
                     if (isScreenSaver)
@@ -511,7 +512,7 @@ namespace DGScope
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
                 var location = new PointF(x, y);
-                if (aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-radar.RotationPeriod))
+                if (aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-radar.RotationPeriod) && aircraft.Altitude <= radar.MaxAltitude)
                 {
                     PrimaryReturn newreturn = new PrimaryReturn();
                     aircraft.TargetReturn = newreturn;
@@ -531,7 +532,7 @@ namespace DGScope
                     var realWidth = (float)text_bmp.Width * xPixelScale;
                     var realHeight = (float)text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
-                    //aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, 0, aircraft.DataBlock.SizeF);
+                    aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, Math.PI/4, aircraft.DataBlock.SizeF);
                     
                     aircraft.DataBlock.ParentAircraft = aircraft;
                     Deconflict(aircraft.DataBlock);
@@ -646,12 +647,14 @@ namespace DGScope
             foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
             {
                 DrawTarget(target);
-                Deconflict(target);
+                if(!HideDataTags)
+                    Deconflict(target);
             }
             foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
             {
                 //Deconflict(block);
-                DrawLabel(block);
+                if (!HideDataTags)
+                    DrawLabel(block);
             }
         }
 
