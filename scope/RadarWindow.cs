@@ -304,6 +304,10 @@ namespace DGScope
             var oldscale = scale;
             switch (e.Key)
             {
+                case Key.A:
+                    lock(radar.Aircraft)
+                        XmlSerializer<List<Aircraft>>.SerializeToFile(radar.Aircraft, "aircraft.xml");
+                    break;
                 case Key.F11:
                     if (isScreenSaver)
                         Environment.Exit(0);
@@ -527,7 +531,7 @@ namespace DGScope
                     var realWidth = (float)text_bmp.Width * xPixelScale;
                     var realHeight = (float)text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
-                    aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, 0, aircraft.DataBlock.SizeF);
+                    //aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, 0, aircraft.DataBlock.SizeF);
                     
                     aircraft.DataBlock.ParentAircraft = aircraft;
                     Deconflict(aircraft.DataBlock);
@@ -537,6 +541,10 @@ namespace DGScope
                 }
                 
                 else if (aircraft.LastPositionTime < DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+                {
+                    dataBlocks.Remove(aircraft.DataBlock);
+                }
+                if (aircraft.Altitude > radar.MaxAltitude)
                 {
                     dataBlocks.Remove(aircraft.DataBlock);
                 }
@@ -550,10 +558,7 @@ namespace DGScope
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
-                    if (plane.Altitude > radar.MaxAltitude)
-                    {
-                        dataBlocks.Remove(plane.DataBlock);
-                    }
+                    
                 }
             }
             
@@ -588,37 +593,37 @@ namespace DGScope
         private void DrawTarget(PrimaryReturn target)
         {
             float targetHeight = 15f * xPixelScale;// (window.ClientRectangle.Height/2);
-            float targetWidth = 5f * yPixelScale;// (window.ClientRectangle.Width/2);
+            float targetWidth = 5f * xPixelScale;// (window.ClientRectangle.Width/2);
             float atan = (float)Math.Atan(targetHeight / targetWidth);
-            float targetHypotenuse = (float)Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth))/2;
+            float targetHypotenuse = (float)(Math.Sqrt((targetHeight*targetHeight) + (targetWidth * targetWidth))/2);
             float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
             float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
             float circleradius = 4f * xPixelScale;
             //target.SizeF = new SizeF(2 * circleradius, 2 * circleradius * aspect_ratio);
             //DrawCircle(target.LocationF.X, target.LocationF.Y, circleradius, aspect_ratio, 25, target.ForeColor, true);
             
-            target.SizeF = new SizeF(targetHypotenuse, targetHypotenuse * aspect_ratio);
+            target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 * aspect_ratio);
             
             GL.LoadIdentity();
             GL.PushMatrix();
-            
+
             float angle = (float)(-(target.Angle + 360) % 360) + (float)ScreenRotation;
-            
+
             GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-            
             GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
             GL.Begin(PrimitiveType.Polygon);
-
+            GL.Scale(aspect_ratio, 0.0f, 0.0f);
             GL.Color4(target.ForeColor);
             GL.Vertex2(x1, y1);
             GL.Vertex2(-x1, y1);
             GL.Vertex2(-x1, -y1);
             GL.Vertex2(x1, -y1);
-
+            
 
             GL.End();
             GL.Translate(-target.LocationF.X, -target.LocationF.Y , 0.0f);
             
+
             GL.PopMatrix();
             
             /*
@@ -748,8 +753,8 @@ namespace DGScope
         {
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0)
                 return;
-            double circlespeed = 10 *(Math.PI / 180);
-            float growsize = xPixelScale;// * (float)circlespeed;
+            double circlespeed = 5 * (Math.PI / 180);
+            float growsize = (10/72f)*xPixelScale;// * (float)circlespeed;
             ConnectingLineF connectingLine = new ConnectingLineF();
             connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
             connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
@@ -757,7 +762,7 @@ namespace DGScope
             int loopcount = 0;
             
             int conflictcount;
-            float circleSize = Label.SizeF.Width /2;
+            float circleSize = Label.SizeF.Width / 2;
             double angle = 0;
             List<IScreenObject> screenObjects = new List<IScreenObject>();
             screenObjects.AddRange(PrimaryReturns.ToList());
@@ -769,7 +774,7 @@ namespace DGScope
                 foreach (IScreenObject screenObject in screenObjects)
                 {
                     bool crashesWithLabel = Label.BoundsF.IntersectsWith(screenObject.BoundsF) && screenObject != Label;
-                    bool crashesWithLine = connectingLine.IntersectsWith(screenObject.BoundsF) && screenObject != Label && !screenObject.BoundsF.IntersectsWith(Label.ParentAircraft.TargetReturn.BoundsF);
+                    bool crashesWithLine = (connectingLine.IntersectsWith(screenObject.BoundsF) && screenObject != Label || connectingLine.IntersectsWith(screenObject.ParentAircraft.ConnectingLine)) && !screenObject.BoundsF.IntersectsWith(Label.ParentAircraft.TargetReturn.BoundsF);
                     if (crashesWithLabel || crashesWithLine)
                     {
                         conflictcount++;
@@ -782,9 +787,11 @@ namespace DGScope
                 Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, circleSize, angle, Label.SizeF); 
                 connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
                 connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
+                Label.ParentAircraft.ConnectingLine = connectingLine;
                 angle += circlespeed;
+                //angle = 180 * (Math.PI / 180);
                 circleSize += growsize;
-                if (loopcount > 1000)
+                if (loopcount >720)
                     return;
             } while (conflictcount > 0 && conflictcount < screenObjects.Count) ;
         }
@@ -829,7 +836,7 @@ namespace DGScope
             else if (degrees > 225 && degrees < 315)
             {
                 EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2); //X bound to mid
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + Label.Height; //Y bound to top
+                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) - Label.Height; //Y bound to top
             }
             else
             {

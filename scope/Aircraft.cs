@@ -82,7 +82,7 @@ namespace DGScope
 
         public PrimaryReturn TargetReturn = new PrimaryReturn() { BackColor = Color.Transparent, ForeColor = Color.Lime };
         public List<PrimaryReturn> ReturnTrails = new List<PrimaryReturn>();
-        public ConnectingLine ConnectingLine = new ConnectingLine() { BackColor = Color.Transparent, ForeColor = Color.Lime };
+        public ConnectingLineF ConnectingLine = new ConnectingLineF() { };
 
         public TransparentLabel DataBlock = new TransparentLabel()
         {
