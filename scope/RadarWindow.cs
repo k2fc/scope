@@ -256,13 +256,16 @@ namespace DGScope
 
         private void AircraftGCTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            var delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddMinutes(-1)).ToList();
+            List<Aircraft> delplane;
+            lock(radar.Aircraft)
+                delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddMinutes(-1)).ToList();
             foreach (var plane in delplane)
             {
                 GL.DeleteTexture(plane.DataBlock.TextureID);
                 plane.DataBlock.TextureID = 0;
                 //plane.Dispose();
-                radar.Aircraft.Remove(plane);
+                lock(radar.Aircraft)
+                    radar.Aircraft.Remove(plane);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
         }

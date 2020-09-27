@@ -91,13 +91,16 @@ namespace DGScope.Receivers
                 {
                     case "MSG":
                         int icaoID = Convert.ToInt32(sbs_data[4], 16);
-                        Aircraft plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
-                        if (plane == null)
+                        Aircraft plane;
+                        lock (aircraft)
                         {
-                            plane = new Aircraft(icaoID);
-                            lock(aircraft)
+                            plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
+                            if (plane == null)
+                            {
+                                plane = new Aircraft(icaoID);
                                 aircraft.Add(plane);
-                            Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
+                                Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
+                            }
                         }
                         DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
                         if (plane.LastMessageTime < messageTime)
@@ -313,14 +316,16 @@ namespace DGScope.Receivers
 
             if (icaoAddr != int.MaxValue)
             {
-                plane = (from x in aircraft where x.ModeSCode == (int)icaoAddr select x).FirstOrDefault();
-                if (plane == null)
+                lock (aircraft) plane = (from x in aircraft where x.ModeSCode == (int)icaoAddr select x).FirstOrDefault();
                 {
-                    plane = new Aircraft((int)icaoAddr);
-                    aircraft.Add(plane);
-                    Debug.WriteLine("Added airplane " + icaoAddr.ToString("X") + " from " + Host);
+                    if (plane == null)
+                    {
+                        plane = new Aircraft((int)icaoAddr);
+                        aircraft.Add(plane);
+                        Debug.WriteLine("Added airplane " + icaoAddr.ToString("X") + " from " + Host);
+                    }
+                    plane.LastMessageTime = DateTime.UtcNow;
                 }
-                plane.LastMessageTime = DateTime.UtcNow;
             }
 
         }
