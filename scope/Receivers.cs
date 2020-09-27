@@ -102,7 +102,8 @@ namespace DGScope.Receivers
                                 Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
                             }
                         }
-                        DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
+                        //DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
+                        DateTime messageTime = DateTime.UtcNow;
                         if (plane.LastMessageTime < messageTime)
                             plane.LastMessageTime = messageTime;
                         plane.ModeSCode = icaoID;

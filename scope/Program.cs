@@ -474,6 +474,10 @@ namespace DGScope
         {
             return LineIntersectsRect(Start, End, Rectangle);
         }
+        public bool IntersectsWith (ConnectingLineF Line)
+        {
+            return LineIntersectsLine(Line.Start, Line.End, Start, End);
+        }
         private static bool LineIntersectsRect(PointF p1, PointF p2, RectangleF r)
         {
             return LineIntersectsLine(p1, p2, new PointF(r.Left, r.Top), new PointF(r.Right, r.Top)) ||
