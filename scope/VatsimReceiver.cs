@@ -115,13 +115,16 @@ namespace DGScope.Receivers
             {
                 case "PILOT":
                     int VatsimCID = Convert.ToInt32(clientdata[1]);
-                    Aircraft test = (from x in Aircraft where x.Callsign == "UAL1447" select x).FirstOrDefault();
-                    Aircraft plane = (from x in Aircraft where x.ModeSCode == VatsimCID select x).FirstOrDefault();
-                    if (plane == null)
+                    Aircraft plane;
+                    lock (Aircraft)
                     {
-                        plane = new Aircraft(VatsimCID);
-                        Aircraft.Add(plane);
-                        Debug.WriteLine("Added airplane " + clientdata[1] + " from VATSIM");
+                        plane = (from x in Aircraft where x.ModeSCode == VatsimCID select x).FirstOrDefault();
+                        if (plane == null)
+                        {
+                            plane = new Aircraft(VatsimCID);
+                            Aircraft.Add(plane);
+                            Debug.WriteLine("Added airplane " + clientdata[1] + " from VATSIM");
+                        }
                     }
                     plane.LastMessageTime = DateTime.UtcNow;
                     plane.LastPositionTime = DateTime.UtcNow;
