@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 
-namespace scope
+namespace DGScope
 {
     [Serializable()]
     [TypeConverter(typeof(ExpandableObjectConverter))]

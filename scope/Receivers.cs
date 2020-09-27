@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace scope
+namespace DGScope.Receivers
 {
     public interface IReceiver
     {

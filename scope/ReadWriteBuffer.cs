@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace scope
+namespace DGScope
 {
     public class ReadWriteBuffer
     {

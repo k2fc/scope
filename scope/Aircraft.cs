@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using DGScope.Receivers;
 
-namespace scope
+namespace DGScope
 {
     public class Aircraft : IDisposable
     {

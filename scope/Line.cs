@@ -1,4 +1,4 @@
-﻿namespace scope
+﻿namespace DGScope
 {
     public class Line
     {

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 
-namespace scope
+namespace DGScope
 {
     static class Program
     {

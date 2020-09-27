@@ -4,8 +4,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml.Serialization;
+using DGScope.Receivers;
 
-namespace scope
+namespace DGScope
 {
     [Browsable(true)]
     [TypeConverter(typeof(ExpandableObjectConverter))]

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using DGScope.Receivers;
 
-namespace scope
+namespace DGScope
 {
     
     public class ListOfIReceiver : List<IReceiver>, IXmlSerializable
