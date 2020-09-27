@@ -78,7 +78,8 @@ namespace DGScope
         public int FadeReps { get; set; } = 6;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 10;
-        //public bool LaunchFullScreen { get; set; } = false;
+        [DisplayName("Screen Rotation"), Description("The number of degrees to rotate the image"), Category("Display Properties")]
+        public double ScreenRotation { get; set; } = 0;
         [DisplayName("Window State"), Category("Display Properties")]
         public WindowState WindowState
         {
@@ -430,7 +431,7 @@ namespace DGScope
         {
             foreach (IReceiver receiver in radar.Receivers)
             {
-                double bearing = radar.Location.BearingTo(receiver.Location);
+                double bearing = radar.Location.BearingTo(receiver.Location) - ScreenRotation;
                 double distance = radar.Location.DistanceTo(receiver.Location);
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
@@ -470,12 +471,12 @@ namespace DGScope
             double yscale = (double)window.Width / (double)window.Height;
             foreach (Line line in lines)
             {
-                double bearing1 = radar.Location.BearingTo(line.End1) - radar.Rotation;
+                double bearing1 = radar.Location.BearingTo(line.End1) - ScreenRotation;
                 double distance1 = radar.Location.DistanceTo(line.End1);
                 float x1 = (float)(Math.Sin(bearing1 * (Math.PI / 180)) * (distance1 / scale));
                 float y1 = (float)(Math.Cos(bearing1 * (Math.PI / 180)) * (distance1 / scale) * yscale);
 
-                double bearing2 = radar.Location.BearingTo(line.End2) - radar.Rotation;
+                double bearing2 = radar.Location.BearingTo(line.End2) - ScreenRotation;
                 double distance2 = radar.Location.DistanceTo(line.End2);
                 float x2 = (float)(Math.Sin(bearing2 * (Math.PI / 180)) * (distance2 / scale));
                 float y2 = (float)(Math.Cos(bearing2 * (Math.PI / 180)) * (distance2 / scale) * yscale);
@@ -499,7 +500,7 @@ namespace DGScope
             List<Aircraft> targets = radar.Scan();
             foreach (Aircraft aircraft in targets)
             {
-                double bearing = radar.Location.BearingTo(aircraft.Location);
+                double bearing = radar.Location.BearingTo(aircraft.Location) - ScreenRotation; 
                 double distance = radar.Location.DistanceTo(aircraft.Location);
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
@@ -543,13 +544,17 @@ namespace DGScope
                 if (target.Intensity < .001)
                     PrimaryReturns.Remove(target);
             }
-            foreach (Aircraft plane in radar.Aircraft.ToList())
+            lock (radar.Aircraft)
             {
-                if (plane.Altitude > radar.MaxAltitude)
+                foreach (Aircraft plane in radar.Aircraft)
                 {
-                    dataBlocks.Remove(plane.DataBlock);
+                    if (plane.Altitude > radar.MaxAltitude)
+                    {
+                        dataBlocks.Remove(plane.DataBlock);
+                    }
                 }
             }
+            
         }
 
         System.Timers.Timer aircraftGCTimer = new System.Timers.Timer(60000);
@@ -567,11 +572,15 @@ namespace DGScope
                 PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
                 block.LocationF = newLocation;
             }
-            foreach (Aircraft plane in radar.Aircraft.ToList())
+            lock (radar.Aircraft)
             {
-                PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
-                plane.LocationF = newLocation;
+                foreach (Aircraft plane in radar.Aircraft)
+                {
+                    PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
+                    plane.LocationF = newLocation;
+                }
             }
+            
         }
 
         private void DrawTarget(PrimaryReturn target)

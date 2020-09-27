@@ -26,7 +26,6 @@ namespace DGScope
         public double Size { get => Math.Sqrt(((Width / 2) * (Width / 2) + ((Height / 2) * (Height / 2)))); }
         //public double Size { get => Math.Min(Width, Height); }
         public double RotationPeriod { get; set; } = 4.8;
-        public double Rotation { get; set; } = 0;
         [XmlIgnore]
         [Browsable(false)]
         public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
@@ -81,13 +80,14 @@ namespace DGScope
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
             Stopwatch.Restart();
-            List<Aircraft> temprx = Aircraft.ToList();
+            
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             foreach (IReceiver receiver in Receivers)
             {
-                TargetsScanned.AddRange(from x in temprx
+                lock(Aircraft)
+                TargetsScanned.AddRange(from x in Aircraft
                                         where x.Bearing(receiver.Location) >= lastazimuth &&
-                                        x.Bearing(receiver.Location) <= newazimuth && x.LocationReceivedBy == receiver && x.Altitude <= MaxAltitude
+                                        x.Bearing(receiver.Location) <= newazimuth && x.LocationReceivedBy == receiver && x.Altitude <= MaxAltitude && x.Location.DistanceTo(this.Location) <= this.Range
                                         select x);
             }
 

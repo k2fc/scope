@@ -67,7 +67,7 @@ namespace DGScope.Receivers
             client.Disconnect();
             while (client.ConnectionState != EventDrivenTCPClient.ConnectionStatus.DisconnectedByUser) { }
             //client.DataReceived -= Client_DataReceived;
-            
+
             running = false;
         }
         public void Restart()
@@ -80,11 +80,12 @@ namespace DGScope.Receivers
         private void Client_DataReceived(EventDrivenTCPClient sender, object data)
         {
             rxBuffer += data;
-            while (rxBuffer.Contains("\r\n"))
+            rxBuffer.Replace("\r\n", "\n");
+            while (rxBuffer.Contains("\n"))
             {
-                string message = rxBuffer.Substring(0, rxBuffer.IndexOf("\r\n"));
+                string message = rxBuffer.Substring(0, rxBuffer.IndexOf("\n"));
                 string[] sbs_data = message.ToString().Split(',');
-                rxBuffer = rxBuffer.Substring(rxBuffer.IndexOf("\r\n") + 2);
+                rxBuffer = rxBuffer.Substring(rxBuffer.IndexOf("\n") + 1);
 
                 switch (sbs_data[0])
                 {
@@ -94,7 +95,8 @@ namespace DGScope.Receivers
                         if (plane == null)
                         {
                             plane = new Aircraft(icaoID);
-                            aircraft.Add(plane);
+                            lock(aircraft)
+                                aircraft.Add(plane);
                             Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
                         }
                         DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
@@ -112,9 +114,9 @@ namespace DGScope.Receivers
                                 if (sbs_data[11] != "")
                                     plane.Altitude = Int32.Parse(sbs_data[11]);
                                 if (sbs_data[12] != "")
-                                    plane.GroundSpeed = Int32.Parse(sbs_data[12]);
+                                    plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
                                 if (sbs_data[13] != "")
-                                    plane.Track = Int32.Parse(sbs_data[13]);
+                                    plane.Track = (int)Double.Parse(sbs_data[13]);
                                 if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
                                     plane.Latitude = Double.Parse(sbs_data[14]);
                                 if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
@@ -145,9 +147,9 @@ namespace DGScope.Receivers
                                 break;
                             case "4":
                                 if (sbs_data[12] != "")
-                                    plane.GroundSpeed = Int32.Parse(sbs_data[12]);
+                                    plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
                                 if (sbs_data[13] != "")
-                                    plane.Track = Int32.Parse(sbs_data[13]);
+                                    plane.Track = (int)Double.Parse(sbs_data[13]);
                                 if (sbs_data[16] != "")
                                     plane.VerticalRate = Int32.Parse(sbs_data[16]);
                                 break;

@@ -38,7 +38,8 @@ namespace DGScope
         { 
             get
             {
-                return (from element in Elements select element.Line).ToList();
+                lock(Elements)
+                    return (from element in Elements select element.Line).ToList();
             } 
         }
         public VideoMap Map
