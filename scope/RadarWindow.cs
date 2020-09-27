@@ -377,7 +377,6 @@ namespace DGScope
             DrawLines();
             GenerateTargets();
             DrawTargets();
-            radar.Scan();
             GL.Flush();
             window.SwapBuffers();
             window.Title = $"(Vsync: {window.VSync}) FPS: {1f / e.Time:0} Aircraft: {radar.Aircraft.Count}";
