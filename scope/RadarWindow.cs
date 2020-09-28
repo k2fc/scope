@@ -393,8 +393,10 @@ namespace DGScope
         private void Window_Load(object sender, EventArgs e)
         {
             if (isScreenSaver)
+            {
                 window.WindowState = WindowState.Fullscreen;
-            //DennisSetup();
+                window.CursorVisible = false;
+            }
             radar.Start();
             oldar = aspect_ratio;
         }
@@ -419,11 +421,15 @@ namespace DGScope
                     break;
                 }
             }
-            if (changed)
+            if (changed && !isScreenSaver)
             {
-                string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
-                XmlSerializer<RadarWindow>.SerializeToFile(this, settingsPath);
+                SaveSettings(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml"));
             }
+        }
+
+        public void SaveSettings(string path)
+        {
+            XmlSerializer<RadarWindow>.SerializeToFile(this, path);
         }
         
         private void DrawRangeRings()

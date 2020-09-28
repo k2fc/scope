@@ -8,10 +8,10 @@ namespace DGScope
 {
     static class Program
     {
-        [STAThread]
         static void Start(bool screensaver = false)
         {
-            string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+            string settingsPath = screensaver? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
+               Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml");
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
             {
@@ -25,10 +25,12 @@ namespace DGScope
                     MessageBox.Show("No config file found. Starting a new config.");
                     PropertyForm propertyForm = new PropertyForm(radarWindow);
                     propertyForm.ShowDialog();
+                    radarWindow.SaveSettings(settingsPath);
                 }
             }
             radarWindow.Run(screensaver);
         }
+        [STAThread]
         static void Main(string[] args)
         {
             Application.EnableVisualStyles();
@@ -37,13 +39,23 @@ namespace DGScope
             if (args.Length > 0)
             {
                 string arg = args[0].ToUpper().Trim();
-                if (arg == "/C") 
+                if (arg.Contains("/C")) 
                 {
-                    RadarWindow radarWindow = new RadarWindow();
+                    string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+                    RadarWindow radarWindow;
+                    if (File.Exists(settingsPath))
+                    {
+                        radarWindow = TryLoad(settingsPath);
+                    }
+                    else
+                    {
+                        radarWindow = new RadarWindow();
+                    }
                     PropertyForm propertyForm = new PropertyForm(radarWindow);
                     propertyForm.ShowDialog();
+                    radarWindow.SaveSettings(settingsPath);
                 }
-                else if (arg == "/S")
+                else if (arg.Contains("/S"))
                 {
                     Start(true);
                 }
