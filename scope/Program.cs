@@ -15,8 +15,6 @@ namespace DGScope
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
             {
-                MessageBox.Show(settingsPath + "exists");
-
                 radarWindow = TryLoad(settingsPath);
             }
             else
