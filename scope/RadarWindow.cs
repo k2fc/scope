@@ -250,9 +250,9 @@ namespace DGScope
             }
         }
         byte[] settingshash;
-        public void Run()
+        public void Run(bool isScreenSaver)
         {
-            
+            this.isScreenSaver = isScreenSaver;
             window.Run();
         }
 
@@ -421,7 +421,7 @@ namespace DGScope
             }
             if (changed)
             {
-                string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "scope.xml");
+                string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
                 XmlSerializer<RadarWindow>.SerializeToFile(this, settingsPath);
             }
         }
@@ -660,7 +660,8 @@ namespace DGScope
 
         private void DrawLabel(TransparentLabel Label)
         {
-            
+            if (!radar.Aircraft.Contains(Label.ParentAircraft))
+                return;
             if (Label.TextureID == 0)
                 Label.TextureID = GL.GenTexture();
             var text_texture = Label.TextureID;
