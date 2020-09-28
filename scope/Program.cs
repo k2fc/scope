@@ -9,24 +9,60 @@ namespace DGScope
     static class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static void Start(bool screensaver = false)
         {
-            string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "scope.xml");
+            string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
             {
+                MessageBox.Show(settingsPath + "exists");
+
                 radarWindow = TryLoad(settingsPath);
             }
             else
             {
-                MessageBox.Show("No config file found. Starting a new config.");
                 radarWindow = new RadarWindow();
-                PropertyForm propertyForm = new PropertyForm(radarWindow);
-                propertyForm.ShowDialog();
+                if (!screensaver)
+                {
+                    MessageBox.Show("No config file found. Starting a new config.");
+                    PropertyForm propertyForm = new PropertyForm(radarWindow);
+                    propertyForm.ShowDialog();
+                }
             }
-            radarWindow.Run();
+            radarWindow.Run(screensaver);
         }
+        static void Main(string[] args)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
+            if (args.Length > 0)
+            {
+                string arg = args[0].ToUpper().Trim();
+                if (arg == "/C") 
+                {
+                    RadarWindow radarWindow = new RadarWindow();
+                    PropertyForm propertyForm = new PropertyForm(radarWindow);
+                    propertyForm.ShowDialog();
+                }
+                else if (arg == "/S")
+                {
+                    Start(true);
+                }
+                else if (arg.Contains("/P"))
+                {
+                    //do nothing
+                }
+                else
+                {
+                    Start(false);
+                }
+            }
+            else
+            {
+                Start(false);
+            }
+        }
         static RadarWindow TryLoad(string settingsPath)
         {
             try
