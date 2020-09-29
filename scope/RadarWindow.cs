@@ -158,13 +158,15 @@ namespace DGScope
                 _homeLocation = value;
             }
         }
+        private double _startingRange;
         [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
         public double Range
         {
-            get => radar.Range;
+            get => _startingRange;
             set
             {
                 radar.Range = value;
+                _startingRange = value;
             }
         }
         [DisplayName("Rotation Period"), Category("Radar Properties"), Description("The number of seconds the radar takes to make one revolution")]
