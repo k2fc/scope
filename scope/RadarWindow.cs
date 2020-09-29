@@ -147,13 +147,15 @@ namespace DGScope
                 radar.Receivers = value;
             }
         }
+        private GeoPoint _homeLocation;
         [DisplayName("Screen Center Point"), Category("Radar Properties")]
         public GeoPoint ScreenCenterPoint
         {
-            get => radar.Location;
+            get => _homeLocation;
             set
             {
                 radar.Location = value;
+                _homeLocation = value;
             }
         }
         [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
