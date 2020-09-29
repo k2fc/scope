@@ -277,18 +277,26 @@ namespace DGScope
             window.CursorVisible = window.WindowState != WindowState.Fullscreen;
         }
 
-        System.Drawing.Point mouseLocation;
         
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
-            if (mouseLocation.X == 0 && mouseLocation.Y == 0)
-                mouseLocation = e.Position;
-            
-            double move = Math.Sqrt(((mouseLocation.X - e.Position.X) * (mouseLocation.X - e.Position.X)) + ((mouseLocation.Y - e.Position.Y) * (mouseLocation.Y - e.Position.Y)));
-            
-            if (move > 10 && isScreenSaver)
-                Environment.Exit(0);
-            mouseLocation = e.Position;
+            if (!e.Mouse.IsAnyButtonDown)
+            {
+                double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
+
+                if (move > 10 && isScreenSaver)
+                    Environment.Exit(0);
+               
+            }
+            else if (e.Mouse.RightButton == ButtonState.Pressed)
+            {
+                double xMove = e.XDelta * xPixelScale;
+                double yMove = e.YDelta * xPixelScale;
+                radar.Location = radar.Location.FromPoint(xMove * scale, 270);
+                radar.Location = radar.Location.FromPoint(yMove * scale, 0);
+                MoveTargets((float)xMove, (float)yMove);
+            }
+
         }
 
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -595,6 +603,26 @@ namespace DGScope
                 }
             }
             
+        }
+
+        private void MoveTargets(float xChange, float yChange)
+        {
+            yChange = yChange * aspect_ratio;
+            foreach (PrimaryReturn target in PrimaryReturns.ToList())
+            {
+                target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+            }
+            foreach (TransparentLabel block in dataBlocks.ToList())
+            {
+                block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
+            }
+            lock (radar.Aircraft)
+            {
+                foreach (Aircraft plane in radar.Aircraft)
+                {
+                    plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
+                }
+            }
         }
 
         private void DrawTarget(PrimaryReturn target)
