@@ -277,15 +277,16 @@ namespace DGScope
             window.CursorVisible = window.WindowState != WindowState.Fullscreen;
         }
 
-        
+        bool _mousesettled = false;
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
             if (!e.Mouse.IsAnyButtonDown)
             {
                 double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
 
-                if (move > 10 && isScreenSaver)
+                if (move > 10 && isScreenSaver && _mousesettled)
                     Environment.Exit(0);
+                _mousesettled = true;
                
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
