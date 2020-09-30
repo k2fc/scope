@@ -312,6 +312,11 @@ namespace DGScope
             else if (e.Delta < 0)
                 radar.Range += 5;
             RescaleTargets((oldscale / scale), (oldar / aspect_ratio));
+            lock(dataBlocks)
+            {
+                foreach (TransparentLabel block in dataBlocks)
+                    block.Redraw = true;
+            }
         }
 
         private void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
@@ -447,9 +452,13 @@ namespace DGScope
         
         private void DrawRangeRings()
         {
+            double bearing = radar.Location.BearingTo(ScreenCenterPoint) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(ScreenCenterPoint);
+            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
             for (int i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(0, 0, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
+                DrawCircle(x,y, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
             }
         }
 
@@ -701,6 +710,7 @@ namespace DGScope
         {
             if (!radar.Aircraft.Contains(Label.ParentAircraft))
                 return;
+            GL.Enable(EnableCap.Texture2D);
             if (Label.TextureID == 0)
                 Label.TextureID = GL.GenTexture();
             var text_texture = Label.TextureID;
@@ -717,12 +727,12 @@ namespace DGScope
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, text_bmp.Width, text_bmp.Height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
+                OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
                 //text_bmp.Save($"{text_texture}.bmp");
             }
-            GL.Enable(EnableCap.Texture2D);
+            
             GL.BindTexture(TextureTarget.Texture2D, text_texture);
             GL.Begin(PrimitiveType.Quads);
             GL.Color4(Label.ForeColor);
@@ -738,6 +748,7 @@ namespace DGScope
             GL.TexCoord2(0, 1); 
             GL.Vertex2(Location.X, Location.Y);
             GL.End();
+            GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.Disable(EnableCap.Texture2D);
 
             
