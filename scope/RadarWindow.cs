@@ -147,22 +147,26 @@ namespace DGScope
                 radar.Receivers = value;
             }
         }
+        private GeoPoint _homeLocation;
         [DisplayName("Screen Center Point"), Category("Radar Properties")]
         public GeoPoint ScreenCenterPoint
         {
-            get => radar.Location;
+            get => _homeLocation;
             set
             {
                 radar.Location = value;
+                _homeLocation = value;
             }
         }
+        private double _startingRange;
         [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
         public double Range
         {
-            get => radar.Range;
+            get => _startingRange;
             set
             {
                 radar.Range = value;
+                _startingRange = value;
             }
         }
         [DisplayName("Rotation Period"), Category("Radar Properties"), Description("The number of seconds the radar takes to make one revolution")]
@@ -279,18 +283,27 @@ namespace DGScope
             window.CursorVisible = window.WindowState != WindowState.Fullscreen;
         }
 
-        System.Drawing.Point mouseLocation;
-        
+        bool _mousesettled = false;
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
-            if (mouseLocation.X == 0 && mouseLocation.Y == 0)
-                mouseLocation = e.Position;
-            
-            double move = Math.Sqrt(((mouseLocation.X - e.Position.X) * (mouseLocation.X - e.Position.X)) + ((mouseLocation.Y - e.Position.Y) * (mouseLocation.Y - e.Position.Y)));
-            
-            if (move > 10 && isScreenSaver)
-                Environment.Exit(0);
-            mouseLocation = e.Position;
+            if (!e.Mouse.IsAnyButtonDown)
+            {
+                double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
+
+                if (move > 10 && isScreenSaver && _mousesettled)
+                    Environment.Exit(0);
+                _mousesettled = true;
+               
+            }
+            else if (e.Mouse.RightButton == ButtonState.Pressed)
+            {
+                double xMove = e.XDelta * xPixelScale;
+                double yMove = e.YDelta * xPixelScale;
+                radar.Location = radar.Location.FromPoint(xMove * scale, 270);
+                radar.Location = radar.Location.FromPoint(yMove * scale, 0);
+                MoveTargets((float)xMove, (float)yMove);
+            }
+
         }
 
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -301,6 +314,11 @@ namespace DGScope
             else if (e.Delta < 0)
                 radar.Range += 5;
             RescaleTargets((oldscale / scale), (oldar / aspect_ratio));
+            lock(dataBlocks)
+            {
+                foreach (TransparentLabel block in dataBlocks)
+                    block.Redraw = true;
+            }
         }
 
         private void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
@@ -437,9 +455,13 @@ namespace DGScope
         
         private void DrawRangeRings()
         {
+            double bearing = radar.Location.BearingTo(ScreenCenterPoint) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(ScreenCenterPoint);
+            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
             for (int i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(0, 0, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
+                DrawCircle(x,y, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
             }
         }
 
@@ -628,6 +650,26 @@ namespace DGScope
             
         }
 
+        private void MoveTargets(float xChange, float yChange)
+        {
+            yChange = yChange * aspect_ratio;
+            foreach (PrimaryReturn target in PrimaryReturns.ToList())
+            {
+                target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+            }
+            foreach (TransparentLabel block in dataBlocks.ToList())
+            {
+                block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
+            }
+            lock (radar.Aircraft)
+            {
+                foreach (Aircraft plane in radar.Aircraft)
+                {
+                    plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
+                }
+            }
+        }
+
         private void DrawTarget(PrimaryReturn target)
         {
             float targetHeight = 15f * xPixelScale;// (window.ClientRectangle.Height/2);
@@ -703,6 +745,7 @@ namespace DGScope
         {
             if (!radar.Aircraft.Contains(Label.ParentAircraft))
                 return;
+            GL.Enable(EnableCap.Texture2D);
             if (Label.TextureID == 0)
                 Label.TextureID = GL.GenTexture();
             var text_texture = Label.TextureID;
@@ -719,12 +762,12 @@ namespace DGScope
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, text_bmp.Width, text_bmp.Height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
+                OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
                 //text_bmp.Save($"{text_texture}.bmp");
             }
-            GL.Enable(EnableCap.Texture2D);
+            
             GL.BindTexture(TextureTarget.Texture2D, text_texture);
             GL.Begin(PrimitiveType.Quads);
             GL.Color4(Label.ForeColor);
@@ -740,6 +783,7 @@ namespace DGScope
             GL.TexCoord2(0, 1); 
             GL.Vertex2(Location.X, Location.Y);
             GL.End();
+            GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.Disable(EnableCap.Texture2D);
 
             
