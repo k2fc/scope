@@ -147,7 +147,7 @@ namespace DGScope
                 radar.Receivers = value;
             }
         }
-        private GeoPoint _homeLocation;
+        private GeoPoint _homeLocation = new GeoPoint();
         [DisplayName("Screen Center Point"), Category("Radar Properties")]
         public GeoPoint ScreenCenterPoint
         {
@@ -158,7 +158,7 @@ namespace DGScope
                 _homeLocation = value;
             }
         }
-        private double _startingRange;
+        private double _startingRange = 20;
         [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
         public double Range
         {
@@ -244,6 +244,7 @@ namespace DGScope
             window.KeyDown += Window_KeyDown;
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
+            window.MouseUp += Window_MouseUp;
             aircraftGCTimer.Start();
             aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
             GL.ClearColor(BackColor);
@@ -255,6 +256,12 @@ namespace DGScope
                 settingshash = md5.Hash;
             }
         }
+
+        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            dragging = false;
+        }
+
         byte[] settingshash;
         public void Run(bool isScreenSaver)
         {
@@ -284,6 +291,7 @@ namespace DGScope
         }
 
         bool _mousesettled = false;
+        bool dragging = false;
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
             if (!e.Mouse.IsAnyButtonDown)
@@ -297,6 +305,7 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
+                dragging = true;
                 double xMove = e.XDelta * xPixelScale;
                 double yMove = e.YDelta * xPixelScale;
                 radar.Location = radar.Location.FromPoint(xMove * scale, 270);
@@ -401,7 +410,8 @@ namespace DGScope
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.DstAlpha);
             DrawRangeRings();
-            DrawNexrad();
+            if(!dragging)
+                DrawNexrad();
             DrawReceiverLocations();
             DrawLines();
             GenerateTargets();
@@ -529,13 +539,9 @@ namespace DGScope
             double yscale = (double)window.Width / (double)window.Height;
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(polygon.Color);
-            foreach (var point in polygon.Points)
+            for (int i = 0; i < polygon.vertices[0].Length; i++)
             {
-                double bearing = radar.Location.BearingTo(point) - ScreenRotation;
-                double distance = radar.Location.DistanceTo(point);
-                float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * yscale);
-                GL.Vertex2(x, y);
+                GL.Vertex2(polygon.vertices[0][i], polygon.vertices[1][i] * yscale);
             }
             GL.End();
         }
@@ -544,10 +550,11 @@ namespace DGScope
         {
             foreach (var nexrad in Nexrads)
             {
-                var polygons = nexrad.Polygons();
+                var polygons = nexrad.Polygons(radar.Location, scale, ScreenRotation);
                 for (int i = 0; i < polygons.Length; i++)
                 {
-                    DrawPolygon(polygons[i]);
+                    if(polygons[i].Color.A > 0)
+                        DrawPolygon(polygons[i]);
                 }
             }
         }
