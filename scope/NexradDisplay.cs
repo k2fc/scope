@@ -89,6 +89,20 @@ namespace DGScope
                     alphafactor = 1 - (value / 255d);
             }
         }
+        public string Name { get; set; }
+        bool enabled = true;
+        public bool Enabled { 
+            get
+            {
+                return enabled;
+            }
+            set 
+            {
+                if (!enabled && value)
+                    timer.Change(0, DownloadInterval);
+                enabled = value;
+            }
+        }
         public string URL { get; set; }
         public int DownloadInterval { get; set; } = 300;
         public int Range { get; set; } = 124;
@@ -98,6 +112,8 @@ namespace DGScope
         bool gotdata = false;
         void GetRadarData(string url)
         {
+            if (!Enabled)
+                return;
             using (var client = new WebClient())
             {
                 try
@@ -139,7 +155,7 @@ namespace DGScope
             if (timer == null)
                 timer = new System.Threading.Timer(new System.Threading.TimerCallback(cbTimerElapsed), null,0,DownloadInterval * 1000);
             
-            if (polygons == null)
+            if (polygons == null || !Enabled)
                 return new Polygon[0];
             return polygons;
         }
@@ -176,6 +192,11 @@ namespace DGScope
                 }
             }
             this.polygons = polygons.ToArray();
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
 
         // ftp://tgftp.nws.noaa.gov/SL.us008001/DF.of/DC.radar/DS.p19r0/SI.kokx/sn.last
