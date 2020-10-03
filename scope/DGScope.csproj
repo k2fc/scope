@@ -60,6 +60,7 @@
     <Compile Include="InputBox.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="CustomLists.cs" />
+    <Compile Include="NexradDisplay.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyForm.cs">
@@ -118,6 +119,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NexradDecoder\NexradDecoder.csproj">
+      <Project>{6a8559f0-0f1f-49c6-baae-6d1c0a624940}</Project>
+      <Name>NexradDecoder</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

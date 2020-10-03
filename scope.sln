@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29409.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DGScope", "scope\DGScope.csproj", "{DE29D155-652E-44C2-8008-C6C3E5A45A16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexradDecoder", "NexradDecoder\NexradDecoder.csproj", "{6A8559F0-0F1F-49C6-BAAE-6D1C0A624940}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{DE29D155-652E-44C2-8008-C6C3E5A45A16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE29D155-652E-44C2-8008-C6C3E5A45A16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE29D155-652E-44C2-8008-C6C3E5A45A16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A8559F0-0F1F-49C6-BAAE-6D1C0A624940}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A8559F0-0F1F-49C6-BAAE-6D1C0A624940}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A8559F0-0F1F-49C6-BAAE-6D1C0A624940}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A8559F0-0F1F-49C6-BAAE-6D1C0A624940}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

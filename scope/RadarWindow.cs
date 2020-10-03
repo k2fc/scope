@@ -197,6 +197,8 @@ namespace DGScope
                 window.VSync = value;
             }
         }
+        [DisplayName("Nexrad Weather Radars")]
+        public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
 
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
@@ -381,6 +383,7 @@ namespace DGScope
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.DstAlpha);
             DrawRangeRings();
+            DrawNexrad();
             DrawReceiverLocations();
             DrawLines();
             GenerateTargets();
@@ -498,6 +501,34 @@ namespace DGScope
             }
         }
 
+        private void DrawPolygon (Polygon polygon)
+        {
+            double scale = radar.Range / Math.Sqrt(2);
+            double yscale = (double)window.Width / (double)window.Height;
+            GL.Begin(PrimitiveType.Polygon);
+            GL.Color4(polygon.Color);
+            foreach (var point in polygon.Points)
+            {
+                double bearing = radar.Location.BearingTo(point) - ScreenRotation;
+                double distance = radar.Location.DistanceTo(point);
+                float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+                float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * yscale);
+                GL.Vertex2(x, y);
+            }
+            GL.End();
+        }
+
+        private void DrawNexrad()
+        {
+            foreach (var nexrad in Nexrads)
+            {
+                var polygons = nexrad.Polygons();
+                for (int i = 0; i < polygons.Length; i++)
+                {
+                    DrawPolygon(polygons[i]);
+                }
+            }
+        }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
         {
             GL.Begin(PrimitiveType.Lines);
@@ -653,14 +684,18 @@ namespace DGScope
             foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
             {
                 DrawTarget(target);
-                if(!HideDataTags)
+                if (!HideDataTags)
+                {
                     Deconflict(target);
+                }
             }
             foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
             {
-                //Deconflict(block);
                 if (!HideDataTags)
+                {
                     DrawLabel(block);
+                    //Deconflict(block);
+                }
             }
         }
 
@@ -756,6 +791,8 @@ namespace DGScope
             foreach (TransparentLabel block in blocks)
             {
                 if (block.BoundsF.IntersectsWith(Return.BoundsF))
+                    Deconflict(block);
+                else if ((Return.ParentAircraft.ConnectingLine.IntersectsWith(block.BoundsF) || Return.ParentAircraft.ConnectingLine.IntersectsWith(block.ParentAircraft.ConnectingLine)) && Return.ParentAircraft != block.ParentAircraft)
                     Deconflict(block);
             }
         }
