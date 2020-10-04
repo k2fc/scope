@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Xml.Serialization;
 using DGScope.Receivers;
@@ -30,6 +31,7 @@ namespace DGScope
         [Browsable(false)]
         public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
+        public Font DataBlockFont { get; set; }
 
         public double LatitudeOfTarget(double distance, double bearing)
         {
