@@ -38,6 +38,7 @@ namespace DGScope
         public DateTime LastPositionTime { get; set; }
         public char TargetChar { get; set; }
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
+        public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
 
         public Aircraft(int icaoID)
         {
@@ -89,8 +90,7 @@ namespace DGScope
             ForeColor = Color.Lime,
             //BackColor = Color.Transparent,
             TextAlign = ContentAlignment.TopLeft,
-            AutoSize = true,
-            Font = new Font("Consolas", 10)
+            AutoSize = true
         };
 
         public void Dispose()
@@ -100,7 +100,6 @@ namespace DGScope
         }
         public void RedrawTarget(int top, int left)
         {
-
             TargetReturn.Top = top - TargetReturn.Height / 2;
             TargetReturn.Left = left - TargetReturn.Width / 2;
             DataBlock.Top = TargetReturn.Top - 50;

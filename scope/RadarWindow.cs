@@ -203,6 +203,15 @@ namespace DGScope
         }
         [DisplayName("Nexrad Weather Radars")]
         public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
+        [DisplayName("Data Block Font")]
+        [XmlIgnore]
+        public Font Font { get; set; } = new Font("Consolas", 10);
+        [XmlElement("FontName")]
+        [Browsable(false)]
+        public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size); } }
+        [XmlElement("FontSize")]
+        [Browsable(false)] 
+        public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
 
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
@@ -314,10 +323,15 @@ namespace DGScope
             }
 
         }
+        System.Threading.Timer zoomTimer;
+        bool zooming;
 
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             var oldscale = scale;
+            dragging = true;
+            zooming = true;
+            zoomTimer = new System.Threading.Timer(new System.Threading.TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
             if (e.Delta > 0 && radar.Range > 5)
                 radar.Range -= 5;
             else if (e.Delta < 0)
@@ -330,6 +344,15 @@ namespace DGScope
             }
         }
 
+        //Don't draw Nexrad while zooming
+        private void cbZoomTimerElapsed(object state)
+        {
+            if (!dragging)
+                zoomTimer.Dispose();
+            if (!zooming)
+                dragging = false;
+            zooming = false;
+        }
         private void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
         {
             var oldscale = scale;
@@ -396,6 +419,7 @@ namespace DGScope
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
             RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
+            Nexrads.ForEach(x => x.RecomputeVertices(radar.Location,scale,ScreenRotation));
             oldar = aspect_ratio;
         }
 
@@ -758,6 +782,7 @@ namespace DGScope
             var text_texture = Label.TextureID;
             if (Label.Redraw && Label.Text.Trim() != "")
             {
+                Label.Font = Font;
                 Bitmap text_bmp = Label.TextBitmap();
                 var realWidth = (float)text_bmp.Width * xPixelScale;
                 var realHeight = (float)text_bmp.Height * yPixelScale;
