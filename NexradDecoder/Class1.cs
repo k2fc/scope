@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Created by Chris Harrell, 09/10/2010
+//
+// Base NexradDecoder class.
+
+using System;
 using System.IO;
 
 namespace NexradDecoder
