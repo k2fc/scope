@@ -1,4 +1,9 @@
-﻿namespace NexradDecoder
+﻿//
+// Created by Chris Harrell, 09/10/2010
+//
+// Base NexradDecoder class.
+
+namespace NexradDecoder
 {
     public class RadialPacketDecoder : NexradDecoder
     {
