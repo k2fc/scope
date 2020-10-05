@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
@@ -118,6 +119,7 @@ namespace DGScope
             {
                 try
                 {
+                    Debug.WriteLine("Downloading radar data from " + url);
                     Stream response = client.OpenRead(url);
                     MemoryStream stream = new MemoryStream();
                     response.CopyTo(stream);
@@ -127,7 +129,10 @@ namespace DGScope
                     symbology = (RadialSymbologyBlock)decoder.parsePSB();
                     gotdata = true;
                 }
-                catch { }
+                catch (Exception ex) 
+                {
+
+                }
             }
                 //decoder.setFileResource("e:\\users\\dennis\\downloads\\KOKX_SDUS51_N0ROKX_202009292354");
                 
