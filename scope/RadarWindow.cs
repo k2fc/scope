@@ -293,7 +293,6 @@ namespace DGScope
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
         }
-
         private void Window_WindowStateChanged(object sender, EventArgs e)
         {
             window.CursorVisible = window.WindowState != WindowState.Fullscreen;
@@ -337,11 +336,7 @@ namespace DGScope
             else if (e.Delta < 0)
                 radar.Range += 5;
             RescaleTargets((oldscale / scale), (oldar / aspect_ratio));
-            lock(dataBlocks)
-            {
-                foreach (TransparentLabel block in dataBlocks)
-                    block.Redraw = true;
-            }
+            
         }
 
         //Don't draw Nexrad while zooming
@@ -416,10 +411,15 @@ namespace DGScope
 
         private void Window_Resize(object sender, EventArgs e)
         {
+            
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
             RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
             Nexrads.ForEach(x => x.RecomputeVertices(radar.Location,scale,ScreenRotation));
+            lock (dataBlocks)
+            {
+                dataBlocks.ForEach(x => x.Redraw = true);
+            }
             oldar = aspect_ratio;
         }
 
@@ -429,6 +429,9 @@ namespace DGScope
 
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
+            if (window.WindowState == WindowState.Minimized)
+                return;
+
             GL.ClearColor(BackColor);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
@@ -440,6 +443,7 @@ namespace DGScope
             DrawLines();
             GenerateTargets();
             DrawTargets();
+            
             GL.Flush();
             window.SwapBuffers();
             window.Title = $"(Vsync: {window.VSync}) FPS: {1f / e.Time:0} Aircraft: {radar.Aircraft.Count}";
@@ -625,6 +629,7 @@ namespace DGScope
                     aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, Math.PI/4, aircraft.DataBlock.SizeF);
                     
                     aircraft.DataBlock.ParentAircraft = aircraft;
+                    Deconflict(newreturn);
                     Deconflict(aircraft.DataBlock);
                     if (!dataBlocks.Contains(aircraft.DataBlock))
                         dataBlocks.Add(aircraft.DataBlock);
@@ -676,6 +681,7 @@ namespace DGScope
                 {
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
                     plane.LocationF = newLocation;
+                    plane.DataBlock.Redraw = true;
                 }
             }
             
@@ -723,7 +729,7 @@ namespace DGScope
             GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
             GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
             GL.Begin(PrimitiveType.Polygon);
-            GL.Scale(aspect_ratio, 0.0f, 0.0f);
+            
             GL.Color4(target.ForeColor);
             GL.Vertex2(x1, y1);
             GL.Vertex2(-x1, y1);
@@ -733,7 +739,7 @@ namespace DGScope
 
             GL.End();
             GL.Translate(-target.LocationF.X, -target.LocationF.Y , 0.0f);
-            
+            //GL.Scale(aspect_ratio, 0.0f, 0.0f);
 
             GL.PopMatrix();
             
@@ -759,7 +765,7 @@ namespace DGScope
                 DrawTarget(target);
                 if (!HideDataTags)
                 {
-                    Deconflict(target);
+                    //Deconflict(target);
                 }
             }
             foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
@@ -874,7 +880,7 @@ namespace DGScope
         }
         private void Deconflict(TransparentLabel Label)
         {
-            if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0)
+            if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
             double circlespeed = 5 * (Math.PI / 180);
             float growsize = (10/72f)*xPixelScale;// * (float)circlespeed;
@@ -885,11 +891,17 @@ namespace DGScope
             int loopcount = 0;
             
             int conflictcount;
+            
             float circleSize = Label.SizeF.Width / 2;
             double angle = 0;
             List<IScreenObject> screenObjects = new List<IScreenObject>();
             screenObjects.AddRange(PrimaryReturns.ToList());
             screenObjects.AddRange(dataBlocks.ToList());
+
+            int minConflictCount = int.MaxValue;
+            float bestSize = float.MaxValue;
+            double bestAngle = 0;
+
             do
             {
                 conflictcount = 0;
@@ -898,10 +910,13 @@ namespace DGScope
                 {
                     bool crashesWithLabel = Label.BoundsF.IntersectsWith(screenObject.BoundsF) && screenObject != Label;
                     bool crashesWithLine = (connectingLine.IntersectsWith(screenObject.BoundsF) && screenObject != Label || connectingLine.IntersectsWith(screenObject.ParentAircraft.ConnectingLine)) && !screenObject.BoundsF.IntersectsWith(Label.ParentAircraft.TargetReturn.BoundsF);
-                    if (crashesWithLabel || crashesWithLine)
+                    if ((crashesWithLabel || crashesWithLine) && screenObject.BoundsF.Width > 0 && screenObject.BoundsF.Height > 0 && !float.IsNaN(screenObject.BoundsF.X) && !float.IsNaN(screenObject.BoundsF.Y)
+                        && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(Label.LocationF.Y) && !float.IsNaN(Label.LocationF.Y))
                     {
                         conflictcount++;
-                        //Debug.WriteLine("{0}'s {1} has a conflict with {2}'s {3}.", Label.ParentAircraft, crashesWithLabel ? "label" : "line", screenObject.ParentAircraft, screenObject.GetType());
+                        //Debug.WriteLine("{0}'s {1} has a conflict with {2}'s {3}. Conflict count {4}, Loop count {5}", 
+                        //    Label.ParentAircraft, crashesWithLabel ? "label" : "line", screenObject.ParentAircraft, screenObject.GetType(),
+                        //    conflictcount, loopcount);
                     }
 
                 }
@@ -914,8 +929,25 @@ namespace DGScope
                 angle += circlespeed;
                 //angle = 180 * (Math.PI / 180);
                 circleSize += growsize;
-                if (loopcount >720)
+                if (conflictcount < minConflictCount)
+                {
+                    minConflictCount = conflictcount;
+                    bestAngle = angle;
+                    bestSize = circleSize;
+                }
+                else if (conflictcount == minConflictCount && circleSize < bestSize)
+                {
+                    bestSize = circleSize;
+                    bestAngle = angle;
+                }
+                else if (loopcount > 720)
+                {
+                    Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",Label.ParentAircraft,loopcount,conflictcount,circleSize/xPixelScale);
+                    Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, bestSize, bestAngle, Label.SizeF);
+                    connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
+                    connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
                     return;
+                }
             } while (conflictcount > 0 && conflictcount < screenObjects.Count) ;
         }
 
