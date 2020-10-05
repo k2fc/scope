@@ -100,7 +100,7 @@ namespace DGScope
             set 
             {
                 if (!enabled && value)
-                    timer.Change(0, DownloadInterval);
+                    timer.Change(0, DownloadInterval * 1000);
                 enabled = value;
             }
         }

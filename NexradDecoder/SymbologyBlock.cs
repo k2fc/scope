@@ -49,7 +49,7 @@ namespace NexradDecoder
     public class Radial
     {
         public int[] ColorValues { get; set; }
-        public int NumOfRLEs { get; set; }
+        public int RadialBytes { get; set; }
         public double StartAngle { get; set; }
         public double AngleDelta { get; set; }
 
