@@ -189,6 +189,17 @@ namespace DGScope
             }
         }
 
+        [DisplayName("Minimum Altitude"), Category("Radar Properties"), Description("The minimum altitude of displayed aircraft.")]
+        public int MinAltitude
+        {
+            get => radar.MinAltitude;
+            set
+            {
+                radar.MinAltitude = value;
+            }
+        }
+
+
         [DisplayName("Vertical Sync"),Description("Limit FPS to refresh rate of monitor"), Category("Display Properties")]
         public VSyncMode VSync
         { 
@@ -606,7 +617,7 @@ namespace DGScope
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
                 var location = new PointF(x, y);
-                if (aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-radar.RotationPeriod) && aircraft.Altitude <= radar.MaxAltitude)
+                if (aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-radar.RotationPeriod) && aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude)
                 {
                     PrimaryReturn newreturn = new PrimaryReturn();
                     aircraft.TargetReturn = newreturn;
@@ -640,7 +651,7 @@ namespace DGScope
                 {
                     dataBlocks.Remove(aircraft.DataBlock);
                 }
-                if (aircraft.Altitude > radar.MaxAltitude)
+                if (aircraft.Altitude > radar.MaxAltitude || aircraft.Altitude < radar.MinAltitude)
                 {
                     dataBlocks.Remove(aircraft.DataBlock);
                 }
@@ -882,7 +893,7 @@ namespace DGScope
         {
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
-            double circlespeed = 5 * (Math.PI / 180);
+            double circlespeed = 10 * (Math.PI / 180);
             float growsize = (10/72f)*xPixelScale;// * (float)circlespeed;
             ConnectingLineF connectingLine = new ConnectingLineF();
             connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
@@ -940,7 +951,7 @@ namespace DGScope
                     bestSize = circleSize;
                     bestAngle = angle;
                 }
-                else if (loopcount > 720)
+                else if (loopcount > 360)
                 {
                     Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",Label.ParentAircraft,loopcount,conflictcount,circleSize/xPixelScale);
                     Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, bestSize, bestAngle, Label.SizeF);
