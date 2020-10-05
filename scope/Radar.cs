@@ -20,6 +20,7 @@ namespace DGScope
         public double Longitude { get => Location.Longitude; }
         public double Range { get; set; } = 20;
         public int MaxAltitude { get; set; } = 1000000;
+        public int MinAltitude { get; set; } = 0;
         [Browsable(false)]
         public int Width { get; set; }
         [Browsable(false)]
