@@ -22,18 +22,29 @@ namespace NexradDecoder
             symbology_block.Radials = new Radial[symbology_block.NumberOfRadials];
             for (int i = 0; i < symbology_block.NumberOfRadials; i++)
             {
-                int numberofrles = readHalfWord();
+                int bytes = readHalfWord();
                 double startangle = readHalfWord() / 10;
                 double angledelta = readHalfWord() / 10;
                 symbology_block.Radials[i] = new Radial();
                 symbology_block.Radials[i].StartAngle = startangle;
-                symbology_block.Radials[i].NumOfRLEs = numberofrles;
+                symbology_block.Radials[i].RadialBytes = bytes;
                 symbology_block.Radials[i].AngleDelta = angledelta;
-                symbology_block.Radials[i].ColorValues = new int[0];
-                for (int j = 0; j < numberofrles * 2; j++)
+                if (symbology_block.LayerPacketCode == -20705)
                 {
-                    var tempcolorvalues = parseRLE();
-                    symbology_block.Radials[i].ColorValues = ArrayMerge.Merge(symbology_block.Radials[i].ColorValues, tempcolorvalues);
+                    symbology_block.Radials[i].ColorValues = new int[0];
+                    for (int j = 0; j < bytes * 2; j++)
+                    {
+                        var tempcolorvalues = parseRLE();
+                        symbology_block.Radials[i].ColorValues = ArrayMerge.Merge(symbology_block.Radials[i].ColorValues, tempcolorvalues);
+                    }
+                }
+                else if (symbology_block.LayerPacketCode == 16)
+                {
+                    symbology_block.Radials[i].ColorValues = new int[bytes];
+                    for (int j = 0; j < bytes; j++)
+                    {
+                        symbology_block.Radials[i].ColorValues[j] = readByte() / 16;
+                    }
                 }
             }
             base.symbology_block = symbology_block;

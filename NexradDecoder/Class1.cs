@@ -3,6 +3,7 @@
 //
 // Base NexradDecoder class.
 
+using ICSharpCode.SharpZipLib.BZip2;
 using System;
 using System.IO;
 
@@ -402,7 +403,22 @@ namespace NexradDecoder
         {
             symbology_block_offset = (description_block.SymbologyOffset * 2) + msg_header_block_offset;
             fs.Seek(symbology_block_offset, SeekOrigin.Begin);
+            if (description_block.ProductSpecific_8 == 1)
+            {
+                using (MemoryStream copy = new MemoryStream())
+                {
+                    fs.CopyTo(copy);
+                    copy.Seek(0, SeekOrigin.Begin);
+                    using (BZip2InputStream inputStream = new BZip2InputStream(copy))
+                    {
+                        var fslength = fs.Length;
+                        fs.Seek(0, SeekOrigin.End);
+                        inputStream.CopyTo(fs);
+                        fs.Seek(fslength, SeekOrigin.Begin);
 
+                    }
+                }
+            }
             symbology_block.Divider = readHalfWord();
             symbology_block.BlockID = readHalfWord();
             symbology_block.BlockLength = readWord();
