@@ -814,8 +814,6 @@ namespace DGScope
                     OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, text_bmp.Width, text_bmp.Height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero); // just allocate me
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
                 //text_bmp.Save($"{text_texture}.bmp");
@@ -900,8 +898,8 @@ namespace DGScope
             deconflictStopwatch.Restart();
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
-            double circlespeed = 10 * (Math.PI / 180);
-            float growsize = (10/72f)*xPixelScale;// * (float)circlespeed;
+            double circlespeed = 5 * (Math.PI / 180);
+            float growsize = (10/18f)*xPixelScale;// * (float)circlespeed;
             ConnectingLineF connectingLine = new ConnectingLineF();
             connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
             connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
