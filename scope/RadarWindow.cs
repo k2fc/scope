@@ -335,6 +335,7 @@ namespace DGScope
         }
         System.Threading.Timer zoomTimer;
         bool zooming;
+        bool hidewx = false;
 
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -366,6 +367,9 @@ namespace DGScope
             {
                 case Key.D:
                     HideDataTags = !HideDataTags;
+                    break;
+                case Key.W:
+                    hidewx = !hidewx;
                     break;
                 case Key.F11:
                     if (isScreenSaver)
@@ -448,7 +452,7 @@ namespace DGScope
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.DstAlpha);
             DrawRangeRings();
-            if(!dragging)
+            if(!dragging && !hidewx)
                 DrawNexrad();
             DrawReceiverLocations();
             DrawLines();
@@ -889,8 +893,11 @@ namespace DGScope
                     Deconflict(block);
             }
         }
+
+        Stopwatch deconflictStopwatch = new Stopwatch();
         private void Deconflict(TransparentLabel Label)
         {
+            deconflictStopwatch.Restart();
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
             double circlespeed = 10 * (Math.PI / 180);
@@ -924,10 +931,10 @@ namespace DGScope
                     if ((crashesWithLabel || crashesWithLine) && screenObject.BoundsF.Width > 0 && screenObject.BoundsF.Height > 0 && !float.IsNaN(screenObject.BoundsF.X) && !float.IsNaN(screenObject.BoundsF.Y)
                         && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(Label.LocationF.Y) && !float.IsNaN(Label.LocationF.Y))
                     {
-                        conflictcount++;
-                        //Debug.WriteLine("{0}'s {1} has a conflict with {2}'s {3}. Conflict count {4}, Loop count {5}", 
-                        //    Label.ParentAircraft, crashesWithLabel ? "label" : "line", screenObject.ParentAircraft, screenObject.GetType(),
-                        //    conflictcount, loopcount);
+                        if (crashesWithLabel)
+                            conflictcount+=2;
+                        if (crashesWithLine)
+                            conflictcount++;
                     }
 
                 }
@@ -951,7 +958,7 @@ namespace DGScope
                     bestSize = circleSize;
                     bestAngle = angle;
                 }
-                else if (loopcount > 360)
+                else if (deconflictStopwatch.ElapsedMilliseconds>10)
                 {
                     Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",Label.ParentAircraft,loopcount,conflictcount,circleSize/xPixelScale);
                     Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, bestSize, bestAngle, Label.SizeF);
@@ -959,7 +966,7 @@ namespace DGScope
                     connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
                     return;
                 }
-            } while (conflictcount > 0 && conflictcount < screenObjects.Count) ;
+            } while (conflictcount > 0) ;
         }
 
         public void Storage()
