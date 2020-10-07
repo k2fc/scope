@@ -41,7 +41,7 @@ namespace NexradDecoder
                     symbology_block.Radials[i].Values = new double[symbology_block.Radials[i].ColorValues.Length];
                     for (int j = 0; j < symbology_block.Radials[i].ColorValues.Length; j++)
                     {
-                        symbology_block.Radials[i].Values[j] = (double)description_block.Threshold[symbology_block.Radials[i].ColorValues[j]] / 10;
+                        symbology_block.Radials[i].Values[j] = (double)description_block.Threshold[symbology_block.Radials[i].ColorValues[j]];
                     }
                 }
                 else if (symbology_block.LayerPacketCode == 16)
