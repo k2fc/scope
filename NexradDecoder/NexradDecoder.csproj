@@ -59,6 +59,7 @@
     <Compile Include="RadialPacketDecoder.cs" />
     <Compile Include="RasterPacketDecoder.cs" />
     <Compile Include="SymbologyBlock.cs" />
+    <Compile Include="WXColorTable.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

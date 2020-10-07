@@ -360,23 +360,23 @@ namespace NexradDecoder
             description_block.ElevationNumber = readHalfWord();                            //HW 29
 
             description_block.ProductSpecific_3 = readHalfWord() / 10;                     //HW 30
-            description_block.Threshold_1 = readHalfWord();                                //HW 31
-            description_block.Threshold_2 = readHalfWord();                                //HW 32
-            description_block.Threshold_3 = readHalfWord();                                //HW 33
-            description_block.Threshold_4 = readHalfWord();                                //HW 34
-            description_block.Threshold_5 = readHalfWord();                                //HW 35
-            description_block.Threshold_6 = readHalfWord();                                //HW 36
-            description_block.Threshold_7 = readHalfWord();                                //HW 37
-            description_block.Threshold_8 = readHalfWord();                                //HW 38
-            description_block.Threshold_9 = readHalfWord();                                //HW 39
-
-            description_block.Threshold_10 = readHalfWord();                               //HW 40
-            description_block.Threshold_11 = readHalfWord();                               //HW 41
-            description_block.Threshold_12 = readHalfWord();                               //HW 42
-            description_block.Threshold_13 = readHalfWord();                               //HW 43
-            description_block.Threshold_14 = readHalfWord();                               //HW 44
-            description_block.Threshold_15 = readHalfWord();                               //HW 45
-            description_block.Threshold_16 = readHalfWord();                               //HW 46
+            description_block.Threshold[0] = readHalfWord();                                //HW 31
+            description_block.Threshold[1] = readHalfWord();                                //HW 32
+            description_block.Threshold[2] = readHalfWord();                                //HW 33
+            description_block.Threshold[3] = readHalfWord();                                //HW 34
+            description_block.Threshold[4] = readHalfWord();                                //HW 35
+            description_block.Threshold[5] = readHalfWord();                                //HW 36
+            description_block.Threshold[6] = readHalfWord();                                //HW 37
+            description_block.Threshold[7] = readHalfWord();                                //HW 38
+            description_block.Threshold[8] = readHalfWord();                                //HW 39
+                                       
+            description_block.Threshold[9] = readHalfWord();                               //HW 40
+            description_block.Threshold[10] = readHalfWord();                               //HW 41
+            description_block.Threshold[11] = readHalfWord();                               //HW 42
+            description_block.Threshold[12] = readHalfWord();                               //HW 43
+            description_block.Threshold[13] = readHalfWord();                               //HW 44
+            description_block.Threshold[14] = readHalfWord();                               //HW 45
+            description_block.Threshold[15] = readHalfWord();                               //HW 46
             description_block.ProductSpecific_4 = readHalfWord();                          //HW 47
             description_block.ProductSpecific_5 = readHalfWord();                          //HW 48
             description_block.ProductSpecific_6 = readHalfWord();                          //HW 49
@@ -403,9 +403,9 @@ namespace NexradDecoder
         {
             symbology_block_offset = (description_block.SymbologyOffset * 2) + msg_header_block_offset;
             fs.Seek(symbology_block_offset, SeekOrigin.Begin);
-            if (description_block.ProductSpecific_8 == 1)
+            if (description_block.ProductSpecific_8 == 1) // This means the Symbology is BZip2 compressed
             {
-                using (MemoryStream copy = new MemoryStream())
+                using (MemoryStream copy = new MemoryStream()) 
                 {
                     fs.CopyTo(copy);
                     copy.Seek(0, SeekOrigin.Begin);
