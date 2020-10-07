@@ -46,8 +46,8 @@ namespace NexradDecoder
                 }
                 else if (symbology_block.LayerPacketCode == 16)
                 {
-                    double minval = (double)description_block.Threshold[0 ]/ 10;
-                    double increment = description_block.Threshold[1] / 10;
+                    double minval = (double)description_block.Threshold[0] / 10;
+                    double increment = (double)description_block.Threshold[1] / 10;
                     symbology_block.Radials[i].ColorValues = new int[bytes];
                     symbology_block.Radials[i].Values = new double[bytes];
                     for (int j = 0; j < bytes; j++)
