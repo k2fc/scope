@@ -32,18 +32,29 @@ namespace NexradDecoder
                 if (symbology_block.LayerPacketCode == -20705)
                 {
                     symbology_block.Radials[i].ColorValues = new int[0];
+                    symbology_block.Radials[i].Values = new double[bytes];
                     for (int j = 0; j < bytes * 2; j++)
                     {
                         var tempcolorvalues = parseRLE();
                         symbology_block.Radials[i].ColorValues = ArrayMerge.Merge(symbology_block.Radials[i].ColorValues, tempcolorvalues);
                     }
+                    symbology_block.Radials[i].Values = new double[symbology_block.Radials[i].ColorValues.Length];
+                    for (int j = 0; j < symbology_block.Radials[i].ColorValues.Length; j++)
+                    {
+                        symbology_block.Radials[i].Values[j] = (double)description_block.Threshold[symbology_block.Radials[i].ColorValues[j]] / 10;
+                    }
                 }
                 else if (symbology_block.LayerPacketCode == 16)
                 {
+                    double minval = (double)description_block.Threshold[0 ]/ 10;
+                    double increment = description_block.Threshold[1] / 10;
                     symbology_block.Radials[i].ColorValues = new int[bytes];
+                    symbology_block.Radials[i].Values = new double[bytes];
                     for (int j = 0; j < bytes; j++)
                     {
-                        symbology_block.Radials[i].ColorValues[j] = readByte() / 16;
+                        int value = readByte();
+                        symbology_block.Radials[i].ColorValues[j] = value / 16;
+                        symbology_block.Radials[i].Values[j] = (increment * value) + minval;
                     }
                 }
             }

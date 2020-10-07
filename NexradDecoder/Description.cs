@@ -23,6 +23,8 @@ namespace NexradDecoder
         public int ProductSpecific_2 { get; set; }
         public int ElevationNumber { get; set; }
         public int ProductSpecific_3 { get; set; }
+        public int[] Threshold { get; set; } = new int[16];
+        /*
         public int Threshold_1 { get; set; }
         public int Threshold_2 { get; set; }
         public int Threshold_3 { get; set; }
@@ -39,6 +41,7 @@ namespace NexradDecoder
         public int Threshold_14 { get; set; }
         public int Threshold_15 { get; set; }
         public int Threshold_16 { get; set; }
+        */
         public int ProductSpecific_4 { get; set; }
         public int ProductSpecific_5 { get; set; }
         public int ProductSpecific_6 { get; set; }

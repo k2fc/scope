@@ -12,49 +12,8 @@ namespace DGScope
 {
     public class NexradDisplay
     {
-        [XmlIgnore]
-        [DisplayName("Colors"), Description("Weather Radar Colors by Value")]
-        public Color[] Colors { get; set; } = new Color[16]
-        {
-            Color.FromArgb(0, 255, 255, 255),
-            Color.FromArgb(0, 255, 255, 255),
-            Color.FromArgb(0, 255, 255, 255),
-            Color.FromArgb(0, 255, 255, 255),
-            Color.FromArgb(0, 255, 0),
-            Color.FromArgb(0, 192, 0),
-            Color.FromArgb(0, 128, 0),
-            Color.FromArgb(255, 255, 0),
-            Color.FromArgb(192, 192, 0),
-            Color.FromArgb(255, 128, 0),
-            Color.FromArgb(255, 0, 0),
-            Color.FromArgb(192, 0, 0),
-            Color.FromArgb(128, 0, 0),
-            Color.FromArgb(255, 0, 255),
-            Color.FromArgb(128, 0, 128),
-            Color.FromArgb(255, 255, 255),
-        };
-        [XmlElement("Colors")]
-        [Browsable(false)]
-        public int[] ColorsAsArgb
-        {
-            get 
-            {
-                var colors = new int[Colors.Length];
-                for (int i = 0; i < colors.Length; i++)
-                {
-                    colors[i] = Colors[i].ToArgb();
-                }
-                return colors; 
-            }
-            set 
-            {
-                Colors = new Color[value.Length];
-                for (int i = 0; i < Colors.Length; i++)
-                {
-                    Colors[i] = Color.FromArgb(value[i]);
-                }
-            }
-        }
+        [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
+        public List<WXColor> ColorTable { get; set; } 
         double intensity = 1;
         [DisplayName("Color Intensity"), Description("Weather Radar Color intensity")]
         public int ColorIntensity {
@@ -171,6 +130,9 @@ namespace DGScope
         double _rotation;
         public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
         {
+            if (ColorTable.Count == 0)
+                GenerateDefaultColorTable();
+            var colortable = new WXColorTable(ColorTable);
             if (!gotdata)
                 return;
             _center = center;
@@ -178,7 +140,8 @@ namespace DGScope
             _rotation = rotation;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
-            double resolution = (double)Range / symbology.LayerNumberOfRangeBins;
+            var scanrange = (double)Range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
+            double resolution = scanrange / symbology.LayerNumberOfRangeBins;
             for (int i = 0; i < symbology.NumberOfRadials; i++)
             {
                 var radial = symbology.Radials[i];
@@ -189,7 +152,8 @@ namespace DGScope
                     polygon.Points.Add(radarLocation.FromPoint(resolution * j, radial.StartAngle + radial.AngleDelta));
                     polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), radial.StartAngle + radial.AngleDelta));
                     polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), radial.StartAngle));
-                    var color = Colors[radial.ColorValues[j]];
+                    //var color = Colors[radial.ColorValues[j]];
+                    var color = colortable.GetColor(radial.Values[j]);
                     polygon.Color = Color.FromArgb((int)(color.A * alphafactor), (int)(color.R * intensity), (int)(color.G * intensity), (int)(color.B * intensity));
                     polygon.ComputeVertices(center, scale, rotation);
                     polygons.Add(polygon);
@@ -197,6 +161,21 @@ namespace DGScope
                 }
             }
             this.polygons = polygons.ToArray();
+        }
+
+        public void GenerateDefaultColorTable()
+        {
+            ColorTable = new List<WXColor>()
+            {
+                new WXColor(10, Color.FromArgb(164,164,255), Color.FromArgb(100,100,192)),
+                new WXColor(20, Color.FromArgb(64,128,255),  Color.FromArgb(32,64,128)),
+                new WXColor(30, Color.FromArgb(0,255,0),   Color.FromArgb(0,128,0)),
+                new WXColor(40, Color.FromArgb(255,255,0),   Color.FromArgb(255,128,0)),
+                new WXColor(50, Color.FromArgb(255,0,0),   Color.FromArgb(160,0,0)),
+                new WXColor(60, Color.FromArgb(255,0,255),   Color.FromArgb(128,0,128)),
+                new WXColor(70, Color.FromArgb(255,255,255), Color.FromArgb(128,128,128)),
+                new WXColor(80, Color.FromArgb(128,128,128), Color.FromArgb(128,128,128)),
+            };
         }
 
         public override string ToString()
