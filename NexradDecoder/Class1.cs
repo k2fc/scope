@@ -120,11 +120,11 @@ namespace NexradDecoder
             int[] valueArray = new int[length];
 
             // Reduce the color values if the radar is in clean air mode and the current product is one of many Base Reflectivity products
-            if (description_block.Mode == 1 && (description_block.Code >= 16 && description_block.Code <= 21))
-            {
-                if (value >= 8) value -= 8;
-                else if (value < 8) value = 0;
-            }
+            //if (description_block.Mode == 1 && (description_block.Code >= 16 && description_block.Code <= 21))
+            //{
+            //    if (value >= 8) value -= 8;
+            //    else if (value < 8) value = 0;
+            //}
 
             for (int i = 1; i < length; i++)
             {
@@ -344,8 +344,8 @@ namespace NexradDecoder
             fs.Seek(description_block_offset, SeekOrigin.Begin);
 
             description_block.Divider = readHalfWord(true);                                //HW 10	
-            description_block.Latitude = (double)readWord() / 1000;                                //HW 11 - 12
-            description_block.Longitude = (double)readWord() / 1000;                           //HW 13 - 14
+            description_block.Latitude = (double)readWord() / 1000;                        //HW 11 - 12
+            description_block.Longitude = (double)readWord() / 1000;                       //HW 13 - 14
             description_block.Height = readHalfWord(true);                                 //HW 15
             description_block.Code = readHalfWord(true);                                   //HW 16
             description_block.Mode = readHalfWord();                                       //HW 17
@@ -353,13 +353,13 @@ namespace NexradDecoder
             description_block.SequenceNumber = readHalfWord();                             //HW 19
 
             description_block.ScanNumber = readHalfWord();                                 //HW 20
-            description_block.ScanTime = readTimeStamp();                 //HW 22 - 23
-            description_block.GenerationTime = readTimeStamp();           //HW 25 - 26
+            description_block.ScanTime = readTimeStamp();                                  //HW 22 - 23
+            description_block.GenerationTime = readTimeStamp();                            //HW 25 - 26
             description_block.ProductSpecific_1 = readHalfWord();                          //HW 27
             description_block.ProductSpecific_2 = readHalfWord();                          //HW 28
             description_block.ElevationNumber = readHalfWord();                            //HW 29
 
-            description_block.ProductSpecific_3 = readHalfWord() / 10;                     //HW 30
+            description_block.ProductSpecific_3 = readHalfWord() / 10;                      //HW 30
             description_block.Threshold[0] = readHalfWord();                                //HW 31
             description_block.Threshold[1] = readHalfWord();                                //HW 32
             description_block.Threshold[2] = readHalfWord();                                //HW 33
