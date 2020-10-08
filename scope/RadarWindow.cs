@@ -94,6 +94,18 @@ namespace DGScope
                 window.WindowState = value;
             }
         }
+        [DisplayName("Target Frame Rate"), Category("Display Properties")]
+        public int TargetFrameRate
+        {
+            get
+            {
+                return (int)window.TargetRenderFrequency;
+            }
+            set
+            {
+                window.TargetRenderFrequency = value;
+            }
+        }
 
         [Browsable(false)]
         public Size WindowSize
@@ -280,6 +292,7 @@ namespace DGScope
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
             dragging = false;
+            zoomTimer = new System.Threading.Timer(new System.Threading.TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
         }
 
         byte[] settingshash;
@@ -613,6 +626,8 @@ namespace DGScope
         private List<TransparentLabel> dataBlocks = new List<TransparentLabel>();
         private void GenerateTargets()
         {
+            if (zooming || dragging)
+                return;
             List<Aircraft> targets = radar.Scan();
             foreach (Aircraft aircraft in targets)
             {
