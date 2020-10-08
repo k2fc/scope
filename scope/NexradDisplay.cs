@@ -13,7 +13,7 @@ namespace DGScope
     public class NexradDisplay
     {
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
-        public List<WXColor> ColorTable { get; set; } 
+        public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
         double intensity = 1;
         [DisplayName("Color Intensity"), Description("Weather Radar Color intensity")]
         public int ColorIntensity {
@@ -31,7 +31,7 @@ namespace DGScope
                     intensity = value / 255d;
             }
         }
-        double alphafactor = .5;
+        double alphafactor = .12156;
         [DisplayName("Transparency"), Description("Weather Radar Transparency")]
         public int Transparency 
         { 
@@ -58,7 +58,9 @@ namespace DGScope
             }
             set 
             {
-                if (!enabled && value)
+                if (timer == null && !enabled && value)
+                    timer = new System.Threading.Timer(new System.Threading.TimerCallback(cbTimerElapsed), null, 0, DownloadInterval * 1000);
+                else if (!enabled && value)
                     timer.Change(0, DownloadInterval * 1000);
                 enabled = value;
             }
@@ -131,7 +133,15 @@ namespace DGScope
         public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
         {
             if (ColorTable.Count == 0)
-                GenerateDefaultColorTable();
+                ColorTable = new List<WXColor>()
+                    {
+                        new WXColor(30, Color.FromArgb(0, 255, 0), Color.FromArgb(0, 128, 0)),
+                        new WXColor(40, Color.FromArgb(255, 255, 0), Color.FromArgb(255, 128, 0)),
+                        new WXColor(50, Color.FromArgb(255, 0, 0), Color.FromArgb(160, 0, 0)),
+                        new WXColor(60, Color.FromArgb(255, 0, 255), Color.FromArgb(128, 0, 128)),
+                        new WXColor(70, Color.FromArgb(255, 255, 255), Color.FromArgb(128, 128, 128)),
+                        new WXColor(80, Color.FromArgb(128, 128, 128), Color.FromArgb(128, 128, 128)),
+                    };
             var colortable = new WXColorTable(ColorTable);
             if (!gotdata)
                 return;
@@ -163,20 +173,6 @@ namespace DGScope
             this.polygons = polygons.ToArray();
         }
 
-        public void GenerateDefaultColorTable()
-        {
-            ColorTable = new List<WXColor>()
-            {
-                new WXColor(10, Color.FromArgb(164,164,255), Color.FromArgb(100,100,192)),
-                new WXColor(20, Color.FromArgb(64,128,255),  Color.FromArgb(32,64,128)),
-                new WXColor(30, Color.FromArgb(0,255,0),   Color.FromArgb(0,128,0)),
-                new WXColor(40, Color.FromArgb(255,255,0),   Color.FromArgb(255,128,0)),
-                new WXColor(50, Color.FromArgb(255,0,0),   Color.FromArgb(160,0,0)),
-                new WXColor(60, Color.FromArgb(255,0,255),   Color.FromArgb(128,0,128)),
-                new WXColor(70, Color.FromArgb(255,255,255), Color.FromArgb(128,128,128)),
-                new WXColor(80, Color.FromArgb(128,128,128), Color.FromArgb(128,128,128)),
-            };
-        }
 
         public override string ToString()
         {
