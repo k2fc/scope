@@ -86,106 +86,115 @@ namespace DGScope.Receivers
                 string message = rxBuffer.Substring(0, rxBuffer.IndexOf("\n"));
                 string[] sbs_data = message.ToString().Split(',');
                 rxBuffer = rxBuffer.Substring(rxBuffer.IndexOf("\n") + 1);
-
-                switch (sbs_data[0])
+                try
                 {
-                    case "MSG":
-                        int icaoID = Convert.ToInt32(sbs_data[4], 16);
-                        Aircraft plane;
-                        lock (aircraft)
-                        {
-                            plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
-                            if (plane == null)
+                    switch (sbs_data[0])
+                    {
+                        case "MSG":
+                            int icaoID = Convert.ToInt32(sbs_data[4], 16);
+                            Aircraft plane;
+                            lock (aircraft)
                             {
-                                plane = new Aircraft(icaoID);
-                                aircraft.Add(plane);
-                                Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
+                                plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
+                                if (plane == null)
+                                {
+                                    plane = new Aircraft(icaoID);
+                                    aircraft.Add(plane);
+                                    Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
+                                }
                             }
-                        }
-                        //DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
-                        DateTime messageTime = DateTime.UtcNow;
-                        if (plane.LastMessageTime < messageTime)
-                            plane.LastMessageTime = messageTime;
-                        plane.ModeSCode = icaoID;
-                        //Debug.WriteLine(message);
-                        switch (sbs_data[1])
-                        {
+                            //DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
+                            DateTime messageTime = DateTime.UtcNow;
+                            if (plane.LastMessageTime < messageTime)
+                                plane.LastMessageTime = messageTime;
+                            plane.ModeSCode = icaoID;
+                            //Debug.WriteLine(message);
+                            switch (sbs_data[1])
+                            {
 
-                            case "1":
-                                plane.Callsign = sbs_data[10];
-                                break;
-                            case "2":
-                                if (sbs_data[11] != "")
-                                    plane.Altitude = Int32.Parse(sbs_data[11]);
-                                if (sbs_data[12] != "")
-                                    plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
-                                if (sbs_data[13] != "")
-                                    plane.Track = (int)Double.Parse(sbs_data[13]);
-                                if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
-                                    plane.Latitude = Double.Parse(sbs_data[14]);
-                                if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
-                                {
-                                    plane.Longitude = Double.Parse(sbs_data[15]);
-                                    plane.TargetChar = '/';
-                                    plane.LastPositionTime = messageTime;
-                                    plane.LocationReceivedBy = this;
-                                }
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                            case "3":
-                                if (sbs_data[11] != "")
-                                    plane.Altitude = Int32.Parse(sbs_data[11]);
-                                if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
-                                    plane.Latitude = Double.Parse(sbs_data[14]);
-                                if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
-                                {
-                                    plane.Longitude = Double.Parse(sbs_data[15]);
-                                    plane.TargetChar = '/';
-                                    plane.LastPositionTime = messageTime;
-                                    plane.LocationReceivedBy = this;
-                                }
-                                plane.Alert = sbs_data[18] == "-1";
-                                plane.Emergency = sbs_data[19] == "-1";
-                                plane.Ident = sbs_data[20] == "-1";
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                            case "4":
-                                if (sbs_data[12] != "")
-                                    plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
-                                if (sbs_data[13] != "")
-                                    plane.Track = (int)Double.Parse(sbs_data[13]);
-                                if (sbs_data[16] != "")
-                                    plane.VerticalRate = Int32.Parse(sbs_data[16]);
-                                break;
-                            case "5":
-                                if (sbs_data[11] != "")
-                                    plane.Altitude = Int32.Parse(sbs_data[11]);
-                                plane.Alert = sbs_data[18] == "-1";
-                                plane.Ident = sbs_data[20] == "-1";
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                            case "6":
-                                if (sbs_data[11] != "")
-                                    plane.Altitude = Int32.Parse(sbs_data[11]);
-                                plane.Squawk = sbs_data[17];
-                                plane.Alert = sbs_data[18] == "-1";
-                                plane.Emergency = sbs_data[19] == "-1";
-                                plane.Ident = sbs_data[20] == "-1";
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                            case "7":
-                                if (sbs_data[11] != "")
-                                    plane.Altitude = Int32.Parse(sbs_data[11]);
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                            case "8":
-                                plane.IsOnGround = sbs_data[21] == "-1";
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
+                                case "1":
+                                    plane.Callsign = sbs_data[10];
+                                    break;
+                                case "2":
+                                    if (sbs_data[11] != "")
+                                        plane.Altitude = Int32.Parse(sbs_data[11]);
+                                    if (sbs_data[12] != "")
+                                        plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
+                                    if (sbs_data[13] != "")
+                                        plane.Track = (int)Double.Parse(sbs_data[13]);
+                                    if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
+                                        plane.Latitude = Double.Parse(sbs_data[14]);
+                                    if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                    {
+                                        plane.Longitude = Double.Parse(sbs_data[15]);
+                                        plane.TargetChar = '/';
+                                        plane.LastPositionTime = messageTime;
+                                        plane.LocationReceivedBy = this;
+                                    }
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                                case "3":
+                                    if (sbs_data[11] != "")
+                                        plane.Altitude = Int32.Parse(sbs_data[11]);
+                                    if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
+                                        plane.Latitude = Double.Parse(sbs_data[14]);
+                                    if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                    {
+                                        plane.Longitude = Double.Parse(sbs_data[15]);
+                                        plane.TargetChar = '/';
+                                        plane.LastPositionTime = messageTime;
+                                        plane.LocationReceivedBy = this;
+                                    }
+                                    plane.Alert = sbs_data[18] == "-1";
+                                    plane.Emergency = sbs_data[19] == "-1";
+                                    plane.Ident = sbs_data[20] == "-1";
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                                case "4":
+                                    if (sbs_data[12] != "")
+                                        plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
+                                    if (sbs_data[13] != "")
+                                        plane.Track = (int)Double.Parse(sbs_data[13]);
+                                    if (sbs_data[16] != "")
+                                        plane.VerticalRate = Int32.Parse(sbs_data[16]);
+                                    break;
+                                case "5":
+                                    if (sbs_data[11] != "")
+                                        plane.Altitude = Int32.Parse(sbs_data[11]);
+                                    plane.Alert = sbs_data[18] == "-1";
+                                    plane.Ident = sbs_data[20] == "-1";
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                                case "6":
+                                    if (sbs_data[11] != "")
+                                        plane.Altitude = Int32.Parse(sbs_data[11]);
+                                    plane.Squawk = sbs_data[17];
+                                    plane.Alert = sbs_data[18] == "-1";
+                                    plane.Emergency = sbs_data[19] == "-1";
+                                    plane.Ident = sbs_data[20] == "-1";
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                                case "7":
+                                    if (sbs_data[11] != "")
+                                        plane.Altitude = Int32.Parse(sbs_data[11]);
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                                case "8":
+                                    plane.IsOnGround = sbs_data[21] == "-1";
+                                    break;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
                 }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                    rxBuffer = "";
+                }
+
 
             }
 
