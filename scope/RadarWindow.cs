@@ -249,6 +249,10 @@ namespace DGScope
         public int DeconflictLabelWeight { get; set; } = 4;
         [DisplayName("Line Weight"), Description("Weight of line conflicts in determining the best place for the data block"), Category("Data block deconflicting")]
         public int DeconflictLineWeight { get; set; } = 1;
+        [DisplayName("Starting Size"), Description("The starting number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
+        public float DeconflictStartingSize { get; set; } = 10;
+        [DisplayName("Starting Angle"), Description("The starting angle to offset the data block from the target"), Category("Data block deconflicting")]
+        public double DeconflictStartingAngle { get; set; } = 45;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
         private GameWindow window;
@@ -669,7 +673,7 @@ namespace DGScope
                     var realWidth = (float)text_bmp.Width * xPixelScale;
                     var realHeight = (float)text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
-                    aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, aircraft.DataBlock.SizeF.Width /2, Math.PI/4, aircraft.DataBlock.SizeF);
+                    aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
                     
                     aircraft.DataBlock.ParentAircraft = aircraft;
                     Deconflict(newreturn);
@@ -940,8 +944,8 @@ namespace DGScope
             
             int conflictcount;
             
-            float circleSize = Label.SizeF.Width / 2;
-            double angle = 0;
+            float circleSize = DeconflictStartingSize * xPixelScale;
+            double angle = DeconflictStartingAngle * (Math.PI / 180);
             List<IScreenObject> screenObjects = new List<IScreenObject>();
             screenObjects.AddRange(PrimaryReturns.ToList());
             screenObjects.AddRange(dataBlocks.ToList());
