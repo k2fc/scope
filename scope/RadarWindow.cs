@@ -235,7 +235,20 @@ namespace DGScope
         [XmlElement("FontSize")]
         [Browsable(false)] 
         public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
-
+        [DisplayName("Speed"), Description("The number of degrees to shift the data block per try"), Category("Data block deconflicting")]
+        public double DeconflictCircleSpeed { get; set; } = 5;
+        [DisplayName("Deconflict Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
+        public bool DeconflictEnabled { get; set; } = true;
+        [DisplayName("Max Size"), Description("The maximum number of pixels to move the data block before giving up"), Category("Data block deconflicting")]
+        public double DeconflictMaxSize { get; set; } = 100;
+        [DisplayName("Max Time"), Description("The maximum number of milliseconds to spend on one data block before giving up"), Category("Data block deconflicting")]
+        public double DeconflictMaxTime { get; set; } = 100;
+        [DisplayName("Grow Size"), Description("The number of pixels to move the data block per revolution"), Category("Data block deconflicting")]
+        public double DeconflictPixelsPerRev { get; set; } = 10;
+        [DisplayName("Label Weight"), Description("Weight of label conflicts in determining the best place for the data block"), Category("Data block deconflicting")]
+        public int DeconflictLabelWeight { get; set; } = 4;
+        [DisplayName("Line Weight"), Description("Weight of line conflicts in determining the best place for the data block"), Category("Data block deconflicting")]
+        public int DeconflictLineWeight { get; set; } = 1;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
         private GameWindow window;
@@ -896,6 +909,8 @@ namespace DGScope
         }
         private void Deconflict(PrimaryReturn Return)
         {
+            if (!DeconflictEnabled)
+                return;
             List<TransparentLabel> blocks = new List<TransparentLabel>();
             blocks.AddRange(dataBlocks.ToList());
             foreach (TransparentLabel block in blocks)
@@ -910,11 +925,13 @@ namespace DGScope
         Stopwatch deconflictStopwatch = new Stopwatch();
         private void Deconflict(TransparentLabel Label)
         {
+            if (!DeconflictEnabled)
+                return;
             deconflictStopwatch.Restart();
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
-            double circlespeed = 5 * (Math.PI / 180);
-            float growsize = (10/18f)*xPixelScale;// * (float)circlespeed;
+            double circlespeed = DeconflictCircleSpeed * (Math.PI / 180);
+            float growsize = (float)(DeconflictPixelsPerRev * DeconflictCircleSpeed  * xPixelScale/360);
             ConnectingLineF connectingLine = new ConnectingLineF();
             connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
             connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
@@ -945,9 +962,9 @@ namespace DGScope
                         && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(Label.LocationF.Y) && !float.IsNaN(Label.LocationF.Y))
                     {
                         if (crashesWithLabel)
-                            conflictcount+=2;
+                            conflictcount+=DeconflictLabelWeight;
                         if (crashesWithLine)
-                            conflictcount++;
+                            conflictcount+=DeconflictLineWeight;
                     }
 
                 }
@@ -971,7 +988,7 @@ namespace DGScope
                     bestSize = circleSize;
                     bestAngle = angle;
                 }
-                else if (deconflictStopwatch.ElapsedMilliseconds>10)
+                else if (deconflictStopwatch.ElapsedMilliseconds>DeconflictMaxTime || circleSize > DeconflictMaxSize * xPixelScale)
                 {
                     Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",Label.ParentAircraft,loopcount,conflictcount,circleSize/xPixelScale);
                     Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, bestSize, bestAngle, Label.SizeF);
