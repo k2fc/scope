@@ -30,6 +30,20 @@ namespace DGScope.Receivers
             System.Threading.Thread.Sleep(sleep);
             Start();
         }
+
+        public bool InRange(GeoPoint location, double altitude)
+        {
+            var distance = location.DistanceTo(Location, altitude - Altitude);
+            double elevation;
+            if (location != Location)
+                elevation = Math.Atan(((altitude - Altitude) / 6076.12) / distance);
+            else if (altitude < Altitude)
+                elevation = -90;
+            else elevation = 90;
+            if (distance <= Range && elevation > minel && elevation < maxel && distance < Range)
+                return true;
+            return false;
+        }
         public void SetAircraftList(List<Aircraft> Aircraft)
         {
             aircraft = Aircraft;
@@ -135,7 +149,6 @@ namespace DGScope.Receivers
                             if (plane.LastMessageTime < messageTime)
                                 plane.LastMessageTime = messageTime;
                             plane.ModeSCode = icaoID;
-
                             switch (sbs_data[1])
                             {
 
@@ -153,12 +166,10 @@ namespace DGScope.Receivers
                                     {
                                         var latitude = Double.Parse(sbs_data[14]);
                                         var longitude = Double.Parse(sbs_data[15]);
-                                        plane.Latitude = latitude;
-                                        plane.Longitude = longitude;
-                                        var distance = plane.Location.DistanceTo(Location, plane.Altitude - Altitude);
-                                        var elevation = Math.Atan(((plane.Altitude - Altitude) / 6076.12) / distance);
-                                        if (distance <= Range && elevation > minel && elevation < maxel)
+                                        var temploc = new GeoPoint(latitude, longitude);
+                                        if (InRange(temploc, plane.Altitude))
                                         {
+                                            plane.Location = temploc;
                                             plane.LastPositionTime = messageTime;
                                             plane.LocationReceivedBy = this;
                                         }
@@ -172,12 +183,10 @@ namespace DGScope.Receivers
                                     {
                                         var latitude = Double.Parse(sbs_data[14]);
                                         var longitude = Double.Parse(sbs_data[15]);
-                                        plane.Latitude = latitude;
-                                        plane.Longitude = longitude;
-                                        var distance = plane.Location.DistanceTo(Location, plane.Altitude - Altitude);
-                                        var elevation = Math.Atan(((plane.Altitude - Altitude)/6076.12) / distance);
-                                        if (distance <= Range && elevation > minel && elevation < maxel)
+                                        var temploc = new GeoPoint(latitude, longitude);
+                                        if (InRange(temploc, plane.Altitude))
                                         {
+                                            plane.Location = temploc;
                                             plane.LastPositionTime = messageTime;
                                             plane.LocationReceivedBy = this;
                                         }
