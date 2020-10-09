@@ -154,20 +154,21 @@ namespace DGScope
             double resolution = scanrange / symbology.LayerNumberOfRangeBins;
             for (int i = 0; i < symbology.NumberOfRadials; i++)
             {
-                var radial = symbology.Radials[i];
-                for (int j = 0; j < radial.ColorValues.Length; j++)
+                for (int j = 0; j < symbology.Radials[i].ColorValues.Length; j++)
                 {
-                    Polygon polygon = new Polygon();
-                    polygon.Points.Add(radarLocation.FromPoint(resolution * j, radial.StartAngle));
-                    polygon.Points.Add(radarLocation.FromPoint(resolution * j, radial.StartAngle + radial.AngleDelta));
-                    polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), radial.StartAngle + radial.AngleDelta));
-                    polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), radial.StartAngle));
-                    //var color = Colors[radial.ColorValues[j]];
-                    var color = colortable.GetColor(radial.Values[j]);
-                    polygon.Color = Color.FromArgb((int)(color.A * alphafactor), (int)(color.R * intensity), (int)(color.G * intensity), (int)(color.B * intensity));
-                    polygon.ComputeVertices(center, scale, rotation);
-                    polygons.Add(polygon);
-                    
+                    if (symbology.Radials[i].ColorValues[j] > 0)
+                    {
+                        Polygon polygon = new Polygon();
+                        polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle));
+                        polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
+                        polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
+                        polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle));
+                        //var color = Colors[radial.ColorValues[j]];
+                        var color = colortable.GetColor(symbology.Radials[i].Values[j]);
+                        polygon.Color = Color.FromArgb((int)(color.A * alphafactor), (int)(color.R * intensity), (int)(color.G * intensity), (int)(color.B * intensity));
+                        polygon.ComputeVertices(center, scale, rotation);
+                        polygons.Add(polygon);
+                    }
                 }
             }
             this.polygons = polygons.ToArray();

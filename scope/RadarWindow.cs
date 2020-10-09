@@ -74,8 +74,9 @@ namespace DGScope
             set { DataBlockColor = Color.FromArgb(value); }
         }
 
-        [DisplayName("Fade Reps"), Description("The number of revolutions of the radar the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
-        public int FadeReps { get; set; } = 6;
+        [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
+        public double FadeTime { get; set; } = 30;
+        //public int FadeReps { get; set; } = 6;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 10;
         [DisplayName("Screen Rotation"), Description("The number of degrees to rotate the image"), Category("Display Properties")]
@@ -181,6 +182,7 @@ namespace DGScope
                 _startingRange = value;
             }
         }
+        /*
         [DisplayName("Rotation Period"), Category("Radar Properties"), Description("The number of seconds the radar takes to make one revolution")]
         public double RotationPeriod
         {
@@ -190,7 +192,7 @@ namespace DGScope
                 radar.RotationPeriod = value;
             }
         }
-
+        */
         [DisplayName("Max Altitude"), Category("Radar Properties"), Description("The maximum altitude of displayed aircraft.")]
         public int MaxAltitude
         {
@@ -550,7 +552,7 @@ namespace DGScope
 
         private void DrawReceiverLocations()
         {
-            foreach (IReceiver receiver in radar.Receivers)
+            foreach (Receiver receiver in radar.Receivers)
             {
                 double bearing = radar.Location.BearingTo(receiver.Location) - ScreenRotation;
                 double distance = radar.Location.DistanceTo(receiver.Location);
@@ -653,12 +655,12 @@ namespace DGScope
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
                 var location = new PointF(x, y);
-                if (aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-radar.RotationPeriod) && aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude)
+                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude && aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-aircraft.LocationReceivedBy.RotationPeriod))
                 {
                     PrimaryReturn newreturn = new PrimaryReturn();
                     aircraft.TargetReturn = newreturn;
                     newreturn.ParentAircraft = aircraft;
-                    newreturn.FadeTime = radar.RotationPeriod * FadeReps;
+                    newreturn.FadeTime = FadeTime;
                     aircraft.RedrawTarget(location);
                     
                     

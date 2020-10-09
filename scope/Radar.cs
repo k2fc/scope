@@ -27,7 +27,6 @@ namespace DGScope
         public int Height { get; set; }
         public double Size { get => Math.Sqrt(((Width / 2) * (Width / 2) + ((Height / 2) * (Height / 2)))); }
         //public double Size { get => Math.Min(Width, Height); }
-        public double RotationPeriod { get; set; } = 4.8;
         [XmlIgnore]
         [Browsable(false)]
         public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
@@ -59,7 +58,7 @@ namespace DGScope
         public bool isRunning = false;
         public void Start()
         {
-            foreach (IReceiver receiver in Receivers)
+            foreach (Receiver receiver in Receivers)
             {
                 receiver.SetAircraftList(Aircraft);
                 if(receiver.Enabled)
@@ -71,34 +70,18 @@ namespace DGScope
         public void Stop()
         {
             isRunning = false;
-            foreach (IReceiver receiver in Receivers)
+            foreach (Receiver receiver in Receivers)
                 receiver.Stop();
         }
 
-        Stopwatch Stopwatch = new Stopwatch();
-        double lastazimuth = 0;
-
-        public List<Aircraft> Scan()
+       public List<Aircraft> Scan()
         {
-            double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
-            double slicewidth = (lastazimuth - newazimuth) % 360;
-            Stopwatch.Restart();
-            
             List<Aircraft> TargetsScanned = new List<Aircraft>();
-            foreach (IReceiver receiver in Receivers)
+            foreach (Receiver receiver in Receivers)
             {
                 lock(Aircraft)
-                TargetsScanned.AddRange(from x in Aircraft
-                                        where x.Bearing(receiver.Location) >= lastazimuth &&
-                                        x.Bearing(receiver.Location) <= newazimuth && x.LocationReceivedBy == receiver  && x.Location.DistanceTo(this.Location) <= this.Range
-                                        select x);
+                TargetsScanned.AddRange(receiver.Scan());
             }
-
-
-            lastazimuth = newazimuth;
-            if (lastazimuth == 360)
-                lastazimuth = 0;
-
             return TargetsScanned;
         }
         public Radar()

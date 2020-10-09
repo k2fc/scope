@@ -8,7 +8,7 @@ using DGScope.Receivers;
 namespace DGScope
 {
     
-    public class ListOfIReceiver : List<IReceiver>, IXmlSerializable
+    public class ListOfIReceiver : List<Receiver>, IXmlSerializable
     {
         public ListOfIReceiver() : base() { }
         public XmlSchema GetSchema()
@@ -28,7 +28,7 @@ namespace DGScope
                 XmlSerializer serial = new XmlSerializer(type);
 
                 reader.ReadStartElement("Receiver");
-                this.Add((IReceiver)serial.Deserialize(reader));
+                this.Add((Receiver)serial.Deserialize(reader));
                 reader.ReadEndElement();
             }
             reader.ReadEndElement();
@@ -37,12 +37,12 @@ namespace DGScope
         public void WriteXml(XmlWriter writer)
         {
 
-            foreach (IReceiver easreceiver in this)
+            foreach (Receiver receiver in this)
             {
                 writer.WriteStartElement("Receiver");
-                writer.WriteAttributeString("AssemblyQualifiedName", easreceiver.GetType().AssemblyQualifiedName);
-                XmlSerializer xmlSerializer = new XmlSerializer(easreceiver.GetType());
-                xmlSerializer.Serialize(writer, easreceiver);
+                writer.WriteAttributeString("AssemblyQualifiedName", receiver.GetType().AssemblyQualifiedName);
+                XmlSerializer xmlSerializer = new XmlSerializer(receiver.GetType());
+                xmlSerializer.Serialize(writer, receiver);
                 writer.WriteEndElement();
             }
 
