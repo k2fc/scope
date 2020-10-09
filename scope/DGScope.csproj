@@ -79,7 +79,6 @@
     <Compile Include="TransparentLabel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="VatsimReceiver.cs" />
     <Compile Include="VideoMap.cs" />
     <Compile Include="VideoMapSelector.cs">
       <SubType>Form</SubType>
