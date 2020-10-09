@@ -8,34 +8,65 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace DGScope.Receivers
 {
-    public interface IReceiver
+    public abstract class Receiver
     {
-        //List<Aircraft> Aircraft { get;  }
-        GeoPoint Location { get; set; }
-        void Start();
-        void Stop();
-        void Restart();
-        void SetAircraftList(List<Aircraft> Aircraft);
-
-        bool Enabled { get; set; }
-        string Name { get; set; }
-        
-    }
-
-   public class SBSReceiver : IReceiver
-    {
-        public string Name { get; set; }
+        public string Name { get; set;  }
         public bool Enabled { get; set; }
-        public string Host { get; set; } = "127.0.0.1";
-        public int Port { get; set; } = 30003;
-        public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
-        private List<Aircraft> aircraft;
-        private EventDrivenTCPClient client;
 
+        protected List<Aircraft> aircraft;
+        protected double minel => MinElevation * Math.PI / 180;
+        protected double maxel => MaxElevation * Math.PI / 180;
+        public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
+        public double Altitude { get; set; } = 0;
+        public double MaxElevation { get; set; } = 90;
+        public double MinElevation { get; set; } = 0;
+        public double RotationPeriod { get; set; } = 4.8;
+        public double Range { get; set; } = 100;
+        public abstract void Start();
+        public abstract void Stop();
+        public void Restart(int sleep = 0)
+        {
+            Stop();
+            System.Threading.Thread.Sleep(sleep);
+            Start();
+        }
         public void SetAircraftList(List<Aircraft> Aircraft)
         {
-            this.aircraft = Aircraft;
+            aircraft = Aircraft;
         }
+        Stopwatch Stopwatch = new Stopwatch();
+        double lastazimuth = 0;
+        public List<Aircraft> Scan()
+        {
+            double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
+            double slicewidth = (lastazimuth - newazimuth) % 360;
+            Stopwatch.Restart();
+            List<Aircraft> TargetsScanned = new List<Aircraft>();
+            lock (aircraft)
+                        TargetsScanned.AddRange(from x in aircraft
+                                            where x.Bearing(Location) >= lastazimuth &&
+                                            x.Bearing(Location) <= newazimuth && x.LocationReceivedBy == this 
+                                            select x);
+            lastazimuth = newazimuth;
+            if (lastazimuth == 360)
+                lastazimuth = 0;
+
+            return TargetsScanned;
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+    }
+
+   public class SBSReceiver : Receiver
+    {
+        
+        public string Host { get; set; } = "127.0.0.1";
+        public int Port { get; set; } = 30003;
+
+        EventDrivenTCPClient client;
 
         public SBSReceiver() { }
         public SBSReceiver(string Host)
@@ -49,7 +80,7 @@ namespace DGScope.Receivers
             this.Port = Port;
         }
         bool running = false;
-        public void Start()
+        public override void Start()
         {
             if (running)
                 return;
@@ -59,7 +90,7 @@ namespace DGScope.Receivers
             client.Connect();
             running = true;
         }
-        public void Stop()
+        public override void Stop()
         {
             if (!running)
                 return;
@@ -70,11 +101,7 @@ namespace DGScope.Receivers
 
             running = false;
         }
-        public void Restart()
-        {
-            Stop();
-            Start();
-        }
+        
         
         string rxBuffer;
         private void Client_DataReceived(EventDrivenTCPClient sender, object data)
@@ -108,7 +135,7 @@ namespace DGScope.Receivers
                             if (plane.LastMessageTime < messageTime)
                                 plane.LastMessageTime = messageTime;
                             plane.ModeSCode = icaoID;
-                            //Debug.WriteLine(message);
+
                             switch (sbs_data[1])
                             {
 
@@ -122,28 +149,38 @@ namespace DGScope.Receivers
                                         plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
                                     if (sbs_data[13] != "")
                                         plane.Track = (int)Double.Parse(sbs_data[13]);
-                                    if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
-                                        plane.Latitude = Double.Parse(sbs_data[14]);
-                                    if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                    if (sbs_data[14] != "" && sbs_data[15] != "" && messageTime > plane.LastPositionTime)
                                     {
-                                        plane.Longitude = Double.Parse(sbs_data[15]);
-                                        plane.TargetChar = '/';
-                                        plane.LastPositionTime = messageTime;
-                                        plane.LocationReceivedBy = this;
+                                        var latitude = Double.Parse(sbs_data[14]);
+                                        var longitude = Double.Parse(sbs_data[15]);
+                                        plane.Latitude = latitude;
+                                        plane.Longitude = longitude;
+                                        var distance = plane.Location.DistanceTo(Location, plane.Altitude - Altitude);
+                                        var elevation = Math.Atan(((plane.Altitude - Altitude) / 6076.12) / distance);
+                                        if (distance <= Range && elevation > minel && elevation < maxel)
+                                        {
+                                            plane.LastPositionTime = messageTime;
+                                            plane.LocationReceivedBy = this;
+                                        }
                                     }
                                     plane.IsOnGround = sbs_data[21] == "-1";
                                     break;
                                 case "3":
                                     if (sbs_data[11] != "")
                                         plane.Altitude = Int32.Parse(sbs_data[11]);
-                                    if (sbs_data[14] != "" && messageTime > plane.LastPositionTime)
-                                        plane.Latitude = Double.Parse(sbs_data[14]);
-                                    if (sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                    if (sbs_data[14] != "" && sbs_data[15] != "" && messageTime > plane.LastPositionTime)
                                     {
-                                        plane.Longitude = Double.Parse(sbs_data[15]);
-                                        plane.TargetChar = '/';
-                                        plane.LastPositionTime = messageTime;
-                                        plane.LocationReceivedBy = this;
+                                        var latitude = Double.Parse(sbs_data[14]);
+                                        var longitude = Double.Parse(sbs_data[15]);
+                                        plane.Latitude = latitude;
+                                        plane.Longitude = longitude;
+                                        var distance = plane.Location.DistanceTo(Location, plane.Altitude - Altitude);
+                                        var elevation = Math.Atan(((plane.Altitude - Altitude)/6076.12) / distance);
+                                        if (distance <= Range && elevation > minel && elevation < maxel)
+                                        {
+                                            plane.LastPositionTime = messageTime;
+                                            plane.LocationReceivedBy = this;
+                                        }
                                     }
                                     plane.Alert = sbs_data[18] == "-1";
                                     plane.Emergency = sbs_data[19] == "-1";
@@ -204,14 +241,10 @@ namespace DGScope.Receivers
             return Name;
         }
     }
-    public class BeastReceiver : IReceiver
+    public class BeastReceiver : Receiver
     {
-        public string Name { get; set; }
-        public bool Enabled { get; set; }
         public string Host { get; set; } = "127.0.0.1";
         public int Port { get; set; } = 30005;
-        public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
-        private List<Aircraft> aircraft;
         private EventDrivenTCPClient client;
 
 
@@ -227,7 +260,7 @@ namespace DGScope.Receivers
             this.Port = Port;
         }
 
-        public void Start()
+        public override void Start()
         {
             if (running)
                 return;
@@ -237,7 +270,7 @@ namespace DGScope.Receivers
             client.DataReceived += Client_DataReceived;
             running = true;
         }
-        public void Stop()
+        public override void Stop()
         {
             if (!running)
                 return;
@@ -246,11 +279,7 @@ namespace DGScope.Receivers
             client.Disconnect();
             running = false;
         }
-        public void Restart()
-        {
-            Stop();
-            Start();
-        }
+        
         bool running;
 
         public override string ToString()
@@ -258,10 +287,7 @@ namespace DGScope.Receivers
             return Name;
         }
    
-        public void SetAircraftList(List<Aircraft> Aircraft)
-        {
-            this.aircraft = Aircraft;
-        }
+        
 
         ReadWriteBuffer buffer = new ReadWriteBuffer(5000);
         private void Client_DataReceived(EventDrivenTCPClient sender, object data)

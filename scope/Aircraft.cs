@@ -26,7 +26,7 @@ namespace DGScope
             }
         }
         public PointF LocationF { get; set; }
-        public IReceiver LocationReceivedBy { get; set; }
+        public Receiver LocationReceivedBy { get; set; }
         public int GroundSpeed { get; set; }
         public int Track { get; set; }
         public int VerticalRate { get; set; }

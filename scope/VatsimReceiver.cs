@@ -6,27 +6,19 @@ using System.Net;
 
 namespace DGScope.Receivers
 {
-    class VatsimReceiver : IReceiver
+    class VatsimReceiver : Receiver
     {
-        public string Name { get; set; }
-        public bool Enabled { get; set; }
         public List<Aircraft> Aircraft { get; private set; }
-        public GeoPoint Location { get; set; }
-
-        public void Start()
+        public override void Start()
         {
             FetchVatsimData();
             timer.Start();
         }
-        public void Stop()
+        public override void Stop()
         {
             timer.Stop();
         }
-        public void Restart()
-        {
-            Stop();
-            Start();
-        }
+        
         public string Url { get; set; }
         public int UpdateInterval { get; set; }
         Stopwatch stopwatch = new Stopwatch();
@@ -37,10 +29,7 @@ namespace DGScope.Receivers
             UpdateInterval = updateinterval;
             timer.Elapsed += Timer_Elapsed;
         }
-        public void SetAircraftList(List<Aircraft> Aircraft)
-        {
-            this.Aircraft = Aircraft;
-        }
+        
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             
