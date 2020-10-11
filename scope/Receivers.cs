@@ -19,7 +19,7 @@ namespace DGScope.Receivers
         public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
         public double Altitude { get; set; } = 0;
         public double MaxElevation { get; set; } = 90;
-        public double MinElevation { get; set; } = 0;
+        public double MinElevation { get; set; } = -90;
         public double RotationPeriod { get; set; } = 4.8;
         public double Range { get; set; } = 100;
         public abstract void Start();
