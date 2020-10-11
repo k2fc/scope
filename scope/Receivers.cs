@@ -68,6 +68,22 @@ namespace DGScope.Receivers
             return TargetsScanned;
         }
 
+        public Aircraft GetPlane(int icaoID)
+        {
+            Aircraft plane;
+            lock (aircraft)
+            {
+                plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
+                if (plane == null)
+                {
+                    plane = new Aircraft(icaoID);
+                    aircraft.Add(plane);
+                    Debug.WriteLine("Added airplane " + icaoID + " from " + Name);
+                }
+            }
+            return plane;
+        }
+
         public override string ToString()
         {
             return base.ToString();
@@ -133,19 +149,10 @@ namespace DGScope.Receivers
                     {
                         case "MSG":
                             int icaoID = Convert.ToInt32(sbs_data[4], 16);
-                            Aircraft plane;
-                            lock (aircraft)
-                            {
-                                plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
-                                if (plane == null)
-                                {
-                                    plane = new Aircraft(icaoID);
-                                    aircraft.Add(plane);
-                                    Debug.WriteLine("Added airplane " + sbs_data[4] + " from " + Host);
-                                }
-                            }
-                            //DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
-                            DateTime messageTime = DateTime.UtcNow;
+                            Aircraft plane = GetPlane(icaoID);
+                            
+                            DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7]);
+                            //DateTime messageTime = DateTime.UtcNow;
                             if (plane.LastMessageTime < messageTime)
                                 plane.LastMessageTime = messageTime;
                             plane.ModeSCode = icaoID;
