@@ -224,6 +224,10 @@ namespace DGScope
                 window.VSync = value;
             }
         }
+        [DisplayName("Primary Target Width"), Description("Width of primary targets, in pixels"), Category("Display Properties")]
+        public float TargetWidth { get; set; } = 5;
+        [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
+        public float TargetHeight { get; set; } = 15;
         [DisplayName("Nexrad Weather Radars")]
         public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
         [DisplayName("Data Block Font")]
@@ -756,8 +760,8 @@ namespace DGScope
 
         private void DrawTarget(PrimaryReturn target)
         {
-            float targetHeight = 15f * xPixelScale;// (window.ClientRectangle.Height/2);
-            float targetWidth = 5f * xPixelScale;// (window.ClientRectangle.Width/2);
+            float targetHeight = (float)TargetHeight * xPixelScale;// (window.ClientRectangle.Height/2);
+            float targetWidth = (float)TargetWidth * xPixelScale;// (window.ClientRectangle.Width/2);
             float atan = (float)Math.Atan(targetHeight / targetWidth);
             float targetHypotenuse = (float)(Math.Sqrt((targetHeight*targetHeight) + (targetWidth * targetWidth))/2);
             float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
@@ -775,6 +779,8 @@ namespace DGScope
 
             GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
             GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
+            GL.Scale(1.0f, aspect_ratio, 1.0f);
+            GL.Ortho(-1.0f, 1.0f, -aspect_ratio, aspect_ratio, 0.1f, 0.0f);
             GL.Begin(PrimitiveType.Polygon);
             
             GL.Color4(target.ForeColor);
@@ -786,7 +792,7 @@ namespace DGScope
 
             GL.End();
             GL.Translate(-target.LocationF.X, -target.LocationF.Y , 0.0f);
-            //GL.Scale(aspect_ratio, 0.0f, 0.0f);
+            
 
             GL.PopMatrix();
             
