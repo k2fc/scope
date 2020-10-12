@@ -125,6 +125,33 @@ namespace DGScope
                 return new Polygon[0];
             return polygons;
         }
+        
+        public void RescalePolygons(float scalechange, float ar_change)
+        {
+            if (polygons == null)
+                return;
+            for (int i = 0; i < polygons.Length; i++)
+            {
+                for (int j = 0; j < polygons[i].vertices.Length; j++)
+                {
+                    polygons[i].vertices[0].X *= scalechange;
+                    polygons[i].vertices[0].Y *= scalechange / ar_change;
+                }
+            }
+        }
+        public void MovePolygons(float xChange, float yChange)
+        {
+            if (polygons == null)
+                return;
+            for (int i = 0; i < polygons.Length; i++)
+            {
+                for (int j = 0; j < polygons[i].vertices.Length; j++)
+                {
+                    polygons[i].vertices[0].X += xChange;
+                    polygons[i].vertices[0].Y -= yChange;
+                }
+            }
+        }
         Polygon[] polygons;
         
         GeoPoint _center = new GeoPoint();
@@ -185,7 +212,7 @@ namespace DGScope
 
     public class Polygon
     {
-        public float[][] vertices = new float[2][];
+        public PointF[] vertices;
         public List<GeoPoint> Points { get; set; } = new List<GeoPoint>();
         public Color Color { get; set; }
 
@@ -196,14 +223,13 @@ namespace DGScope
             {
                 points = Points.ToArray();
             }
-            vertices[0] = new float[points.Length];
-            vertices[1] = new float[points.Length];
+            vertices = new PointF[points.Length];
             for (int i = 0; i < points.Length; i++)
             {
                 double bearing = center.BearingTo(points[i]) - ScreenRotation;
                 double distance = center.DistanceTo(points[i]);
-                vertices[0][i] = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                vertices[1][i] = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].X = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].Y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             }
         }
     }

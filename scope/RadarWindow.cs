@@ -618,9 +618,9 @@ namespace DGScope
             double yscale = (double)window.Width / (double)window.Height;
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(polygon.Color);
-            for (int i = 0; i < polygon.vertices[0].Length; i++)
+            for (int i = 0; i < polygon.vertices.Length; i++)
             {
-                GL.Vertex2(polygon.vertices[0][i], polygon.vertices[1][i] * yscale);
+                GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y * yscale);
             }
             GL.End();
         }
@@ -727,6 +727,8 @@ namespace DGScope
             {
                 PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
                 block.LocationF = newLocation;
+                block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
+                block.ParentAircraft.ConnectingLine.End = block.LocationF;
             }
             lock (radar.Aircraft)
             {
@@ -737,7 +739,6 @@ namespace DGScope
                     plane.DataBlock.Redraw = true;
                 }
             }
-            
         }
 
         private void MoveTargets(float xChange, float yChange)
@@ -750,6 +751,8 @@ namespace DGScope
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
                 block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
+                block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
+                block.ParentAircraft.ConnectingLine.End = block.LocationF;
             }
             lock (radar.Aircraft)
             {
