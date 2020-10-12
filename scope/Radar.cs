@@ -79,8 +79,8 @@ namespace DGScope
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             foreach (Receiver receiver in Receivers)
             {
-                lock(Aircraft)
-                TargetsScanned.AddRange(receiver.Scan());
+                if (receiver.Enabled)
+                    TargetsScanned.AddRange(receiver.Scan());
             }
             return TargetsScanned;
         }

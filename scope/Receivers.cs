@@ -52,6 +52,8 @@ namespace DGScope.Receivers
         double lastazimuth = 0;
         public List<Aircraft> Scan()
         {
+            if (aircraft == null)
+                return new List<Aircraft>();
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
             Stopwatch.Restart();
