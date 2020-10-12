@@ -763,7 +763,7 @@ namespace DGScope
         private void DrawTarget(PrimaryReturn target)
         {
             float targetHeight = (float)TargetHeight * xPixelScale;// (window.ClientRectangle.Height/2);
-            float targetWidth = (float)TargetWidth * xPixelScale;// (window.ClientRectangle.Width/2);
+            float targetWidth = (float)TargetWidth * yPixelScale;// (window.ClientRectangle.Width/2);
             float atan = (float)Math.Atan(targetHeight / targetWidth);
             float targetHypotenuse = (float)(Math.Sqrt((targetHeight*targetHeight) + (targetWidth * targetWidth))/2);
             float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
@@ -778,10 +778,9 @@ namespace DGScope
             GL.PushMatrix();
 
             float angle = (float)(-(target.Angle + 360) % 360) + (float)ScreenRotation;
-
             GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-            GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
             GL.Scale(1.0f, aspect_ratio, 1.0f);
+            GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
             GL.Ortho(-1.0f, 1.0f, -aspect_ratio, aspect_ratio, 0.1f, 0.0f);
             GL.Begin(PrimitiveType.Polygon);
             
