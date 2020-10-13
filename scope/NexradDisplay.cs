@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Xml.Serialization;
 
 namespace DGScope
@@ -95,20 +96,27 @@ namespace DGScope
 
                 }
             }
-                //decoder.setFileResource("e:\\users\\dennis\\downloads\\KOKX_SDUS51_N0ROKX_202009292354");
-                
-            RecomputeVertices(_center, _scale, _rotation);
-        }
+            //decoder.setFileResource("e:\\users\\dennis\\downloads\\KOKX_SDUS51_N0ROKX_202009292354");
 
+            //RecomputeVertices(_center, _scale, _rotation);
+            if (!recomputeVerticesThread.IsAlive)
+            {
+                recomputeVerticesThread.Start();
+            }
+            recompute = true;
+        }
+        Thread recomputeVerticesThread;
         public NexradDisplay() 
         {
-            
+            recomputeVerticesThread = new Thread(new ThreadStart(RecomputeVertices));
+            recomputeVerticesThread.IsBackground = true;
         }
         System.Threading.Timer timer;
         private void cbTimerElapsed(object state)
         {
             GetRadarData(URL);
         }
+        bool recompute = true;
         public Polygon[] Polygons(GeoPoint center, double scale, double rotation = 0)
         {
             if (_center != center || _scale != scale || _rotation != rotation)
@@ -116,10 +124,10 @@ namespace DGScope
                 _center = center;
                 _scale = scale;
                 _rotation = rotation;
-                RecomputeVertices(center, scale, rotation);
+                recompute = true;
             }
             if (timer == null)
-                timer = new System.Threading.Timer(new System.Threading.TimerCallback(cbTimerElapsed), null,0,DownloadInterval * 1000);
+                timer = new Timer(new TimerCallback(cbTimerElapsed), null,0,DownloadInterval * 1000);
             
             if (polygons == null || !Enabled)
                 return new Polygon[0];
@@ -157,6 +165,19 @@ namespace DGScope
         GeoPoint _center = new GeoPoint();
         double _scale;
         double _rotation;
+
+        public void RecomputeVertices()
+        {
+            while(true) 
+            {
+                if (recompute)
+                {
+                    RecomputeVertices(_center, _scale, _rotation);
+                }
+                else
+                    Thread.Sleep(100);
+            }
+        }
         public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
         {
             if (ColorTable.Count == 0)
@@ -175,6 +196,7 @@ namespace DGScope
             _center = center;
             _scale = scale;
             _rotation = rotation;
+            recompute = false;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
             var scanrange = (double)Range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
