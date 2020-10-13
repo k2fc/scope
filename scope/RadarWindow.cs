@@ -466,7 +466,6 @@ namespace DGScope
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
             RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
-            Nexrads.ForEach(x => x.RecomputeVertices(radar.Location,scale,ScreenRotation));
             lock (dataBlocks)
             {
                 dataBlocks.ForEach(x => x.Redraw = true);
@@ -488,7 +487,7 @@ namespace DGScope
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.DstAlpha);
             DrawRangeRings();
-            if(!dragging && !hidewx)
+            if(!hidewx)
                 DrawNexrad();
             DrawReceiverLocations();
             DrawLines();
