@@ -14,6 +14,8 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Drawing.Design;
 using DGScope.Receivers;
+using System.Threading;
+using System.Numerics;
 
 namespace DGScope
 {
@@ -267,29 +269,16 @@ namespace DGScope
         public RadarWindow(GameWindow Window)
         {
             window = Window;
-            window.Load += Window_Load;
-            window.Closing += Window_Closing;
-            window.RenderFrame += Window_RenderFrame;
-            window.UpdateFrame += Window_UpdateFrame;
-            window.Resize += Window_Resize;
-            window.WindowStateChanged += Window_WindowStateChanged;
-            window.KeyDown += Window_KeyDown;
-            window.MouseWheel += Window_MouseWheel;
-            window.MouseMove += Window_MouseMove;
-            aircraftGCTimer.Start();
-            aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
-            GL.ClearColor(BackColor);
-            string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
-            using (MD5 md5 = MD5.Create())
-            {
-                md5.Initialize();
-                md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
-                settingshash = md5.Hash;
-            }
+            Initialize();
         }
         public RadarWindow()
         {
             window = new GameWindow(1000, 1000);
+            Initialize();
+        }
+        Thread deconflictThread;
+        private void Initialize()
+        {
             window.Load += Window_Load;
             window.Closing += Window_Closing;
             window.RenderFrame += Window_RenderFrame;
@@ -310,6 +299,8 @@ namespace DGScope
                 md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
                 settingshash = md5.Hash;
             }
+            deconflictThread = new Thread(new ThreadStart(Deconflict));
+            deconflictThread.IsBackground = true;
         }
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
@@ -507,6 +498,7 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             radar.Start();
+            deconflictThread.Start();
             oldar = aspect_ratio;
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -675,14 +667,14 @@ namespace DGScope
                     aircraft.DataBlock.ForeColor = DataBlockColor;
                     PrimaryReturns.Add(newreturn);
                     Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
-                    var realWidth = (float)text_bmp.Width * xPixelScale;
-                    var realHeight = (float)text_bmp.Height * yPixelScale;
+                    var realWidth = text_bmp.Width * xPixelScale;
+                    var realHeight = text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                     aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
                     
                     aircraft.DataBlock.ParentAircraft = aircraft;
-                    Deconflict(newreturn);
-                    Deconflict(aircraft.DataBlock);
+                    //Deconflict(newreturn);
+                    //Deconflict(aircraft.DataBlock);
                     if (!dataBlocks.Contains(aircraft.DataBlock))
                         dataBlocks.Add(aircraft.DataBlock);
                     
@@ -920,6 +912,11 @@ namespace DGScope
             GL.End();
             */
         }
+
+        private void Deconflict()
+        {
+            Arrange(0.5, 100, 100, false);
+        }
         private void Deconflict(PrimaryReturn Return)
         {
             if (!DeconflictEnabled)
@@ -1012,10 +1009,7 @@ namespace DGScope
             } while (conflictcount > 0) ;
         }
 
-        public void Storage()
-        {
 
-        }
         public PointF ConnectingLinePoint(PointF StartPoint, RectangleF Label)
         {
             PointF EndPoint = new PointF();
@@ -1061,8 +1055,150 @@ namespace DGScope
             }
             return EndPoint;
         }
+        private const double ATTRACTION_CONSTANT = 0.1;     // spring constant
+        private const double REPULSION_CONSTANT = 10000;	// charge constant
+        public void Arrange(double damping, int springLength, int maxIterations, bool deterministic)
+        {
+            // random starting positions can be made deterministic by seeding System.Random with a constant
+            Random rnd = deterministic ? new Random(0) : new Random();
+
+            
+
+            while (true)
+            {
+                // copy nodes into an array of metadata and randomise initial coordinates for each node
+                List<IScreenObject> screenObjects = new List<IScreenObject>();
+                lock (PrimaryReturns)
+                    screenObjects.AddRange(PrimaryReturns);
+                lock (dataBlocks)
+                    screenObjects.AddRange(dataBlocks);
+                NodeLayoutInfo[] layout = new NodeLayoutInfo[screenObjects.Count];
+                for (int i = 0; i < layout.Length; i++)
+                {
+                    layout[i] = new NodeLayoutInfo(screenObjects[i], new Complex(), PointF.Empty);
+                }
+                int stopCount = 0;
+                int iterations = 0;
+                double totalDisplacement = 0;
+
+                for (int i = 0; i < layout.Length; i++)
+                {
+                    NodeLayoutInfo current = layout[i];
+
+                    // express the node's current position as a vector, relative to the origin
+                    Complex currentPosition = new Complex(CalcDistance(Point.Empty, current.Node.LocationF), GetBearingAngle(Point.Empty, current.Node.LocationF));
+                    Complex netForce = new Complex(0, 0);
+
+                    // determine repulsion between nodes
+                    foreach (IScreenObject other in screenObjects)
+                    {
+                        if (other != current.Node) netForce += CalcRepulsionForce(current.Node, other);
+                    }
+
+                    // determine attraction caused by connections
+                    netForce += CalcAttractionForce(current.Node, current.Node.ParentAircraft.TargetReturn, springLength);
+                    
+
+                    // apply net force to node velocity
+                    current.Velocity = (current.Velocity + netForce) * damping;
+
+                    // apply velocity to node position
+                    if (current.GetType() != typeof(PrimaryReturn))
+                    {
+                        current.NextPosition = new PointF();
+                        current.NextPosition.X = (float)(currentPosition + current.Velocity).Real;
+                        current.NextPosition.Y = (float)(currentPosition + current.Velocity).Imaginary;
+                    }
+                    
+                }
+
+                // move nodes to resultant positions (and calculate total displacement)
+                for (int i = 0; i < layout.Length; i++)
+                {
+                    NodeLayoutInfo current = layout[i];
+
+                    totalDisplacement += CalcDistance(current.Node.LocationF, current.NextPosition);
+                    if (current.GetType() != typeof(PrimaryReturn))
+                    {
+                        var label = (TransparentLabel)current.Node;
+                        label.LocationF = current.NextPosition;
+                    }
+                }
+
+                iterations++;
+                if (totalDisplacement < 10) stopCount++;
+                if (stopCount > 15) break;
+                if (iterations > maxIterations) break;
+            }
+
+        }
+        private class NodeLayoutInfo
+        {
+            public IScreenObject Node;
+            public Complex Velocity;
+            public PointF NextPosition;
+
+            public NodeLayoutInfo(IScreenObject node, Complex velocity, PointF nextPosition)
+            {
+                Node = node;
+                Velocity = velocity;
+                NextPosition = nextPosition;
+            }
+        }
+        private Complex CalcAttractionForce(IScreenObject x, IScreenObject y, double springLength)
+        {
+            int proximity = Math.Max(CalcDistance(x.LocationF, y.LocationF), 1);
+
+            // Hooke's Law: F = -kx
+            double force = ATTRACTION_CONSTANT * Math.Max(proximity - springLength, 0);
+            double angle = GetBearingAngle(x.LocationF, y.LocationF);
+
+            return new Complex(force, angle);
+        }
+        public static int CalcDistance(PointF a, PointF b)
+        {
+            double xDist = (a.X - b.X);
+            double yDist = (a.Y - b.Y);
+            return (int)Math.Sqrt(Math.Pow(xDist, 2) + Math.Pow(yDist, 2));
+        }
+        private double GetBearingAngle(PointF start, PointF end)
+        {
+            PointF half = new PointF(start.X + ((end.X - start.X) / 2), start.Y + ((end.Y - start.Y) / 2));
+
+            double diffX = (double)(half.X - start.X);
+            double diffY = (double)(half.Y - start.Y);
+
+            if (diffX == 0) diffX = 0.001;
+            if (diffY == 0) diffY = 0.001;
+
+            double angle;
+            if (Math.Abs(diffX) > Math.Abs(diffY))
+            {
+                angle = Math.Tanh(diffY / diffX) * (180.0 / Math.PI);
+                if (((diffX < 0) && (diffY > 0)) || ((diffX < 0) && (diffY < 0))) angle += 180;
+            }
+            else
+            {
+                angle = Math.Tanh(diffX / diffY) * (180.0 / Math.PI);
+                if (((diffY < 0) && (diffX > 0)) || ((diffY < 0) && (diffX < 0))) angle += 180;
+                angle = (180 - (angle + 90));
+            }
+
+            return angle;
+        }
+        private Complex CalcRepulsionForce(IScreenObject x, IScreenObject y)
+        {
+            int proximity = Math.Max(CalcDistance(x.LocationF, y.LocationF), 1);
+
+            // Coulomb's Law: F = k(Qq/r^2)
+            double force = -(REPULSION_CONSTANT / Math.Pow(proximity, 2));
+            double angle = GetBearingAngle(x.LocationF, y.LocationF);
+
+            return new Complex(force, angle);
+        }
     }
 
+    
     
 
     
