@@ -30,11 +30,14 @@ namespace DGScope
         [DisplayName("Video Map Line Color"), Category("Colors")]
         public Color VideoMapLineColor { get; set; } = Color.Brown;
         [XmlIgnore]
-        [DisplayName("Return Color"), Description("Primary Radar return color"), Category("Colors")]
+        [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
         public Color ReturnColor { get; set; } = Color.Lime;
         [XmlIgnore]
         [DisplayName("Data Block Color"), Description("Color of aircraft data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
+        [XmlIgnore]
+        [DisplayName("History Color"), Description("Color of aircraft history targets"), Category("Colors")]
+        public Color HistoryColor { get; set; } = Color.Lime;
         [XmlIgnore]
         [DisplayName("Connecting Line Color"), Description("Color of the lines which connect the primary returns to their associated data blocks"), Category("Colors")]
         public Color ConnectingLineColor { get; set; } = Color.Lime;
@@ -74,6 +77,13 @@ namespace DGScope
             get { return DataBlockColor.ToArgb(); }
             set { DataBlockColor = Color.FromArgb(value); }
         }
+        [XmlElement("HistoryColor")]
+        [Browsable(false)]
+        public int HistoryColorAsArgb
+        {
+            get { return HistoryColor.ToArgb(); }
+            set { HistoryColor = Color.FromArgb(value); }
+        }
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
@@ -84,6 +94,11 @@ namespace DGScope
         public double ScreenRotation { get; set; } = 0;
         [DisplayName("Hide Data Tags"), Category("Display Properties")]
         public bool HideDataTags { get; set; } = false;
+        [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
+        public bool HistoryFade { get; set; } = true;
+        [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
+            "If false, they retain their direction with respect to the receiving radar site."), Category("Display Properties")]
+        public bool HistoryDirectionAngle { get; set; } = false;
         [DisplayName("Window State"), Category("Display Properties")]
         public WindowState WindowState
         {
@@ -231,6 +246,10 @@ namespace DGScope
         public float TargetWidth { get; set; } = 5;
         [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
         public float TargetHeight { get; set; } = 15;
+        [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
+        public float HistoryWidth { get; set; } = 5;
+        [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
+        public float HistoryHeight { get; set; } = 15;
         [DisplayName("Nexrad Weather Radars")]
         public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
         [DisplayName("Data Block Font")]
@@ -650,6 +669,18 @@ namespace DGScope
                 var location = new PointF(x, y);
                 if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude && aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-aircraft.LocationReceivedBy.RotationPeriod))
                 {
+                    aircraft.TargetReturn.ForeColor = HistoryColor;
+                    aircraft.TargetReturn.ShapeHeight = HistoryHeight;
+                    aircraft.TargetReturn.ShapeWidth = HistoryWidth;
+                    if (!HistoryFade)
+                    {
+                        aircraft.TargetReturn.Fading = false;
+                        aircraft.TargetReturn.Intensity = 1;
+                    }
+                    if (HistoryDirectionAngle)
+                    {
+                        aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180/Math.PI));
+                    }
                     PrimaryReturn newreturn = new PrimaryReturn();
                     aircraft.TargetReturn = newreturn;
                     newreturn.ParentAircraft = aircraft;
@@ -658,6 +689,8 @@ namespace DGScope
                     newreturn.NewLocation = location;
                     newreturn.Intensity = 1;
                     newreturn.ForeColor = ReturnColor;
+                    newreturn.ShapeHeight = TargetHeight;
+                    newreturn.ShapeWidth = TargetWidth;
                     aircraft.DataBlock.ForeColor = DataBlockColor;
                     lock(PrimaryReturns)
                         PrimaryReturns.Add(newreturn);
@@ -762,8 +795,8 @@ namespace DGScope
 
         private void DrawTarget(PrimaryReturn target)
         {
-            float targetHeight = (float)TargetHeight * xPixelScale;// (window.ClientRectangle.Height/2);
-            float targetWidth = (float)TargetWidth * yPixelScale;// (window.ClientRectangle.Width/2);
+            float targetHeight = target.ShapeHeight * xPixelScale;// (window.ClientRectangle.Height/2);
+            float targetWidth = target.ShapeWidth * yPixelScale;// (window.ClientRectangle.Width/2);
             float atan = (float)Math.Atan(targetHeight / targetWidth);
             float targetHypotenuse = (float)(Math.Sqrt((targetHeight*targetHeight) + (targetWidth * targetWidth))/2);
             float x1 = (float)(Math.Sin(atan) * targetHypotenuse);

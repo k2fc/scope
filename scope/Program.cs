@@ -122,6 +122,9 @@ namespace DGScope
             }
         }
 
+        public float ShapeWidth { get; set; }
+        public float ShapeHeight { get; set; }
+
         public new Size Size
         {
             get
@@ -161,17 +164,19 @@ namespace DGScope
         public double Angle { get; set; } = 0;
         private Color initialColor = Color.Lime;
         public int Length { get; set; } = 20;
+        public bool Fading { get; set; } = true;
         public override Color ForeColor
         {
             get
             {
-                if (Intensity > 1)
+                if (!Fading)
                     return initialColor;
-                if (Intensity < 0)
+                if (Intensity >= 1)
+                    return initialColor;
+                if (Intensity <= 0)
                     return Color.Transparent;
                 //return Color.FromArgb((int)(initialColor.R * Intensity * Intensity), (int)(initialColor.G * Intensity * Intensity), (int)(initialColor.B * Intensity * Intensity));
-                var newcolor = Color.FromArgb((int)(initialColor.A * Intensity * Intensity), (int)(initialColor.R), (int)(initialColor.G), (int)(initialColor.B));
-                newcolor = Color.FromArgb((int)(Math.Pow(initialColor.A,Intensity)), (int)(initialColor.R), (int)(initialColor.G), (int)(initialColor.B));
+                var newcolor = Color.FromArgb((int)(Math.Pow(initialColor.A,Intensity)), (int)(initialColor.R), (int)(initialColor.G), (int)(initialColor.B));
                 return newcolor;
             }
 
