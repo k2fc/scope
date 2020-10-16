@@ -15,7 +15,6 @@ using System.Security.Cryptography;
 using System.Drawing.Design;
 using DGScope.Receivers;
 using System.Threading;
-using System.Numerics;
 
 namespace DGScope
 {
@@ -657,10 +656,6 @@ namespace DGScope
                     newreturn.FadeTime = FadeTime;
                     aircraft.RedrawTarget(location);
                     newreturn.NewLocation = location;
-                    
-                    //newreturn.LocationF = location;
-                    //aircraft.LocationF = location;
-                    
                     newreturn.Intensity = 1;
                     newreturn.ForeColor = ReturnColor;
                     aircraft.DataBlock.ForeColor = DataBlockColor;
@@ -671,8 +666,6 @@ namespace DGScope
                     var realHeight = text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                     aircraft.DataBlock.ParentAircraft = aircraft;
-                    //Deconflict(newreturn);
-                    //Deconflict(aircraft.DataBlock);
                     if (!dataBlocks.Contains(aircraft.DataBlock))
                     {
                         aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
@@ -724,6 +717,7 @@ namespace DGScope
             {
                 PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
                 block.LocationF = newLocation;
+                block.NewLocation = newLocation;
                 block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
                 block.ParentAircraft.ConnectingLine.End = block.LocationF;
             }
@@ -750,6 +744,7 @@ namespace DGScope
                 block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
                 block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
                 block.ParentAircraft.ConnectingLine.End = block.LocationF;
+                block.NewLocation = block.LocationF;
             }
             lock (radar.Aircraft)
             {
@@ -797,19 +792,6 @@ namespace DGScope
 
             GL.PopMatrix();
             
-            /*
-            GL.Begin(PrimitiveType.Lines);
-            GL.Color4(Color.Red);
-            GL.Vertex2(target.BoundsF.Left, target.BoundsF.Top);
-            GL.Vertex2(target.BoundsF.Right, target.BoundsF.Top);
-            GL.Vertex2(target.BoundsF.Right, target.BoundsF.Top);
-            GL.Vertex2(target.BoundsF.Right, target.BoundsF.Bottom);
-            GL.Vertex2(target.BoundsF.Right, target.BoundsF.Bottom);
-            GL.Vertex2(target.BoundsF.Left, target.BoundsF.Bottom);
-            GL.Vertex2(target.BoundsF.Left, target.BoundsF.Bottom);
-            GL.Vertex2(target.BoundsF.Left, target.BoundsF.Top);
-            GL.End();
-            */
         }
 
         private void DrawTargets()
@@ -817,18 +799,12 @@ namespace DGScope
             foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
             {
                 DrawTarget(target);
-                if (!HideDataTags)
-                {
-                    //Deconflict(target);
-                }
             }
             foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
             {
                 if (!HideDataTags)
                 {
                     DrawLabel(block);
-                    //DrawCircle(block.LocationF.X, block.LocationF.Y, 3 * xPixelScale, aspect_ratio, 10, Color.Yellow, true);
-                    //Deconflict(block);
                 }
             }
         }
