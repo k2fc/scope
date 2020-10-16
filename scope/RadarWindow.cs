@@ -14,6 +14,8 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Drawing.Design;
 using DGScope.Receivers;
+using System.Threading;
+using System.Numerics;
 
 namespace DGScope
 {
@@ -267,29 +269,16 @@ namespace DGScope
         public RadarWindow(GameWindow Window)
         {
             window = Window;
-            window.Load += Window_Load;
-            window.Closing += Window_Closing;
-            window.RenderFrame += Window_RenderFrame;
-            window.UpdateFrame += Window_UpdateFrame;
-            window.Resize += Window_Resize;
-            window.WindowStateChanged += Window_WindowStateChanged;
-            window.KeyDown += Window_KeyDown;
-            window.MouseWheel += Window_MouseWheel;
-            window.MouseMove += Window_MouseMove;
-            aircraftGCTimer.Start();
-            aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
-            GL.ClearColor(BackColor);
-            string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
-            using (MD5 md5 = MD5.Create())
-            {
-                md5.Initialize();
-                md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
-                settingshash = md5.Hash;
-            }
+            Initialize();
         }
         public RadarWindow()
         {
             window = new GameWindow(1000, 1000);
+            Initialize();
+        }
+        Thread deconflictThread;
+        private void Initialize()
+        {
             window.Load += Window_Load;
             window.Closing += Window_Closing;
             window.RenderFrame += Window_RenderFrame;
@@ -310,6 +299,8 @@ namespace DGScope
                 md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
                 settingshash = md5.Hash;
             }
+            deconflictThread = new Thread(new ThreadStart(Deconflict));
+            deconflictThread.IsBackground = true;
         }
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
@@ -493,7 +484,6 @@ namespace DGScope
             DrawLines();
             GenerateTargets();
             DrawTargets();
-            
             GL.Flush();
             window.SwapBuffers();
             window.Title = $"(Vsync: {window.VSync}) FPS: {1f / e.Time:0} Aircraft: {radar.Aircraft.Count}";
@@ -507,6 +497,7 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             radar.Start();
+            deconflictThread.Start();
             oldar = aspect_ratio;
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -665,7 +656,7 @@ namespace DGScope
                     newreturn.ParentAircraft = aircraft;
                     newreturn.FadeTime = FadeTime;
                     aircraft.RedrawTarget(location);
-                    
+                    newreturn.NewLocation = location;
                     
                     //newreturn.LocationF = location;
                     //aircraft.LocationF = location;
@@ -673,34 +664,41 @@ namespace DGScope
                     newreturn.Intensity = 1;
                     newreturn.ForeColor = ReturnColor;
                     aircraft.DataBlock.ForeColor = DataBlockColor;
-                    PrimaryReturns.Add(newreturn);
+                    lock(PrimaryReturns)
+                        PrimaryReturns.Add(newreturn);
                     Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
-                    var realWidth = (float)text_bmp.Width * xPixelScale;
-                    var realHeight = (float)text_bmp.Height * yPixelScale;
+                    var realWidth = text_bmp.Width * xPixelScale;
+                    var realHeight = text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
-                    aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
-                    
                     aircraft.DataBlock.ParentAircraft = aircraft;
-                    Deconflict(newreturn);
-                    Deconflict(aircraft.DataBlock);
+                    //Deconflict(newreturn);
+                    //Deconflict(aircraft.DataBlock);
                     if (!dataBlocks.Contains(aircraft.DataBlock))
-                        dataBlocks.Add(aircraft.DataBlock);
-                    
+                    {
+                        aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
+                        lock (dataBlocks)
+                            dataBlocks.Add(aircraft.DataBlock);
+                    }
                 }
                 
                 else if (aircraft.LastPositionTime < DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                 {
-                    dataBlocks.Remove(aircraft.DataBlock);
+                    lock(dataBlocks)
+                        dataBlocks.Remove(aircraft.DataBlock);
                 }
                 if (aircraft.Altitude > radar.MaxAltitude || aircraft.Altitude < radar.MinAltitude)
                 {
-                    dataBlocks.Remove(aircraft.DataBlock);
+                    lock(dataBlocks)
+                        dataBlocks.Remove(aircraft.DataBlock);
                 }
             }
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
                 if (target.Intensity < .001)
-                    PrimaryReturns.Remove(target);
+                {
+                    lock(PrimaryReturns)
+                        PrimaryReturns.Remove(target);
+                }
             }
             lock (radar.Aircraft)
             {
@@ -829,6 +827,7 @@ namespace DGScope
                 if (!HideDataTags)
                 {
                     DrawLabel(block);
+                    //DrawCircle(block.LocationF.X, block.LocationF.Y, 3 * xPixelScale, aspect_ratio, 10, Color.Yellow, true);
                     //Deconflict(block);
                 }
             }
@@ -883,72 +882,135 @@ namespace DGScope
             GL.Color4(ConnectingLineColor);
             
             ConnectingLineF line = new ConnectingLineF();
-            
-            line.End = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
-            line.Start = ConnectingLinePoint(line.End, Label.ParentAircraft.TargetReturn.BoundsF);
+            line.ParentAircraft = Label.ParentAircraft;
+            line.End = ConnectingLinePoint(Label.ParentAircraft.TargetReturn.BoundsF, Label.BoundsF);
+            line.Start = ConnectingLinePoint(Label.BoundsF, Label.ParentAircraft.TargetReturn.BoundsF);
             GL.Vertex2(line.Start.X, line.Start.Y);
             GL.Vertex2(line.End.X, line.End.Y);
             GL.End();
             
-            /*
-            GL.Begin(PrimitiveType.Lines);
-            GL.Color4(Color.Red);
-            GL.Vertex2(Label.BoundsF.Left, Label.BoundsF.Top);
-            GL.Vertex2(Label.BoundsF.Right, Label.BoundsF.Top);
-            GL.Vertex2(Label.BoundsF.Right, Label.BoundsF.Top);
-            GL.Vertex2(Label.BoundsF.Right, Label.BoundsF.Bottom);
-            GL.Vertex2(Label.BoundsF.Right, Label.BoundsF.Bottom);
-            GL.Vertex2(Label.BoundsF.Left, Label.BoundsF.Bottom);
-            GL.Vertex2(Label.BoundsF.Left, Label.BoundsF.Bottom);
-            GL.Vertex2(Label.BoundsF.Left, Label.BoundsF.Top);
-            GL.End();
-
-            /*
-            ConnectingLineF connectingLineF = new ConnectingLineF();
-            connectingLineF.Start = Label.ParentAircraft.LocationF;
-            connectingLineF.End = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF); 
-            GL.Begin(PrimitiveType.Lines);
-            GL.Color4(Color.Red);
-            GL.Vertex2(connectingLineF.BoundsF.Left, connectingLineF.BoundsF.Top);
-            GL.Vertex2(connectingLineF.BoundsF.Right, connectingLineF.BoundsF.Top);
-            //GL.Vertex2(connectingLineF.BoundsF.Right, connectingLineF.BoundsF.Top);
-            //GL.Vertex2(connectingLineF.BoundsF.Right, connectingLineF.BoundsF.Bottom);
-            //GL.Vertex2(connectingLineF.BoundsF.Right, connectingLineF.BoundsF.Bottom);
-            //GL.Vertex2(connectingLineF.BoundsF.Left, connectingLineF.BoundsF.Bottom);
-            GL.Vertex2(connectingLineF.BoundsF.Left, connectingLineF.BoundsF.Bottom);
-            GL.Vertex2(connectingLineF.BoundsF.Left, connectingLineF.BoundsF.Top);
-            GL.End();
-            */
+            
         }
-        private void Deconflict(PrimaryReturn Return)
+
+        private void DrawAllScreenObjectBounds()
         {
-            if (!DeconflictEnabled)
-                return;
-            List<TransparentLabel> blocks = new List<TransparentLabel>();
-            blocks.AddRange(dataBlocks.ToList());
-            foreach (TransparentLabel block in blocks)
+            List<IScreenObject> screenObjects = new List<IScreenObject>();
+            lock (dataBlocks)
+                screenObjects.AddRange(dataBlocks);
+            
+            foreach (var item in screenObjects)
             {
-                if (block.BoundsF.IntersectsWith(Return.BoundsF))
-                    Deconflict(block);
-                else if ((Return.ParentAircraft.ConnectingLine.IntersectsWith(block.BoundsF) || Return.ParentAircraft.ConnectingLine.IntersectsWith(block.ParentAircraft.ConnectingLine)) && Return.ParentAircraft != block.ParentAircraft)
-                    Deconflict(block);
+                var bounds = new RectangleF(item.NewLocation, item.SizeF);
+                if (hasConflicts(item))
+                    DrawRectangle(bounds, Color.Red);
+                else
+                    DrawRectangle(bounds, Color.Gray);
             }
         }
 
+        private bool hasConflicts (IScreenObject screenObject)
+        {
+            return conflictScore(screenObject) > 0;
+        }
+
+        private int conflictScore(IScreenObject screenObject)
+        {
+            List<IScreenObject> screenObjects = new List<IScreenObject>();
+            lock (PrimaryReturns)
+            {
+                screenObjects.AddRange(PrimaryReturns.ToList());
+            }
+            lock (dataBlocks)
+            {
+                screenObjects.AddRange(dataBlocks.ToList());
+            }
+            screenObjects.Remove(screenObject);
+            int score = 0;
+            RectangleF newBounds = new RectangleF(screenObject.NewLocation, screenObject.SizeF);
+            foreach (var item in screenObjects)
+            {
+                RectangleF othernewBounds = new RectangleF(item.NewLocation, item.SizeF);
+                if (othernewBounds.IntersectsWith(newBounds))
+                {
+                    score += DeconflictLabelWeight;
+                    if (item.GetType() == typeof(ConnectingLineF))
+                        score += DeconflictLineWeight;
+                    else
+                        score += DeconflictLabelWeight;
+                }
+                if (screenObject.ParentAircraft.ConnectingLine.IntersectsWith(othernewBounds) && item.ParentAircraft != screenObject.ParentAircraft)
+                {
+                    score += DeconflictLabelWeight;
+                }
+                if (screenObject.ParentAircraft.ConnectingLine.IntersectsWith(item.ParentAircraft.ConnectingLine) && item.ParentAircraft != screenObject.ParentAircraft)
+                {
+                    score += DeconflictLineWeight;
+                }
+                if (item.ParentAircraft.ConnectingLine.IntersectsWith(newBounds) && item.ParentAircraft != screenObject.ParentAircraft)
+                {
+                    score += DeconflictLabelWeight;
+                }
+                if (item.ParentAircraft.ConnectingLine.IntersectsWith(screenObject.ParentAircraft.ConnectingLine) && item.ParentAircraft != screenObject.ParentAircraft)
+                {
+                    score += DeconflictLineWeight;
+                }
+            }
+            return score;
+        }
+
+        private void DrawScreenObjectBounds(IScreenObject screenObject, Color color)
+        {
+            DrawRectangle(screenObject.BoundsF, color, false);
+        }
+        private void DrawRectangle(RectangleF rectangle, Color color, bool fill = false)
+        {
+            GL.Begin(PrimitiveType.Lines);
+            GL.Color4(color);
+            GL.Vertex2(rectangle.Left, rectangle.Top);
+            GL.Vertex2(rectangle.Right,rectangle.Top);
+            GL.Vertex2(rectangle.Right,rectangle.Top);
+            GL.Vertex2(rectangle.Right,rectangle.Bottom);
+            GL.Vertex2(rectangle.Right,rectangle.Bottom);
+            GL.Vertex2(rectangle.Left, rectangle.Bottom);
+            GL.Vertex2(rectangle.Left, rectangle.Bottom);
+            GL.Vertex2(rectangle.Left, rectangle.Top);
+            GL.End();
+        }
+        private void Deconflict()
+        {
+            while (true)
+            {
+                List<TransparentLabel> blocks;
+                lock (dataBlocks)
+                    blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
+                foreach (var label in blocks)
+                {
+                    Deconflict(label);
+                }
+                foreach (var label in blocks)
+                {
+                    label.LocationF = label.NewLocation;
+                }
+                Thread.Sleep(100);
+                
+            }
+        }
+        
         Stopwatch deconflictStopwatch = new Stopwatch();
-        private void Deconflict(TransparentLabel Label)
+        private void Deconflict(IScreenObject ThisObject)
         {
             if (!DeconflictEnabled)
                 return;
             deconflictStopwatch.Restart();
             if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
                 return;
+            RectangleF newBounds = ThisObject.BoundsF;
             double circlespeed = DeconflictCircleSpeed * (Math.PI / 180);
             float growsize = (float)(DeconflictPixelsPerRev * DeconflictCircleSpeed  * xPixelScale/360);
             ConnectingLineF connectingLine = new ConnectingLineF();
-            connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
-            connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
-            connectingLine.ParentAircraft = Label.ParentAircraft;
+            connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, ThisObject.BoundsF);
+            connectingLine.End = ConnectingLinePoint(ThisObject.BoundsF, ThisObject.ParentAircraft.TargetReturn.BoundsF);
+            connectingLine.ParentAircraft = ThisObject.ParentAircraft;
             int loopcount = 0;
             
             int conflictcount;
@@ -956,39 +1018,29 @@ namespace DGScope
             float circleSize = DeconflictStartingSize * xPixelScale;
             double angle = DeconflictStartingAngle * (Math.PI / 180);
             List<IScreenObject> screenObjects = new List<IScreenObject>();
-            screenObjects.AddRange(PrimaryReturns.ToList());
-            screenObjects.AddRange(dataBlocks.ToList());
-
+            lock (PrimaryReturns)
+            {
+                screenObjects.AddRange(PrimaryReturns.ToList());
+                screenObjects.AddRange(from x in PrimaryReturns select x.ParentAircraft.ConnectingLine);
+            }
+            lock (dataBlocks)
+                screenObjects.AddRange(dataBlocks.ToList());
+            screenObjects.Remove(ThisObject);
             int minConflictCount = int.MaxValue;
             float bestSize = float.MaxValue;
             double bestAngle = 0;
 
             do
             {
-                conflictcount = 0;
+                
                 loopcount++;
-                foreach (IScreenObject screenObject in screenObjects)
-                {
-                    bool crashesWithLabel = Label.BoundsF.IntersectsWith(screenObject.BoundsF) && screenObject != Label;
-                    bool crashesWithLine = (connectingLine.IntersectsWith(screenObject.BoundsF) && screenObject != Label || connectingLine.IntersectsWith(screenObject.ParentAircraft.ConnectingLine)) && !screenObject.BoundsF.IntersectsWith(Label.ParentAircraft.TargetReturn.BoundsF);
-                    if ((crashesWithLabel || crashesWithLine) && screenObject.BoundsF.Width > 0 && screenObject.BoundsF.Height > 0 && !float.IsNaN(screenObject.BoundsF.X) && !float.IsNaN(screenObject.BoundsF.Y)
-                        && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(connectingLine.LocationF.Y) && !float.IsNaN(Label.LocationF.Y) && !float.IsNaN(Label.LocationF.Y))
-                    {
-                        if (crashesWithLabel)
-                            conflictcount+=DeconflictLabelWeight;
-                        if (crashesWithLine)
-                            conflictcount+=DeconflictLineWeight;
-                    }
-
-                }
-                //if (conflictcount > 0)
-                //    Debug.WriteLine("Shifting label for {0} for the {1} time because it has {2} conflicts. Angle: {3} Radius: {4}", Label.ParentAircraft, loopcount, conflictcount, (int)(angle * (180 / Math.PI)) % 360, circleSize);
-                Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, circleSize, angle, Label.SizeF); 
-                connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
-                connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
-                Label.ParentAircraft.ConnectingLine = connectingLine;
+                ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, circleSize, angle, ThisObject.SizeF);
+                newBounds = new RectangleF(ThisObject.NewLocation, ThisObject.SizeF);
+                conflictcount = conflictScore(ThisObject);
+                connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, newBounds);
+                connectingLine.End = ConnectingLinePoint(newBounds, ThisObject.ParentAircraft.TargetReturn.BoundsF);
+                ThisObject.ParentAircraft.ConnectingLine = connectingLine;
                 angle += circlespeed;
-                //angle = 180 * (Math.PI / 180);
                 circleSize += growsize;
                 if (conflictcount < minConflictCount)
                 {
@@ -1003,72 +1055,79 @@ namespace DGScope
                 }
                 else if (deconflictStopwatch.ElapsedMilliseconds>DeconflictMaxTime || circleSize > DeconflictMaxSize * xPixelScale)
                 {
-                    Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",Label.ParentAircraft,loopcount,conflictcount,circleSize/xPixelScale);
-                    Label.LocationF = ShiftedLabelLocation(Label.ParentAircraft.LocationF, bestSize, bestAngle, Label.SizeF);
-                    connectingLine.Start = ConnectingLinePoint(Label.ParentAircraft.LocationF, Label.BoundsF);
-                    connectingLine.End = ConnectingLinePoint(connectingLine.Start, Label.ParentAircraft.TargetReturn.BoundsF);
+                    Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",ThisObject.ParentAircraft,loopcount,conflictcount,bestSize/xPixelScale);
+                    ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, bestSize, bestAngle, ThisObject.SizeF); 
+                    newBounds = new RectangleF(ThisObject.NewLocation, ThisObject.SizeF);
+                    connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, newBounds);
+                    connectingLine.End = ConnectingLinePoint(newBounds, ThisObject.ParentAircraft.TargetReturn.BoundsF);
                     return;
                 }
-            } while (conflictcount > 0) ;
+            } while (hasConflicts(ThisObject)) ;
         }
 
-        public void Storage()
-        {
 
-        }
-        public PointF ConnectingLinePoint(PointF StartPoint, RectangleF Label)
+        public PointF ConnectingLinePoint(RectangleF Start, RectangleF End)
         {
             PointF EndPoint = new PointF();
-            if (Label.Right < StartPoint.X)
-                EndPoint.X = Label.Right;
-            else if (Label.Left > StartPoint.X)
-                EndPoint.X = Label.Left;
-            else
-                EndPoint.X = Label.Left + (Label.Width / 2);
 
-            if (Label.Top > StartPoint.Y)
-                EndPoint.Y = Label.Top;
-            else if (Label.Bottom < StartPoint.Y)
-                EndPoint.Y = Label.Bottom;
+            if (End.Right < Start.Left)
+                EndPoint.X = End.Right;
+            else if (End.Left > Start.Right)
+                EndPoint.X = End.Left;
             else
-                EndPoint.Y = Label.Bottom - (Label.Height / 2);
+                EndPoint.X = End.Left + (End.Width / 2);
+
+            if (End.Top > Start.Bottom)
+                EndPoint.Y = End.Top;
+            else if (End.Bottom < Start.Top)
+                EndPoint.Y = End.Bottom;
+            else
+                EndPoint.Y = End.Bottom - (End.Height / 2);
             return EndPoint;
         }
         public PointF ShiftedLabelLocation(PointF StartPoint, float radius, double angle, SizeF Label)
         {
             PointF EndPoint = new PointF();
             double degrees = ((angle * (180 / Math.PI)) + 360) % 360;
-            
-            if (degrees > 135 && degrees < 225)
+
+            if (degrees > 315 || degrees < 45)
+            {
+                EndPoint.X = StartPoint.X + (float)Math.Cos(angle) * radius; //X bound to left
+            }
+            else if (degrees > 135 && degrees < 225)
             {
                 EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - Label.Width; //X bound to right
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + (Label.Height / 2); //Y bound to mid
-            }
-            else if (degrees > 45 && degrees < 135)
-            {
-                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2);//X bound to mid
-                EndPoint.Y = StartPoint.Y + (float)Math.Sin(angle) * radius; //Y bound to bottom
-            }
-            else if (degrees > 225 && degrees < 315)
-            {
-                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2); //X bound to mid
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) - Label.Height; //Y bound to top
             }
             else
             {
-                EndPoint.X = StartPoint.X + (float)Math.Cos(angle) * radius; //X bound to left
-                EndPoint.Y = (StartPoint.Y + (float)Math.Sin(angle) * radius) + (Label.Height / 2); //Y bound to mid
+                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2);//X bound to mid
+            }
+
+            if (degrees > 45 && degrees < 135)
+            {
+                EndPoint.Y = StartPoint.Y + (float)Math.Sin(angle) * radius; //Y bound to bottom
+            }
+            else if (degrees > 224 && degrees < 315)
+            {
+                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + Label.Height; //Y bound to top
+            }
+            else
+            {
+                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + (Label.Height / 2); //Y bound to mid
             }
             return EndPoint;
         }
+        
     }
 
+    
     
 
     
     public interface IScreenObject
     {
-        PointF LocationF { get;  }
+        PointF LocationF { get; set; }
+        PointF NewLocation { get; set; }
         SizeF SizeF { get;  }
         RectangleF BoundsF { get; }
         Aircraft ParentAircraft { get; set; }

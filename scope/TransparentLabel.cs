@@ -95,6 +95,7 @@ namespace DGScope
 
         public int TextureID { get; set; }
         public PointF LocationF { get; set; }
+        public PointF NewLocation { get; set; }
         public SizeF SizeF { get; set; }
         public Aircraft ParentAircraft { get; set; }
         public RectangleF BoundsF
