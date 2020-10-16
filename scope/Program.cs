@@ -107,6 +107,7 @@ namespace DGScope
     public class PrimaryReturn : Control, IScreenObject
     {
         PointF _location;
+        public PointF NewLocation { get { return LocationF; } set { } }
         public PointF LocationF
         {
             set
@@ -316,6 +317,7 @@ namespace DGScope
     {
         public bool InScreenBounds => LocationF.X > -1 && LocationF.X < 1 && LocationF.Y > -1 && LocationF.Y < 1;
         Color initialColor;
+        public PointF NewLocation { get; set; }
         public Color ForeColor 
         { 
             get
@@ -511,8 +513,9 @@ namespace DGScope
     {
         public PointF Start { get; set; }
         public PointF End { get; set; }
-        public PointF LocationF { get => new PointF(Start.X > End.X ? End.X : Start.X, Start.Y > End.Y ? End.Y : Start.Y); }
-        public SizeF SizeF { get => new SizeF(Math.Abs(Start.X - End.X), Math.Abs(Start.Y - End.Y)); }
+        public PointF LocationF { get { return new PointF(Start.X > End.X ? End.X : Start.X, Start.Y > End.Y ? End.Y : Start.Y); }set { } }
+        public PointF NewLocation { get; set; }
+        public SizeF SizeF { get { return new SizeF(Math.Abs(Start.X - End.X), Math.Abs(Start.Y - End.Y)); } set { } }
 
         public RectangleF BoundsF => new RectangleF(LocationF, SizeF);
 
