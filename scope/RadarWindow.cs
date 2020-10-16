@@ -672,6 +672,11 @@ namespace DGScope
                         lock (dataBlocks)
                             dataBlocks.Add(aircraft.DataBlock);
                     }
+                    else if (!DeconflictEnabled)
+                    {
+                        aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
+                        aircraft.DataBlock.NewLocation = aircraft.DataBlock.LocationF;
+                    }
                 }
                 
                 else if (aircraft.LastPositionTime < DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
@@ -889,7 +894,7 @@ namespace DGScope
             return conflictScore(screenObject) > 0;
         }
 
-        private int conflictScore(IScreenObject screenObject)
+        private int conflictScore(IScreenObject thisObject)
         {
             List<IScreenObject> screenObjects = new List<IScreenObject>();
             lock (PrimaryReturns)
@@ -900,33 +905,35 @@ namespace DGScope
             {
                 screenObjects.AddRange(dataBlocks.ToList());
             }
-            screenObjects.Remove(screenObject);
+            screenObjects.Remove(thisObject);
             int score = 0;
-            RectangleF newBounds = new RectangleF(screenObject.NewLocation, screenObject.SizeF);
-            foreach (var item in screenObjects)
+            RectangleF newBounds = new RectangleF(thisObject.NewLocation, thisObject.SizeF);
+            var thisAircraft = thisObject.ParentAircraft;
+            foreach (var otherObject in screenObjects)
             {
-                RectangleF othernewBounds = new RectangleF(item.NewLocation, item.SizeF);
+                var otherAircraft = otherObject.ParentAircraft;
+                RectangleF othernewBounds = new RectangleF(otherObject.NewLocation, otherObject.SizeF);
                 if (othernewBounds.IntersectsWith(newBounds))
                 {
                     score += DeconflictLabelWeight;
-                    if (item.GetType() == typeof(ConnectingLineF))
+                    if (otherObject.GetType() == typeof(ConnectingLineF))
                         score += DeconflictLineWeight;
                     else
                         score += DeconflictLabelWeight;
                 }
-                if (screenObject.ParentAircraft.ConnectingLine.IntersectsWith(othernewBounds) && item.ParentAircraft != screenObject.ParentAircraft)
+                if (thisAircraft.ConnectingLine.IntersectsWith(othernewBounds) && otherAircraft != thisAircraft)
                 {
                     score += DeconflictLabelWeight;
                 }
-                if (screenObject.ParentAircraft.ConnectingLine.IntersectsWith(item.ParentAircraft.ConnectingLine) && item.ParentAircraft != screenObject.ParentAircraft)
+                if (thisAircraft.ConnectingLine.IntersectsWith(otherAircraft.ConnectingLine) && otherAircraft != thisAircraft)
                 {
                     score += DeconflictLineWeight;
                 }
-                if (item.ParentAircraft.ConnectingLine.IntersectsWith(newBounds) && item.ParentAircraft != screenObject.ParentAircraft)
+                if (otherAircraft.ConnectingLine.IntersectsWith(newBounds) && otherAircraft != thisAircraft)
                 {
                     score += DeconflictLabelWeight;
                 }
-                if (item.ParentAircraft.ConnectingLine.IntersectsWith(screenObject.ParentAircraft.ConnectingLine) && item.ParentAircraft != screenObject.ParentAircraft)
+                if (otherAircraft.ConnectingLine.IntersectsWith(thisAircraft.ConnectingLine) && thisAircraft != otherAircraft)
                 {
                     score += DeconflictLineWeight;
                 }
@@ -956,19 +963,21 @@ namespace DGScope
         {
             while (true)
             {
-                List<TransparentLabel> blocks;
-                lock (dataBlocks)
-                    blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
-                foreach (var label in blocks)
+                if (DeconflictEnabled)
                 {
-                    Deconflict(label);
-                }
-                foreach (var label in blocks)
-                {
-                    label.LocationF = label.NewLocation;
+                    List<TransparentLabel> blocks;
+                    lock (dataBlocks)
+                        blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
+                    foreach (var label in blocks)
+                    {
+                        Deconflict(label);
+                    }
+                    foreach (var label in blocks)
+                    {
+                        label.LocationF = label.NewLocation;
+                    }
                 }
                 Thread.Sleep(100);
-                
             }
         }
         
