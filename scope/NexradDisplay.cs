@@ -68,7 +68,7 @@ namespace DGScope
         }
         public string URL { get; set; }
         public int DownloadInterval { get; set; } = 300;
-        public int Range { get; set; } = 124;
+        public int Range { get; set; } = 248;
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
         DescriptionBlock description;
