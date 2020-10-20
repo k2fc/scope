@@ -57,12 +57,12 @@ namespace DGScope.Receivers
                             {
                                 Aircraft plane = GetPlane(jsonPlane.ModeSCode);
                                 if (plane.LastMessageTime < response.Time)
-                                    plane.LastMessageTime = DateTime.UtcNow;
+                                    plane.LastMessageTime = response.Time;
                                 bool posDataUpdate = false;
                                 if (jsonPlane.PosTime > plane.LastPositionTime)
                                 {
                                     posDataUpdate = true;
-                                    plane.LastPositionTime = DateTime.UtcNow;
+                                    plane.LastPositionTime = jsonPlane.PosTime;
                                     plane.LocationReceivedBy = this;
                                 }
                                 plane.ModeSCode = jsonPlane.ModeSCode;
