@@ -61,6 +61,7 @@ namespace DGScope.Receivers
                         TargetsScanned.AddRange(from x in aircraft
                                             where x.Bearing(Location) >= lastazimuth &&
                                             x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LocationReceivedBy == this 
+                                            && InRange(x.Location, x.Altitude)
                                             select x);
             lastazimuth = newazimuth;
             if (lastazimuth == 360)
