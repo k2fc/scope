@@ -60,7 +60,7 @@ namespace DGScope.Receivers
             lock (aircraft)
                         TargetsScanned.AddRange(from x in aircraft
                                             where x.Bearing(Location) >= lastazimuth &&
-                                            x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LocationReceivedBy == this 
+                                            x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LastPositionTime > DateTime.UtcNow.AddSeconds(-RotationPeriod) 
                                             && InRange(x.Location, x.Altitude)
                                             select x);
             lastazimuth = newazimuth;
