@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace DGScope.Receivers
@@ -61,7 +60,7 @@ namespace DGScope.Receivers
             lock (aircraft)
                         TargetsScanned.AddRange(from x in aircraft
                                             where x.Bearing(Location) >= lastazimuth &&
-                                            x.Bearing(Location) <= newazimuth && x.LocationReceivedBy == this 
+                                            x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LocationReceivedBy == this 
                                             select x);
             lastazimuth = newazimuth;
             if (lastazimuth == 360)
@@ -80,7 +79,7 @@ namespace DGScope.Receivers
                 {
                     plane = new Aircraft(icaoID);
                     aircraft.Add(plane);
-                    Debug.WriteLine("Added airplane " + icaoID + " from " + Name);
+                    Debug.WriteLine("Added airplane {0} from {1}", icaoID.ToString("X"), Name);
                 }
             }
             return plane;
