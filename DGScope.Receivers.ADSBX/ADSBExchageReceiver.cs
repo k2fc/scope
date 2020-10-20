@@ -13,6 +13,7 @@ namespace DGScope.Receivers
         public string APIKey { get; set; }
         public int RefreshInterval { get; set; } = 5;
         Timer timer;
+        object lockObject = new object();
 
         public override void Start()
         {
@@ -27,12 +28,14 @@ namespace DGScope.Receivers
             }
         }
 
-        public void cbTimerElapsed(object state)
+        private void cbTimerElapsed(object state)
         {
-            GetAirplanes();
-            
+            lock (lockObject)
+            {
+                GetAirplanes();
+            }
         }
-        void GetAirplanes()
+        private void GetAirplanes()
         {
             var url = string.Format("https://adsbexchange.com/api/aircraft/json/lat/{0}/lon/{1}/dist/{2}/",Location.Latitude, Location.Longitude, Range);
             var webRequest = WebRequest.Create(url);
