@@ -82,6 +82,7 @@ namespace DGScope
             catch (Exception ex)
             {
                 RadarWindow radarWindow = new RadarWindow();
+                Console.WriteLine(ex.StackTrace);
                 var mboxresult = MessageBox.Show("Error reading settings file.\n" + ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy the file and start a new config.", "Error reading settings file", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
                 if (mboxresult == DialogResult.Abort)
                     Environment.Exit(1);

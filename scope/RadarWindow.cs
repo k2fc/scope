@@ -36,6 +36,9 @@ namespace DGScope
         [DisplayName("Data Block Color"), Description("Color of aircraft data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
         [XmlIgnore]
+        [DisplayName("Data Block Emergency Color"), Description("Color of emergency aircraft data blocks"), Category("Colors")]
+        public Color DataBlockEmergencyColor { get; set; } = Color.Red;
+        [XmlIgnore]
         [DisplayName("History Color"), Description("Color of aircraft history targets"), Category("Colors")]
         public Color HistoryColor { get; set; } = Color.Lime;
         [XmlIgnore]
@@ -76,6 +79,13 @@ namespace DGScope
         {
             get { return DataBlockColor.ToArgb(); }
             set { DataBlockColor = Color.FromArgb(value); }
+        }
+        [XmlElement("DataBlockEmergencyColor")]
+        [Browsable(false)]
+        public int DataBlockEmergencyColorAsArgb
+        {
+            get { return DataBlockEmergencyColor.ToArgb(); }
+            set { DataBlockEmergencyColor = Color.FromArgb(value); }
         }
         [XmlElement("HistoryColor")]
         [Browsable(false)]
@@ -311,11 +321,18 @@ namespace DGScope
             aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
-            using (MD5 md5 = MD5.Create())
+            if (settingsstring != null)
             {
-                md5.Initialize();
-                md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
-                settingshash = md5.Hash;
+                using (MD5 md5 = MD5.Create())
+                {
+                    md5.Initialize();
+                    md5.ComputeHash(Encoding.UTF8.GetBytes(settingsstring));
+                    settingshash = md5.Hash;
+                }
+            }
+            else
+            {
+                settingshash = new byte[0];
             }
             deconflictThread = new Thread(new ThreadStart(Deconflict));
             deconflictThread.IsBackground = true;
@@ -324,7 +341,7 @@ namespace DGScope
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
             dragging = false;
-            zoomTimer = new System.Threading.Timer(new System.Threading.TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
+            zoomTimer = new Timer(new TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
         }
 
         byte[] settingshash;
@@ -531,14 +548,22 @@ namespace DGScope
                 newhash = md5.Hash;
             }
             bool changed = false;
-            for (int i = 0; i < settingshash.Length; i++)
+            if (settingshash.Length != newhash.Length)
             {
-                if (newhash[i] != settingshash[i])
+                changed = true;
+            }
+            else
+            {
+                for (int i = 0; i < settingshash.Length; i++)
                 {
-                    changed = true;
-                    break;
+                    if (newhash[i] != settingshash[i])
+                    {
+                        changed = true;
+                        break;
+                    }
                 }
             }
+            
             if (changed && !isScreenSaver)
             {
                 SaveSettings(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml"));
@@ -691,7 +716,14 @@ namespace DGScope
                     newreturn.ForeColor = ReturnColor;
                     newreturn.ShapeHeight = TargetHeight;
                     newreturn.ShapeWidth = TargetWidth;
-                    aircraft.DataBlock.ForeColor = DataBlockColor;
+                    if (!aircraft.Emergency)
+                    {
+                        aircraft.DataBlock.ForeColor = DataBlockColor;
+                    }
+                    else
+                    {
+                        aircraft.DataBlock.ForeColor = DataBlockEmergencyColor;
+                    }
                     lock(PrimaryReturns)
                         PrimaryReturns.Add(newreturn);
                     Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
