@@ -12,7 +12,6 @@ namespace DGScope.Receivers
 
         public ReceiverCollectionEditor(Type type) : base(type)
         {
-            types.Add(typeof(SBSReceiver));
             LoadReceivers();
         }
 
