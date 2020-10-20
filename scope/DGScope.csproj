@@ -55,7 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aircraft.cs" />
-    <Compile Include="EventDrivenTcpClient.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
     <Compile Include="Line.cs" />
