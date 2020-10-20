@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace DGScope
@@ -9,6 +10,50 @@ namespace DGScope
     /// </summary>
     public class TransparentLabel : Control, IScreenObject
     {
+        bool _flashing = false;
+        bool flashOn = true;
+        System.Threading.Timer flashtimer;
+        
+        public bool Flashing {
+            get
+            {
+                return _flashing;
+            }
+            set
+            {
+                if (value && value != _flashing)
+                {
+                    flashtimer = new System.Threading.Timer(new TimerCallback(cbFlashTimerElapsed), null, 750, 750);
+                }
+                else if (!value)
+                {
+                    if (flashtimer != null)
+                    {
+                        flashtimer.Dispose();
+                    }
+                }
+                _flashing = value;
+            }
+        }
+
+        public override Color ForeColor 
+        {
+            get
+            {
+                if (!Flashing || flashOn)
+                {
+                    return base.ForeColor;
+                }
+                else
+                {
+                    return Color.Transparent;
+                }
+            }
+            set
+            {
+                base.ForeColor = value;
+            }
+        }
         public bool InBoundsF => LocationF.X > -1 && LocationF.X < 1 && LocationF.Y > -1 && LocationF.Y < 1;
         /// <summary>
         /// Creates a new <see cref="TransparentLabel"/> instance.
@@ -79,6 +124,10 @@ namespace DGScope
             DrawText();
         }
 
+        private void cbFlashTimerElapsed(object state)
+        {
+            flashOn = flashOn ? false : true;
+        }
 
         private Bitmap _backBuffer;
         public void DrawText()

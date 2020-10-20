@@ -30,7 +30,13 @@ namespace DGScope
         public int GroundSpeed { get; set; }
         public int Track { get; set; }
         public int VerticalRate { get; set; }
-        public bool Ident { get; set; }
+        public bool Ident { get => ident; 
+            set
+            {
+                ident = value;
+                DataBlock.Flashing = value;
+            }
+        }
         public bool IsOnGround { get; set; }
         public bool Emergency { get; set; }
         public bool Alert { get; set; }
@@ -39,6 +45,8 @@ namespace DGScope
         public char TargetChar { get; set; }
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
+
+        bool ident;
 
         public Aircraft(int icaoID)
         {
