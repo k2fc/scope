@@ -3,6 +3,9 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
+using System.Linq;
+using DGScope.Receivers;
 
 namespace DGScope
 {
@@ -35,7 +38,7 @@ namespace DGScope
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
+            LoadReceiverPlugins();
             if (args.Length > 0)
             {
                 string arg = args[0].ToUpper().Trim();
@@ -97,6 +100,16 @@ namespace DGScope
                 }
             }
             return new RadarWindow();
+        }
+
+        static void LoadReceiverPlugins()
+        {
+            String path = Application.StartupPath;
+            string[] pluginFiles = Directory.GetFiles(path, "*.dll");
+            var ipi = (from file in pluginFiles let asm = Assembly.LoadFile(file)
+                      from plugintype in asm.GetExportedTypes()
+                      where typeof(Receiver).IsAssignableFrom(plugintype)
+                      select (Receiver)Activator.CreateInstance(plugintype)).ToArray();
         }
         
     }
