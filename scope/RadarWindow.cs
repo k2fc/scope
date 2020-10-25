@@ -304,7 +304,8 @@ namespace DGScope
             window = new GameWindow(1000, 1000);
             Initialize();
         }
-        Thread deconflictThread;
+        //Thread deconflictThread;
+        Timer deconflictTimer;
         private void Initialize()
         {
             window.Load += Window_Load;
@@ -316,8 +317,8 @@ namespace DGScope
             window.KeyDown += Window_KeyDown;
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
-            aircraftGCTimer.Start();
-            aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
+            aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, 60000, 60000);
+            deconflictTimer = new Timer(new TimerCallback(Deconflict), null, 100, 1000);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -333,8 +334,8 @@ namespace DGScope
             {
                 settingshash = new byte[0];
             }
-            deconflictThread = new Thread(new ThreadStart(Deconflict));
-            deconflictThread.IsBackground = true;
+            //deconflictThread = new Thread(new ThreadStart(Deconflict));
+            //deconflictThread.IsBackground = true;
         }
 
         byte[] settingshash;
@@ -344,7 +345,7 @@ namespace DGScope
             window.Run();
         }
 
-        private void AircraftGCTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private void cbAircraftGarbageCollectorTimer(object state)
         {
             List<Aircraft> delplane;
             lock(radar.Aircraft)
@@ -509,7 +510,7 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             radar.Start();
-            deconflictThread.Start();
+            //deconflictThread.Start();
             oldar = aspect_ratio;
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -748,7 +749,7 @@ namespace DGScope
             
         }
 
-        System.Timers.Timer aircraftGCTimer = new System.Timers.Timer(60000);
+        Timer aircraftGCTimer;
 
         private void RescaleTargets(float scalechange, float ar_change)
         {
@@ -782,20 +783,29 @@ namespace DGScope
             yChange = yChange * aspect_ratio;
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
-                target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+                lock (target.ParentAircraft.DeconflictLockObject)
+                {
+                    target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+                }
             }
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
-                block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
-                block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
-                block.ParentAircraft.ConnectingLine.End = block.LocationF;
-                block.NewLocation = block.LocationF;
+                lock (block.ParentAircraft.DeconflictLockObject)
+                {
+                    block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
+                    block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
+                    block.ParentAircraft.ConnectingLine.End = block.LocationF;
+                    block.NewLocation = block.LocationF;
+                }
             }
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
-                    plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
+                    lock (plane.DeconflictLockObject)
+                    {
+                        plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
+                    }
                 }
             }
         }
@@ -999,31 +1009,48 @@ namespace DGScope
             GL.Vertex2(rectangle.Left, rectangle.Top);
             GL.End();
         }
-        private void Deconflict()
+        private void Deconflict(object state)
         {
-            while (true)
+            if (DeconflictEnabled)
             {
-                if (DeconflictEnabled)
+                List<TransparentLabel> blocks;
+                lock (dataBlocks)
+                    blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
+                foreach (var label in blocks)
                 {
-                    List<TransparentLabel> blocks;
-                    lock (dataBlocks)
-                        blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
-                    foreach (var label in blocks)
+                    bool locked = false;
+                    try
                     {
-                        Deconflict(label);
+                        locked = Monitor.TryEnter(label.ParentAircraft.DeconflictLockObject);
+                        if (locked)
+                        {
+                            Deconflict(label);
+                        }
+                        else
+                        {
+                            Debug.WriteLine("{0} is already locked... skipping.", label.ParentAircraft);
+                        }
                     }
-                    foreach (var label in blocks)
+                    finally
                     {
-                        label.LocationF = label.NewLocation;
+                        if (locked)
+                        {
+                            Monitor.Exit(label.ParentAircraft.DeconflictLockObject);
+                        }
                     }
                 }
-                Thread.Sleep(100);
+                foreach (var label in blocks)
+                {
+                    label.LocationF = label.NewLocation;
+                }
             }
+            
         }
         
-        Stopwatch deconflictStopwatch = new Stopwatch();
         private void Deconflict(IScreenObject ThisObject)
         {
+            Stopwatch deconflictStopwatch = new Stopwatch();
+
             if (!DeconflictEnabled)
                 return;
             deconflictStopwatch.Restart();
@@ -1078,7 +1105,7 @@ namespace DGScope
                     bestSize = circleSize;
                     bestAngle = angle;
                 }
-                else if (deconflictStopwatch.ElapsedMilliseconds>DeconflictMaxTime || circleSize > DeconflictMaxSize * xPixelScale)
+                else if (circleSize > DeconflictMaxSize * xPixelScale)
                 {
                     Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",ThisObject.ParentAircraft,loopcount,conflictcount,bestSize/xPixelScale);
                     ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, bestSize, bestAngle, ThisObject.SizeF); 
