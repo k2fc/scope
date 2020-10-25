@@ -692,7 +692,7 @@ namespace DGScope
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
                 var location = new PointF(x, y);
-                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude && aircraft.LastPositionTime >= DateTime.UtcNow.AddSeconds(-aircraft.LocationReceivedBy.RotationPeriod))
+                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude)
                 {
                     aircraft.TargetReturn.ForeColor = HistoryColor;
                     aircraft.TargetReturn.ShapeHeight = HistoryHeight;
