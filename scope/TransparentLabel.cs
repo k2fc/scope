@@ -13,7 +13,7 @@ namespace DGScope
         bool _flashing = false;
         bool flashOn = true;
         System.Threading.Timer flashtimer;
-        
+
         public bool Flashing {
             get
             {

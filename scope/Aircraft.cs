@@ -43,6 +43,7 @@ namespace DGScope
         public DateTime LastMessageTime { get; set; }
         public DateTime LastPositionTime { get; set; }
         public char TargetChar { get; set; }
+        public object DeconflictLockObject { get; set; } = new object();
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
 
@@ -142,10 +143,18 @@ namespace DGScope
             else if (VerticalRate < -100)
                 vrchar = "↓";
             var oldtext = DataBlock.Text;
+            DataBlock.Text = "";
+            if (Ident)
+                DataBlock.Text = "ID";
+            if (Squawk == "7700")
+                DataBlock.Text += "EM" + "\r\n";
+            else if (Squawk == "7600")
+                DataBlock.Text += "RF" + "\r\n";
+            else if (Ident)
+                DataBlock.Text += "\r\n";
             if (Callsign != null)
-                DataBlock.Text = Callsign + "\r\n" + (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
-            else
-                DataBlock.Text = (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
+                DataBlock.Text += Callsign + "\r\n";
+            DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
             DataBlock.Redraw = DataBlock.Text != oldtext;
             TargetReturn.Text = TargetChar.ToString();
             TargetReturn.Refresh();
