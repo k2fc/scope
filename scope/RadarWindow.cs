@@ -316,7 +316,6 @@ namespace DGScope
             window.KeyDown += Window_KeyDown;
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
-            window.MouseUp += Window_MouseUp;
             aircraftGCTimer.Start();
             aircraftGCTimer.Elapsed += AircraftGCTimer_Elapsed;
             GL.ClearColor(BackColor);
@@ -336,12 +335,6 @@ namespace DGScope
             }
             deconflictThread = new Thread(new ThreadStart(Deconflict));
             deconflictThread.IsBackground = true;
-        }
-
-        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            dragging = false;
-            zoomTimer = new Timer(new TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
         }
 
         byte[] settingshash;
@@ -372,7 +365,6 @@ namespace DGScope
         }
 
         bool _mousesettled = false;
-        bool dragging = false;
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
             if (!e.Mouse.IsAnyButtonDown)
@@ -386,7 +378,6 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
-                dragging = true;
                 double xMove = e.XDelta * xPixelScale;
                 double yMove = e.YDelta * xPixelScale;
                 radar.Location = radar.Location.FromPoint(xMove * scale, 270);
@@ -395,16 +386,11 @@ namespace DGScope
             }
 
         }
-        System.Threading.Timer zoomTimer;
-        bool zooming;
         bool hidewx = false;
 
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             var oldscale = scale;
-            dragging = true;
-            zooming = true;
-            zoomTimer = new System.Threading.Timer(new System.Threading.TimerCallback(cbZoomTimerElapsed), null, 1000, 1000);
             if (e.Delta > 0 && radar.Range > 5)
                 radar.Range -= 5;
             else if (e.Delta < 0)
@@ -413,15 +399,6 @@ namespace DGScope
             
         }
 
-        //Don't draw Nexrad while zooming
-        private void cbZoomTimerElapsed(object state)
-        {
-            if (!dragging)
-                zoomTimer.Dispose();
-            if (!zooming)
-                dragging = false;
-            zooming = false;
-        }
         private void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
         {
             var oldscale = scale;
@@ -682,8 +659,6 @@ namespace DGScope
         private List<TransparentLabel> dataBlocks = new List<TransparentLabel>();
         private void GenerateTargets()
         {
-            if (zooming || dragging)
-                return;
             List<Aircraft> targets = radar.Scan();
             foreach (Aircraft aircraft in targets)
             {
@@ -1052,7 +1027,7 @@ namespace DGScope
             if (!DeconflictEnabled)
                 return;
             deconflictStopwatch.Restart();
-            if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0 || dragging)
+            if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0)
                 return;
             RectangleF newBounds = ThisObject.BoundsF;
             double circlespeed = DeconflictCircleSpeed * (Math.PI / 180);
