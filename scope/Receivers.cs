@@ -61,12 +61,11 @@ namespace DGScope.Receivers
                         TargetsScanned.AddRange(from x in aircraft
                                             where x.Bearing(Location) >= lastazimuth &&
                                             x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LastPositionTime > DateTime.UtcNow.AddSeconds(-RotationPeriod) 
-                                            && InRange(x.Location, x.Altitude)
+                                            && InRange(x.Location, x.Altitude) && x.LocationReceivedBy == this
                                             select x);
             lastazimuth = newazimuth;
             if (lastazimuth == 360)
                 lastazimuth = 0;
-
             return TargetsScanned;
         }
 
