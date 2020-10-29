@@ -18,7 +18,7 @@ namespace DGScope.Receivers
         private void LoadReceivers()
         {
             DirectoryInfo dir = new DirectoryInfo(Environment.CurrentDirectory);
-            FileInfo[] dlls = dir.GetFiles("*.dll");
+            FileInfo[] dlls = dir.GetFiles("DGScope.*.dll");
             foreach (var dll in dlls)
             {
                 Assembly assembly = Assembly.LoadFrom(dll.FullName);

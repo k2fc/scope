@@ -1013,6 +1013,10 @@ namespace DGScope
         {
             if (DeconflictEnabled)
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                int skipped = 0;
+                int worked = 0;
                 List<TransparentLabel> blocks;
                 lock (dataBlocks)
                     blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
@@ -1025,10 +1029,12 @@ namespace DGScope
                         if (locked)
                         {
                             Deconflict(label);
+                            worked++;
                         }
                         else
                         {
                             Debug.WriteLine("{0} is already locked... skipping.", label.ParentAircraft);
+                            skipped++;
                         }
                     }
                     finally
@@ -1043,6 +1049,7 @@ namespace DGScope
                 {
                     label.LocationF = label.NewLocation;
                 }
+                Debug.WriteLine("Deconflict pass completed in {0} milliseconds. Worked {1} object and skipped {2}", (stopwatch.ElapsedTicks / 10000f), worked, skipped);
             }
             
         }
