@@ -357,6 +357,8 @@ namespace DGScope
                 //plane.Dispose();
                 lock(radar.Aircraft)
                     radar.Aircraft.Remove(plane);
+                lock (dataBlocks)
+                    dataBlocks.Remove(plane.DataBlock);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
         }
@@ -668,7 +670,7 @@ namespace DGScope
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                 float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
                 var location = new PointF(x, y);
-                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude)
+                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude && aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                 {
                     aircraft.TargetReturn.ForeColor = HistoryColor;
                     aircraft.TargetReturn.ShapeHeight = HistoryHeight;
@@ -719,17 +721,12 @@ namespace DGScope
                         aircraft.DataBlock.NewLocation = aircraft.DataBlock.LocationF;
                     }
                 }
-                
-                else if (aircraft.LastPositionTime < DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+                else
                 {
-                    lock(dataBlocks)
+                    lock (dataBlocks)
                         dataBlocks.Remove(aircraft.DataBlock);
                 }
-                if (aircraft.Altitude > radar.MaxAltitude || aircraft.Altitude < radar.MinAltitude)
-                {
-                    lock(dataBlocks)
-                        dataBlocks.Remove(aircraft.DataBlock);
-                }
+
             }
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
@@ -737,6 +734,10 @@ namespace DGScope
                 {
                     lock(PrimaryReturns)
                         PrimaryReturns.Remove(target);
+                    if (target.ParentAircraft.TargetReturn == target)
+                    {
+                        dataBlocks.Remove(target.ParentAircraft.DataBlock);
+                    }
                 }
             }
             lock (radar.Aircraft)

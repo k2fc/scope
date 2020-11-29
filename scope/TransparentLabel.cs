@@ -46,7 +46,7 @@ namespace DGScope
                 }
                 else
                 {
-                    return Color.Transparent;
+                    return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
                 }
             }
             set
