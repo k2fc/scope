@@ -23,6 +23,7 @@ namespace DGScope
             {
                 Latitude = value.Latitude;
                 Longitude = value.Longitude;
+                Drawn = false;
             }
         }
         public PointF LocationF { get; set; }
@@ -46,6 +47,7 @@ namespace DGScope
         public object DeconflictLockObject { get; set; } = new object();
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
+        public bool Drawn { get; set; } = false;
 
         bool ident;
 

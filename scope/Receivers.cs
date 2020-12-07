@@ -21,6 +21,7 @@ namespace DGScope.Receivers
         public double MinElevation { get; set; } = -90;
         public double RotationPeriod { get; set; } = 4.8;
         public double Range { get; set; } = 100;
+        public bool Rotating { get; set; } = true;
         public abstract void Start();
         public abstract void Stop();
         public void Restart(int sleep = 0)
@@ -59,8 +60,8 @@ namespace DGScope.Receivers
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             lock (aircraft)
                         TargetsScanned.AddRange(from x in aircraft
-                                            where x.Bearing(Location) >= lastazimuth &&
-                                            x.Bearing(Location) <= newazimuth && !x.IsOnGround && x.LastPositionTime > DateTime.UtcNow.AddSeconds(-RotationPeriod) 
+                                            where ((x.Bearing(Location) >= lastazimuth &&
+                                            x.Bearing(Location) <= newazimuth) || !Rotating) && !x.IsOnGround && !x.Drawn 
                                             && InRange(x.Location, x.Altitude) && x.LocationReceivedBy == this
                                             select x);
             lastazimuth = newazimuth;
