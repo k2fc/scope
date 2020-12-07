@@ -349,7 +349,7 @@ namespace DGScope
         {
             List<Aircraft> delplane;
             lock(radar.Aircraft)
-                delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddMinutes(-1)).ToList();
+                delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddSeconds(-(LostTargetSeconds * 10))).ToList();
             foreach (var plane in delplane)
             {
                 GL.DeleteTexture(plane.DataBlock.TextureID);
@@ -709,6 +709,7 @@ namespace DGScope
                     var realHeight = text_bmp.Height * yPixelScale;
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                     aircraft.DataBlock.ParentAircraft = aircraft;
+                    aircraft.Drawn = true;
                     if (!dataBlocks.Contains(aircraft.DataBlock))
                     {
                         aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
