@@ -121,7 +121,9 @@ namespace DGScope
             else if (VerticalRate < -100)
                 vrchar = "↓";
             var oldtext = DataBlock.Text;
-            if (Callsign != null)
+            if (Squawk == "1200")
+                DataBlock.Text = (Altitude / 100).ToString("D3") + " V";
+            else if (Callsign != null)
                 DataBlock.Text = Callsign + "\r\n" + (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
             else
                 DataBlock.Text = (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
@@ -154,9 +156,12 @@ namespace DGScope
                 DataBlock.Text += "RF" + "\r\n";
             else if (Ident)
                 DataBlock.Text += "\r\n";
-            if (Callsign != null)
+            if (Callsign != null && Squawk != "1200")
                 DataBlock.Text += Callsign + "\r\n";
-            DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
+            if (Squawk == "1200")
+                DataBlock.Text = (Altitude / 100).ToString("D3") + " V";
+            else 
+                DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
             DataBlock.Redraw = DataBlock.Text != oldtext;
             TargetReturn.Text = TargetChar.ToString();
             TargetReturn.Refresh();
