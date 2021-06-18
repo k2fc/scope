@@ -964,31 +964,39 @@ namespace DGScope
             foreach (var otherObject in screenObjects)
             {
                 var otherAircraft = otherObject.ParentAircraft;
-                RectangleF othernewBounds = new RectangleF(otherObject.NewLocation, otherObject.SizeF);
-                if (othernewBounds.IntersectsWith(newBounds))
+                if (thisAircraft.ModeSCode > otherAircraft.ModeSCode)
                 {
-                    score += DeconflictLabelWeight;
-                    if (otherObject.GetType() == typeof(ConnectingLineF))
-                        score += DeconflictLineWeight;
-                    else
+                    RectangleF othernewBounds = new RectangleF(otherObject.NewLocation, otherObject.SizeF);
+                    if (othernewBounds.IntersectsWith(newBounds))
+                    {
                         score += DeconflictLabelWeight;
+                        if (otherObject.GetType() == typeof(ConnectingLineF))
+                            score += DeconflictLineWeight;
+                        else
+                            score += DeconflictLabelWeight;
+                    }
+                    if (thisAircraft.ConnectingLine.IntersectsWith(othernewBounds) && otherAircraft != thisAircraft)
+                    {
+                        score += DeconflictLabelWeight;
+                    }
+                    if (thisAircraft.ConnectingLine.IntersectsWith(otherAircraft.ConnectingLine) && otherAircraft != thisAircraft)
+                    {
+                        score += DeconflictLineWeight;
+                    }
+                    if (otherAircraft.ConnectingLine.IntersectsWith(newBounds) && otherAircraft != thisAircraft)
+                    {
+                        score += DeconflictLabelWeight;
+                    }
+                    if (otherAircraft.ConnectingLine.IntersectsWith(thisAircraft.ConnectingLine) && thisAircraft != otherAircraft)
+                    {
+                        score += DeconflictLineWeight;
+                    }
                 }
-                if (thisAircraft.ConnectingLine.IntersectsWith(othernewBounds) && otherAircraft != thisAircraft)
+                else if (thisAircraft.DataBlock.BoundsF.IntersectsWith(otherAircraft.TargetReturn.BoundsF))
                 {
-                    score += DeconflictLabelWeight;
+                    //score += DeconflictLabelWeight;
                 }
-                if (thisAircraft.ConnectingLine.IntersectsWith(otherAircraft.ConnectingLine) && otherAircraft != thisAircraft)
-                {
-                    score += DeconflictLineWeight;
-                }
-                if (otherAircraft.ConnectingLine.IntersectsWith(newBounds) && otherAircraft != thisAircraft)
-                {
-                    score += DeconflictLabelWeight;
-                }
-                if (otherAircraft.ConnectingLine.IntersectsWith(thisAircraft.ConnectingLine) && thisAircraft != otherAircraft)
-                {
-                    score += DeconflictLineWeight;
-                }
+                
             }
             return score;
         }
@@ -1070,6 +1078,8 @@ namespace DGScope
             float growsize = (float)(DeconflictPixelsPerRev * DeconflictCircleSpeed  * xPixelScale/360);
             ConnectingLineF connectingLine = new ConnectingLineF();
             connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, ThisObject.BoundsF);
+            //connectingLine.Start = new PointF(ThisObject.ParentAircraft.TargetReturn.BoundsF.Left + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Width / 2),
+                        //ThisObject.ParentAircraft.TargetReturn.BoundsF.Top + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Height / 2));
             connectingLine.End = ConnectingLinePoint(ThisObject.BoundsF, ThisObject.ParentAircraft.TargetReturn.BoundsF);
             connectingLine.ParentAircraft = ThisObject.ParentAircraft;
             int loopcount = 0;
@@ -1120,6 +1130,8 @@ namespace DGScope
                     ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, bestSize, bestAngle, ThisObject.SizeF); 
                     newBounds = new RectangleF(ThisObject.NewLocation, ThisObject.SizeF);
                     connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, newBounds);
+                    //connectingLine.Start = new PointF(ThisObject.ParentAircraft.TargetReturn.BoundsF.Left + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Width / 2),
+                    //    ThisObject.ParentAircraft.TargetReturn.BoundsF.Top + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Height / 2));
                     connectingLine.End = ConnectingLinePoint(newBounds, ThisObject.ParentAircraft.TargetReturn.BoundsF);
                     return;
                 }
@@ -1143,38 +1155,47 @@ namespace DGScope
             else if (End.Bottom < Start.Top)
                 EndPoint.Y = End.Bottom;
             else
-                EndPoint.Y = End.Bottom - (End.Height / 2);
+                EndPoint.Y = End.Bottom - (End.Height / 2); 
             return EndPoint;
         }
         public PointF ShiftedLabelLocation(PointF StartPoint, float radius, double angle, SizeF Label)
         {
             PointF EndPoint = new PointF();
             double degrees = ((angle * (180 / Math.PI)) + 360) % 360;
+            bool xmid = true;
+            bool ymid = false;
+            if (degrees != 90 || degrees != 270)
+            {
+                if (Math.Abs(Math.Tan(angle - (Math.PI / 2.0f)) * radius ) > (Label.Width / 4))
+                    xmid = false;
+                if (Math.Abs(Math.Tan(angle) * (radius * aspect_ratio)) < (Label.Height / 4))
+                    ymid = true;
+            }
 
-            if (degrees > 315 || degrees < 45)
-            {
-                EndPoint.X = StartPoint.X + (float)Math.Cos(angle) * radius; //X bound to left
-            }
-            else if (degrees > 135 && degrees < 225)
-            {
-                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - Label.Width; //X bound to right
-            }
-            else
+            if (xmid)
             {
                 EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2);//X bound to mid
             }
-
-            if (degrees > 45 && degrees < 135)
+            else if (degrees > 270 || degrees < 90)
             {
-                EndPoint.Y = StartPoint.Y + (float)Math.Sin(angle) * radius; //Y bound to bottom
+                EndPoint.X = StartPoint.X + (float)Math.Cos(angle) * radius; //X bound to left
             }
-            else if (degrees > 224 && degrees < 315)
+            else 
             {
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + Label.Height; //Y bound to top
+                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - Label.Width; //X bound to right
             }
-            else
+            
+            if (ymid)
             {
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * radius) + (Label.Height / 2); //Y bound to mid
+                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * (radius * aspect_ratio)) - (Label.Height / 2); //Y bound to mid
+            }
+            else if (degrees >=0 && degrees <= 180)
+            {
+                EndPoint.Y = StartPoint.Y + (float)Math.Sin(angle) * (radius * aspect_ratio); //Y bound to bottom
+            }
+            else 
+            {
+                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * (radius * aspect_ratio)) - Label.Height; //Y bound to top
             }
             return EndPoint;
         }
