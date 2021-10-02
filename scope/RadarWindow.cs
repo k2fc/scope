@@ -785,6 +785,10 @@ namespace DGScope
                             newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
                             if (bounds.IntersectsWith(otherBounds))
                             {
+                                conflictcount+=2;
+                            }
+                            if (bounds.IntersectsWith(otherPlane.TargetReturn.BoundsF))
+                            {
                                 conflictcount++;
                             }
                         }
