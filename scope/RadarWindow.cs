@@ -337,6 +337,8 @@ namespace DGScope
             //deconflictThread.IsBackground = true;
         }
 
+        
+
         byte[] settingshash;
         public void Run(bool isScreenSaver)
         {
@@ -389,7 +391,17 @@ namespace DGScope
 
         }
         bool hidewx = false;
+        private void Window_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Mouse.LeftButton == ButtonState.Pressed)
+            {
 
+            }
+            else if (e.Mouse.RightButton == ButtonState.Pressed)
+            {
+
+            }
+        }
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             var oldscale = scale;
@@ -735,16 +747,13 @@ namespace DGScope
                     }
                 }
             }
-            lock (radar.Aircraft)
-            {
-                foreach (Aircraft plane in radar.Aircraft)
-                {
-                    
-                }
-            }
+            
             
         }
-
+        private bool inRange (Aircraft plane)
+        {
+            return plane.Location.DistanceTo(radar.Location) <= radar.Range;
+        }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
             LeaderDirection newDirection = LDRDirection;
@@ -758,23 +767,32 @@ namespace DGScope
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
-                
-                for (int i = 0; i < 360; i+=45)
+                int minconflicts = int.MaxValue;
+                LeaderDirection bestDirection = newDirection;
+                for (int i = 0; i < 8; i++)
                 {
                     int conflictcount = 0;
-                    foreach (var otherAircraft in radar.Aircraft)
+                    List<Aircraft> otherAircraft = new List<Aircraft>();
+                    lock (radar.Aircraft)
                     {
-                        if (thisAircraft.ModeSCode != otherAircraft.ModeSCode)
+                        otherAircraft = radar.Aircraft.Where(x => radar.Location.DistanceTo(x.Location) <= radar.Range).ToList();
+                    }
+                    foreach (var otherPlane in otherAircraft)
+                    {
+                        if (thisAircraft.ModeSCode != otherPlane.ModeSCode)
                         {
-                            RectangleF otherBounds = new RectangleF(otherAircraft.DataBlock.LocationF, otherAircraft.DataBlock.SizeF);
-                            newDirection = (LeaderDirection)(((int)LDRDirection + i) % 360);
+                            RectangleF otherBounds = new RectangleF(otherPlane.DataBlock.LocationF, otherPlane.DataBlock.SizeF);
+                            newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
                             if (bounds.IntersectsWith(otherBounds))
                             {
                                 conflictcount++;
                             }
-                            
-                            
                         }
+                    }
+                    if (conflictcount < minconflicts)
+                    {
+                        minconflicts = conflictcount;
+                        bestDirection = newDirection;
                     }
                     if (conflictcount > 0)
                     {
@@ -809,6 +827,34 @@ namespace DGScope
                     {
                         break;
                     }
+                    
+                }
+                newDirection = bestDirection;
+                xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
+                yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
+                blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
+                blockLocation.X = thisAircraft.LocationF.X + xoffset;
+                                
+
+                switch (newDirection)
+                {
+                    case LeaderDirection.NW:
+                    case LeaderDirection.W:
+                    case LeaderDirection.SW:
+                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                        break;
+                }
+                switch (newDirection)
+                {
+                    case LeaderDirection.SW:
+                    case LeaderDirection.S:
+                    case LeaderDirection.SE:
+                    case LeaderDirection.E:
+                    case LeaderDirection.W:
+                    case LeaderDirection.NE:
+                    case LeaderDirection.NW:
+                        blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+                        break;
                 }
             }
             else
@@ -834,7 +880,7 @@ namespace DGScope
                         break;
                 }
             }
-            thisAircraft.ConnectingLine.Start = thisAircraft.LocationF;
+            PointF leaderStart = new PointF(thisAircraft.LocationF.X, thisAircraft.LocationF.Y);
             if (blockLocation.X < thisAircraft.LocationF.X)
             {
                 thisAircraft.ConnectingLine.End = new PointF(blockLocation.X + thisAircraft.DataBlock.SizeF.Width,
@@ -843,9 +889,43 @@ namespace DGScope
             else
             {
                 thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
-
             }
-           
+            switch (newDirection)
+            {
+                case LeaderDirection.NE:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    break;
+                case LeaderDirection.N:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    break;
+                case LeaderDirection.NW:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    break;
+                case LeaderDirection.SE:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    break;
+                case LeaderDirection.S:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    break;
+                case LeaderDirection.SW:
+                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    break;
+                case LeaderDirection.E:
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    break;
+                case LeaderDirection.W:
+                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    break;
+                default:
+                    Console.WriteLine("Welp");
+                    break;
+            }
+            
+            thisAircraft.ConnectingLine.Start = leaderStart;           
             
             return blockLocation;
         }
@@ -873,7 +953,7 @@ namespace DGScope
                 foreach (Aircraft plane in radar.Aircraft)
                 {
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
-                    plane.ConnectingLine.End = newLocation;
+                    //plane.ConnectingLine.End = newLocation;
                     plane.LocationF = newLocation;
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
                     //plane.DataBlock.Redraw = true;
