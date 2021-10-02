@@ -48,6 +48,8 @@ namespace DGScope
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
         public bool Drawn { get; set; } = false;
+        public bool Owned { get; set; } = false;
+        public bool Marked { get; set; } = false;
 
         bool ident;
 
