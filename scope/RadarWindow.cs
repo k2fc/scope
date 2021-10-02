@@ -20,6 +20,17 @@ namespace DGScope
 {
     public class RadarWindow
     {
+        public enum LeaderDirection
+        {
+            NW = 135, 
+            N  = 90,
+            NE = 45,
+            W  = 180,
+            E  = 0,
+            SW = 225,
+            S  = 270, 
+            SE = 315
+        }
         [XmlIgnore]
         [DisplayName("Background Color"),Description("Radar Background Color"), Category("Colors")] 
         public Color BackColor { get; set; } = Color.Black;
@@ -42,8 +53,8 @@ namespace DGScope
         [DisplayName("History Color"), Description("Color of aircraft history targets"), Category("Colors")]
         public Color HistoryColor { get; set; } = Color.Lime;
         [XmlIgnore]
-        [DisplayName("Connecting Line Color"), Description("Color of the lines which connect the primary returns to their associated data blocks"), Category("Colors")]
-        public Color ConnectingLineColor { get; set; } = Color.Lime;
+        [DisplayName("Leader Line Color"), Description("Color of the lines which connect the primary returns to their associated data blocks"), Category("Colors")]
+        public Color LeaderLineColor { get; set; } = Color.Lime;
 
         [XmlElement("BackColor")]
         [Browsable(false)]
@@ -271,24 +282,12 @@ namespace DGScope
         [XmlElement("FontSize")]
         [Browsable(false)] 
         public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
-        [DisplayName("Speed"), Description("The number of degrees to shift the data block per try"), Category("Data block deconflicting")]
-        public double DeconflictCircleSpeed { get; set; } = 5;
-        [DisplayName("Deconflict Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
-        public bool DeconflictEnabled { get; set; } = true;
-        [DisplayName("Max Size"), Description("The maximum number of pixels to move the data block before giving up"), Category("Data block deconflicting")]
-        public double DeconflictMaxSize { get; set; } = 100;
-        [DisplayName("Max Time"), Description("The maximum number of milliseconds to spend on one data block before giving up"), Category("Data block deconflicting")]
-        public double DeconflictMaxTime { get; set; } = 100;
-        [DisplayName("Grow Size"), Description("The number of pixels to move the data block per revolution"), Category("Data block deconflicting")]
-        public double DeconflictPixelsPerRev { get; set; } = 10;
-        [DisplayName("Label Weight"), Description("Weight of label conflicts in determining the best place for the data block"), Category("Data block deconflicting")]
-        public int DeconflictLabelWeight { get; set; } = 4;
-        [DisplayName("Line Weight"), Description("Weight of line conflicts in determining the best place for the data block"), Category("Data block deconflicting")]
-        public int DeconflictLineWeight { get; set; } = 1;
-        [DisplayName("Starting Size"), Description("The starting number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
-        public float DeconflictStartingSize { get; set; } = 10;
-        [DisplayName("Starting Angle"), Description("The starting angle to offset the data block from the target"), Category("Data block deconflicting")]
-        public double DeconflictStartingAngle { get; set; } = 45;
+        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
+        public bool AutoOffset { get; set; } = true;
+        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
+        public float LeaderLength { get; set; } = 10;
+        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
+        public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
         private GameWindow window;
@@ -318,7 +317,7 @@ namespace DGScope
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, 60000, 60000);
-            deconflictTimer = new Timer(new TimerCallback(Deconflict), null, 100, 1000);
+            //deconflictTimer = new Timer(new TimerCallback(Deconflict), null, 100, 100);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -710,16 +709,11 @@ namespace DGScope
                     aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                     aircraft.DataBlock.ParentAircraft = aircraft;
                     aircraft.Drawn = true;
+                    aircraft.DataBlock.LocationF = OffsetDatablockLocation(aircraft);
                     if (!dataBlocks.Contains(aircraft.DataBlock))
                     {
-                        aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
                         lock (dataBlocks)
                             dataBlocks.Add(aircraft.DataBlock);
-                    }
-                    else if (!DeconflictEnabled)
-                    {
-                        aircraft.DataBlock.LocationF = ShiftedLabelLocation(aircraft.LocationF, DeconflictStartingSize * xPixelScale, DeconflictStartingAngle * (Math.PI / 180), aircraft.DataBlock.SizeF);
-                        aircraft.DataBlock.NewLocation = aircraft.DataBlock.LocationF;
                     }
                 }
                 else
@@ -751,6 +745,111 @@ namespace DGScope
             
         }
 
+        private PointF OffsetDatablockLocation(Aircraft thisAircraft)
+        {
+            LeaderDirection newDirection = LDRDirection;
+            PointF blockLocation = new PointF();
+            float xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
+            float yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
+            blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
+            blockLocation.X = thisAircraft.LocationF.X + xoffset;
+            
+            if (AutoOffset)
+            {
+                
+                RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
+                
+                for (int i = 0; i < 360; i+=45)
+                {
+                    int conflictcount = 0;
+                    foreach (var otherAircraft in radar.Aircraft)
+                    {
+                        if (thisAircraft.ModeSCode != otherAircraft.ModeSCode)
+                        {
+                            RectangleF otherBounds = new RectangleF(otherAircraft.DataBlock.LocationF, otherAircraft.DataBlock.SizeF);
+                            newDirection = (LeaderDirection)(((int)LDRDirection + i) % 360);
+                            if (bounds.IntersectsWith(otherBounds))
+                            {
+                                conflictcount++;
+                            }
+                            
+                            
+                        }
+                    }
+                    if (conflictcount > 0)
+                    {
+                        xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
+                        yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
+                        blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
+                        blockLocation.X = thisAircraft.LocationF.X + xoffset;
+                        
+                        switch (newDirection)
+                        {
+                            case LeaderDirection.NW:
+                            case LeaderDirection.W:
+                            case LeaderDirection.SW:
+                                blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                                break;
+                        }
+                        switch (newDirection)
+                        {
+                            case LeaderDirection.SW:
+                            case LeaderDirection.S:
+                            case LeaderDirection.SE:
+                            case LeaderDirection.E:
+                            case LeaderDirection.W:
+                            case LeaderDirection.NE:
+                            case LeaderDirection.NW:
+                                blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+                                break;
+                        }
+                        bounds.Location = blockLocation;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                switch (newDirection)
+                {
+                    case LeaderDirection.NW:
+                    case LeaderDirection.W:
+                    case LeaderDirection.SW:
+                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                        break;
+                }
+                switch (newDirection)
+                {
+                    case LeaderDirection.SW:
+                    case LeaderDirection.S:
+                    case LeaderDirection.SE:
+                    case LeaderDirection.E:
+                    case LeaderDirection.W:
+                    case LeaderDirection.NE:
+                    case LeaderDirection.NW:
+                        blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+                        break;
+                }
+            }
+            thisAircraft.ConnectingLine.Start = thisAircraft.LocationF;
+            if (blockLocation.X < thisAircraft.LocationF.X)
+            {
+                thisAircraft.ConnectingLine.End = new PointF(blockLocation.X + thisAircraft.DataBlock.SizeF.Width,
+                        blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
+            }
+            else
+            {
+                thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
+
+            }
+           
+            
+            return blockLocation;
+        }
+
         Timer aircraftGCTimer;
 
         private void RescaleTargets(float scalechange, float ar_change)
@@ -763,19 +862,21 @@ namespace DGScope
             }
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
-                PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
+                /*PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
                 block.LocationF = newLocation;
                 block.NewLocation = newLocation;
-                block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
-                block.ParentAircraft.ConnectingLine.End = block.LocationF;
+                block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X * scalechange, (block.ParentAircraft.ConnectingLine.Start.Y * scalechange) / ar_change);
+                //block.ParentAircraft.ConnectingLine.End = block.LocationF;*/
             }
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
+                    plane.ConnectingLine.End = newLocation;
                     plane.LocationF = newLocation;
-                    plane.DataBlock.Redraw = true;
+                    plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
+                    //plane.DataBlock.Redraw = true;
                 }
             }
         }
@@ -795,8 +896,8 @@ namespace DGScope
                 lock (block.ParentAircraft.DeconflictLockObject)
                 {
                     block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
-                    block.ParentAircraft.ConnectingLine.Start = block.ParentAircraft.TargetReturn.LocationF;
-                    block.ParentAircraft.ConnectingLine.End = block.LocationF;
+                    block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X + xChange, block.ParentAircraft.ConnectingLine.Start.Y - yChange);
+                    block.ParentAircraft.ConnectingLine.End = new PointF(block.ParentAircraft.ConnectingLine.End.X + xChange, block.ParentAircraft.ConnectingLine.End.Y - yChange);
                     block.NewLocation = block.LocationF;
                 }
             }
@@ -889,6 +990,7 @@ namespace DGScope
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
+                Label.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
                 //text_bmp.Save($"{text_texture}.bmp");
             }
             
@@ -912,12 +1014,12 @@ namespace DGScope
 
             
             GL.Begin(PrimitiveType.Lines);
-            GL.Color4(ConnectingLineColor);
+            GL.Color4(LeaderLineColor);
             
             ConnectingLineF line = new ConnectingLineF();
-            line.ParentAircraft = Label.ParentAircraft;
-            line.End = ConnectingLinePoint(Label.ParentAircraft.TargetReturn.BoundsF, Label.BoundsF);
-            line.Start = ConnectingLinePoint(Label.BoundsF, Label.ParentAircraft.TargetReturn.BoundsF);
+            line = Label.ParentAircraft.ConnectingLine;
+            //line.End = ConnectingLinePoint(Label.ParentAircraft.TargetReturn.BoundsF, Label.BoundsF);
+            //line.Start = ConnectingLinePoint(Label.BoundsF, Label.ParentAircraft.TargetReturn.BoundsF);
             GL.Vertex2(line.Start.X, line.Start.Y);
             GL.Vertex2(line.End.X, line.End.Y);
             GL.End();
@@ -927,79 +1029,17 @@ namespace DGScope
 
         private void DrawAllScreenObjectBounds()
         {
-            List<IScreenObject> screenObjects = new List<IScreenObject>();
+            List<TransparentLabel> screenObjects = new List<TransparentLabel>();
             lock (dataBlocks)
                 screenObjects.AddRange(dataBlocks);
             
             foreach (var item in screenObjects)
             {
-                var bounds = new RectangleF(item.NewLocation, item.SizeF);
-                if (hasConflicts(item))
-                    DrawRectangle(bounds, Color.Red);
-                else
-                    DrawRectangle(bounds, Color.Gray);
+                var bounds = new RectangleF(item.LocationF, item.SizeF);
+                DrawRectangle(bounds, Color.Gray);
             }
         }
 
-        private bool hasConflicts (IScreenObject screenObject)
-        {
-            return conflictScore(screenObject) > 0;
-        }
-
-        private int conflictScore(IScreenObject thisObject)
-        {
-            List<IScreenObject> screenObjects = new List<IScreenObject>();
-            lock (PrimaryReturns)
-            {
-                screenObjects.AddRange(PrimaryReturns.ToList());
-            }
-            lock (dataBlocks)
-            {
-                screenObjects.AddRange(dataBlocks.ToList());
-            }
-            screenObjects.Remove(thisObject);
-            int score = 0;
-            RectangleF newBounds = new RectangleF(thisObject.NewLocation, thisObject.SizeF);
-            var thisAircraft = thisObject.ParentAircraft;
-            foreach (var otherObject in screenObjects)
-            {
-                var otherAircraft = otherObject.ParentAircraft;
-                if (thisAircraft.ModeSCode > otherAircraft.ModeSCode)
-                {
-                    RectangleF othernewBounds = new RectangleF(otherObject.NewLocation, otherObject.SizeF);
-                    if (othernewBounds.IntersectsWith(newBounds))
-                    {
-                        score += DeconflictLabelWeight;
-                        if (otherObject.GetType() == typeof(ConnectingLineF))
-                            score += DeconflictLineWeight;
-                        else
-                            score += DeconflictLabelWeight;
-                    }
-                    if (thisAircraft.ConnectingLine.IntersectsWith(othernewBounds) && otherAircraft != thisAircraft)
-                    {
-                        score += DeconflictLabelWeight;
-                    }
-                    if (thisAircraft.ConnectingLine.IntersectsWith(otherAircraft.ConnectingLine) && otherAircraft != thisAircraft)
-                    {
-                        score += DeconflictLineWeight;
-                    }
-                    if (otherAircraft.ConnectingLine.IntersectsWith(newBounds) && otherAircraft != thisAircraft)
-                    {
-                        score += DeconflictLabelWeight;
-                    }
-                    if (otherAircraft.ConnectingLine.IntersectsWith(thisAircraft.ConnectingLine) && thisAircraft != otherAircraft)
-                    {
-                        score += DeconflictLineWeight;
-                    }
-                }
-                else if (thisAircraft.DataBlock.BoundsF.IntersectsWith(otherAircraft.TargetReturn.BoundsF))
-                {
-                    //score += DeconflictLabelWeight;
-                }
-                
-            }
-            return score;
-        }
 
         private void DrawScreenObjectBounds(IScreenObject screenObject, Color color)
         {
@@ -1019,124 +1059,9 @@ namespace DGScope
             GL.Vertex2(rectangle.Left, rectangle.Top);
             GL.End();
         }
-        private void Deconflict(object state)
-        {
-            if (DeconflictEnabled)
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                int skipped = 0;
-                int worked = 0;
-                List<TransparentLabel> blocks;
-                lock (dataBlocks)
-                    blocks = dataBlocks.OrderBy(x => x.ParentAircraft.ModeSCode).ToList();
-                foreach (var label in blocks)
-                {
-                    bool locked = false;
-                    try
-                    {
-                        locked = Monitor.TryEnter(label.ParentAircraft.DeconflictLockObject);
-                        if (locked)
-                        {
-                            Deconflict(label);
-                            worked++;
-                        }
-                        else
-                        {
-                            Debug.WriteLine("{0} is already locked... skipping.", label.ParentAircraft);
-                            skipped++;
-                        }
-                    }
-                    finally
-                    {
-                        if (locked)
-                        {
-                            Monitor.Exit(label.ParentAircraft.DeconflictLockObject);
-                        }
-                    }
-                }
-                foreach (var label in blocks)
-                {
-                    label.LocationF = label.NewLocation;
-                }
-                Debug.WriteLine("Deconflict pass completed in {0} milliseconds. Worked {1} object and skipped {2}", (stopwatch.ElapsedTicks / 10000f), worked, skipped);
-            }
-            
-        }
+
         
-        private void Deconflict(IScreenObject ThisObject)
-        {
-            Stopwatch deconflictStopwatch = new Stopwatch();
-
-            if (!DeconflictEnabled)
-                return;
-            deconflictStopwatch.Restart();
-            if (window.WindowState == WindowState.Minimized || window.Width == 0 || window.Height == 0)
-                return;
-            RectangleF newBounds = ThisObject.BoundsF;
-            double circlespeed = DeconflictCircleSpeed * (Math.PI / 180);
-            float growsize = (float)(DeconflictPixelsPerRev * DeconflictCircleSpeed  * xPixelScale/360);
-            ConnectingLineF connectingLine = new ConnectingLineF();
-            connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, ThisObject.BoundsF);
-            //connectingLine.Start = new PointF(ThisObject.ParentAircraft.TargetReturn.BoundsF.Left + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Width / 2),
-                        //ThisObject.ParentAircraft.TargetReturn.BoundsF.Top + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Height / 2));
-            connectingLine.End = ConnectingLinePoint(ThisObject.BoundsF, ThisObject.ParentAircraft.TargetReturn.BoundsF);
-            connectingLine.ParentAircraft = ThisObject.ParentAircraft;
-            int loopcount = 0;
-            
-            int conflictcount;
-            
-            float circleSize = DeconflictStartingSize * xPixelScale;
-            double angle = DeconflictStartingAngle * (Math.PI / 180);
-            List<IScreenObject> screenObjects = new List<IScreenObject>();
-            lock (PrimaryReturns)
-            {
-                screenObjects.AddRange(PrimaryReturns.ToList());
-                screenObjects.AddRange(from x in PrimaryReturns select x.ParentAircraft.ConnectingLine);
-            }
-            lock (dataBlocks)
-                screenObjects.AddRange(dataBlocks.ToList());
-            screenObjects.Remove(ThisObject);
-            int minConflictCount = int.MaxValue;
-            float bestSize = float.MaxValue;
-            double bestAngle = 0;
-
-            do
-            {
-                
-                loopcount++;
-                ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, circleSize, angle, ThisObject.SizeF);
-                newBounds = new RectangleF(ThisObject.NewLocation, ThisObject.SizeF);
-                conflictcount = conflictScore(ThisObject);
-                connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, newBounds);
-                connectingLine.End = ConnectingLinePoint(newBounds, ThisObject.ParentAircraft.TargetReturn.BoundsF);
-                ThisObject.ParentAircraft.ConnectingLine = connectingLine;
-                angle += circlespeed;
-                circleSize += growsize;
-                if (conflictcount < minConflictCount)
-                {
-                    minConflictCount = conflictcount;
-                    bestAngle = angle;
-                    bestSize = circleSize;
-                }
-                else if (conflictcount == minConflictCount && circleSize < bestSize)
-                {
-                    bestSize = circleSize;
-                    bestAngle = angle;
-                }
-                else if (circleSize > DeconflictMaxSize * xPixelScale)
-                {
-                    Debug.WriteLine("Giving up trying to deconflict {0} after {1} tries.  Leaving it with {2} conflicts and a circle size of {3} pixels.",ThisObject.ParentAircraft,loopcount,conflictcount,bestSize/xPixelScale);
-                    ThisObject.NewLocation = ShiftedLabelLocation(ThisObject.ParentAircraft.LocationF, bestSize, bestAngle, ThisObject.SizeF); 
-                    newBounds = new RectangleF(ThisObject.NewLocation, ThisObject.SizeF);
-                    connectingLine.Start = ConnectingLinePoint(ThisObject.ParentAircraft.TargetReturn.BoundsF, newBounds);
-                    //connectingLine.Start = new PointF(ThisObject.ParentAircraft.TargetReturn.BoundsF.Left + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Width / 2),
-                    //    ThisObject.ParentAircraft.TargetReturn.BoundsF.Top + (ThisObject.ParentAircraft.TargetReturn.BoundsF.Height / 2));
-                    connectingLine.End = ConnectingLinePoint(newBounds, ThisObject.ParentAircraft.TargetReturn.BoundsF);
-                    return;
-                }
-            } while (hasConflicts(ThisObject)) ;
-        }
+        
 
 
         public PointF ConnectingLinePoint(RectangleF Start, RectangleF End)
