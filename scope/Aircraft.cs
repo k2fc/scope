@@ -119,9 +119,9 @@ namespace DGScope
             DataBlock.Left = TargetReturn.Right + 50;
             string vrchar = " ";
             if (VerticalRate > 100)
-                vrchar = "↑";
+                vrchar = " ";
             else if (VerticalRate < -100)
-                vrchar = "↓";
+                vrchar = " ";
             var oldtext = DataBlock.Text;
             if (Squawk == "1200")
                 DataBlock.Text = (Altitude / 100).ToString("D3") + " V";
@@ -145,9 +145,9 @@ namespace DGScope
             TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
             string vrchar = " ";
             if (VerticalRate > 100)
-                vrchar = "↑";
+                vrchar = " ";
             else if (VerticalRate < -100)
-                vrchar = "↓";
+                vrchar = " ";
             var oldtext = DataBlock.Text;
             DataBlock.Text = "";
             if (Ident)

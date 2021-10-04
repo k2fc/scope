@@ -754,16 +754,43 @@ namespace DGScope
         {
             return plane.Location.DistanceTo(radar.Location) <= radar.Range;
         }
+
+        private PointF OffsetDatablockLocation(Aircraft thisAircraft, LeaderDirection direction)
+        {
+            PointF blockLocation = new PointF();
+            float xoffset = (float)(Math.Cos((Math.PI / 180) * (double)direction) * LeaderLength * xPixelScale);
+            float yoffset = (float)(Math.Sin((Math.PI / 180) * (double)direction) * LeaderLength * yPixelScale);
+            blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
+            blockLocation.X = thisAircraft.LocationF.X + xoffset;
+            switch (direction)
+            {
+                case LeaderDirection.NW:
+                case LeaderDirection.W:
+                case LeaderDirection.SW:
+                    blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                    break;
+            }
+            switch (direction)
+            {
+                case LeaderDirection.SW:
+                case LeaderDirection.S:
+                case LeaderDirection.SE:
+                case LeaderDirection.E:
+                case LeaderDirection.W:
+                case LeaderDirection.NE:
+                case LeaderDirection.NW:
+                    blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+                    break;
+            }
+            return blockLocation;
+        }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
             LeaderDirection newDirection = LDRDirection;
-            PointF blockLocation = new PointF();
-            float xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
-            float yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
-            blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
-            blockLocation.X = thisAircraft.LocationF.X + xoffset;
+            PointF blockLocation = OffsetDatablockLocation(thisAircraft, LDRDirection);
             
-            if (AutoOffset)
+            
+            if (AutoOffset && inRange(thisAircraft))
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
@@ -775,14 +802,19 @@ namespace DGScope
                     List<Aircraft> otherAircraft = new List<Aircraft>();
                     lock (radar.Aircraft)
                     {
-                        otherAircraft = radar.Aircraft.Where(x => radar.Location.DistanceTo(x.Location) <= radar.Range).ToList();
+                        otherAircraft = radar.Aircraft.Where(x => inRange(x)).ToList();
                     }
+                    newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                    blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
+                    
+                    bounds.Location = blockLocation;
+
                     foreach (var otherPlane in otherAircraft)
                     {
                         if (thisAircraft.ModeSCode != otherPlane.ModeSCode)
                         {
                             RectangleF otherBounds = new RectangleF(otherPlane.DataBlock.LocationF, otherPlane.DataBlock.SizeF);
-                            newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                            
                             if (bounds.IntersectsWith(otherBounds))
                             {
                                 conflictcount+=2;
@@ -798,92 +830,24 @@ namespace DGScope
                         minconflicts = conflictcount;
                         bestDirection = newDirection;
                     }
-                    if (conflictcount > 0)
+                    if (conflictcount == 0)
                     {
-                        xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
-                        yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
-                        blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
-                        blockLocation.X = thisAircraft.LocationF.X + xoffset;
-                        
-                        switch (newDirection)
-                        {
-                            case LeaderDirection.NW:
-                            case LeaderDirection.W:
-                            case LeaderDirection.SW:
-                                blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
-                                break;
-                        }
-                        switch (newDirection)
-                        {
-                            case LeaderDirection.SW:
-                            case LeaderDirection.S:
-                            case LeaderDirection.SE:
-                            case LeaderDirection.E:
-                            case LeaderDirection.W:
-                            case LeaderDirection.NE:
-                            case LeaderDirection.NW:
-                                blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
-                                break;
-                        }
-                        bounds.Location = blockLocation;
+                        break;
                     }
                     else
                     {
-                        break;
+                        
                     }
-                    
                 }
-                newDirection = bestDirection;
-                xoffset = (float)(Math.Cos((Math.PI / 180) * (double)newDirection) * LeaderLength * xPixelScale);
-                yoffset = (float)(Math.Sin((Math.PI / 180) * (double)newDirection) * LeaderLength * yPixelScale);
-                blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
-                blockLocation.X = thisAircraft.LocationF.X + xoffset;
-                                
+                if (minconflicts > 0)
+                {
+                    newDirection = bestDirection;
+                }
+                blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
 
-                switch (newDirection)
-                {
-                    case LeaderDirection.NW:
-                    case LeaderDirection.W:
-                    case LeaderDirection.SW:
-                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
-                        break;
-                }
-                switch (newDirection)
-                {
-                    case LeaderDirection.SW:
-                    case LeaderDirection.S:
-                    case LeaderDirection.SE:
-                    case LeaderDirection.E:
-                    case LeaderDirection.W:
-                    case LeaderDirection.NE:
-                    case LeaderDirection.NW:
-                        blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
-                        break;
-                }
+
             }
-            else
-            {
-                switch (newDirection)
-                {
-                    case LeaderDirection.NW:
-                    case LeaderDirection.W:
-                    case LeaderDirection.SW:
-                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
-                        break;
-                }
-                switch (newDirection)
-                {
-                    case LeaderDirection.SW:
-                    case LeaderDirection.S:
-                    case LeaderDirection.SE:
-                    case LeaderDirection.E:
-                    case LeaderDirection.W:
-                    case LeaderDirection.NE:
-                    case LeaderDirection.NW:
-                        blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
-                        break;
-                }
-            }
+            
             PointF leaderStart = new PointF(thisAircraft.LocationF.X, thisAircraft.LocationF.Y);
             if (blockLocation.X < thisAircraft.LocationF.X)
             {
@@ -923,9 +887,6 @@ namespace DGScope
                     break;
                 case LeaderDirection.W:
                     leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
-                    break;
-                default:
-                    Console.WriteLine("Welp");
                     break;
             }
             
