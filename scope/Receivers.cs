@@ -56,8 +56,12 @@ namespace DGScope.Receivers
                 return new List<Aircraft>();
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
-            Stopwatch.Restart();
             List<Aircraft> TargetsScanned = new List<Aircraft>();
+            if (!Rotating && (Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) < 1)
+            {
+                return TargetsScanned;    
+            }
+            Stopwatch.Restart();
             lock (aircraft)
                         TargetsScanned.AddRange(from x in aircraft
                                             where ((x.Bearing(Location) >= lastazimuth &&
