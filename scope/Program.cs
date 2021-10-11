@@ -539,6 +539,21 @@ namespace DGScope
         }
     }
 
+    public class RangeBearingLine
+    {
+        public PointF Start { get; set; }
+        public PointF End { get; set; }
+
+        public GeoPoint StartGeo { get; set; }
+        public GeoPoint EndGeo { get; set; }
+
+        public Aircraft StartPlane { get; set; } = null;
+        public Aircraft EndPlane { get; set; } = null;
+        public PointF LocationF { get { return new PointF(Start.X > End.X ? End.X : Start.X, Start.Y > End.Y ? End.Y : Start.Y); } set { } }
+        public SizeF SizeF { get { return new SizeF(Math.Abs(Start.X - End.X), Math.Abs(Start.Y - End.Y)); } set { } }
+
+        public RectangleF BoundsF => new RectangleF(LocationF, SizeF);
+    }
     public class ConnectingLineF : IScreenObject
     {
         public PointF Start { get; set; }
