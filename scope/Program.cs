@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Linq;
 using DGScope.Receivers;
+using System.Security.Principal;
 
 namespace DGScope
 {
@@ -13,7 +14,7 @@ namespace DGScope
     {
         static void Start(bool screensaver = false)
         {
-            string settingsPath = screensaver? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
+            string settingsPath = (screensaver || IsAdministrator()) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml");
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
@@ -76,6 +77,13 @@ namespace DGScope
                 Start(false);
             }
         }
+
+        public static bool IsAdministrator()
+        {
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
         static RadarWindow TryLoad(string settingsPath)
         {
             try
@@ -86,7 +94,10 @@ namespace DGScope
             {
                 RadarWindow radarWindow = new RadarWindow();
                 Console.WriteLine(ex.StackTrace);
-                var mboxresult = MessageBox.Show("Error reading settings file.\n" + ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy the file and start a new config.", "Error reading settings file", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
+                var mboxresult = MessageBox.Show("Error reading settings file "+ settingsPath + "\n" + 
+                    ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy " +
+                    "the file and start a new config.", "Error reading settings file", 
+                    MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
                 if (mboxresult == DialogResult.Abort)
                     Environment.Exit(1);
                 else if (mboxresult == DialogResult.Retry)
