@@ -44,15 +44,45 @@ namespace DGScope
         public DateTime LastMessageTime { get; set; }
         public DateTime LastPositionTime { get; set; }
         public char TargetChar { get; set; }
-        public object DeconflictLockObject { get; set; } = new object();
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
+        public Line PTL { get; set; } = new Line();
         public bool Drawn { get; set; } = false;
         public bool Owned { get; set; } = false;
         public bool Marked { get; set; } = false;
 
-        bool ident;
+        public RadarWindow.LeaderDirection? LDRDirection = null;
+        public bool ShowCallsignWithNoSquawk { get; set; } = false;
+        public bool FDB { 
+            get
+            {
+                return _fdb;
+            }
+            set
+            {
+                DataBlock.Redraw = true;
+                _fdb = value;
+            }
+        }
 
+        bool ident;
+        bool _fdb = false;
+        private bool fdb()
+        {
+            if (Owned)
+            {
+                _fdb = true;
+                return true;
+            }
+            if (Emergency || ShowCallsignWithNoSquawk)
+            {
+                return true;
+            }
+            else
+            {
+                return _fdb;
+            }
+        }
         public Aircraft(int icaoID)
         {
             ModeSCode = icaoID;
@@ -100,7 +130,7 @@ namespace DGScope
 
         public TransparentLabel DataBlock = new TransparentLabel()
         {
-            ForeColor = Color.Lime,
+            //ForeColor = Color.Lime,
             //BackColor = Color.Transparent,
             TextAlign = ContentAlignment.TopLeft,
             AutoSize = true
@@ -111,38 +141,9 @@ namespace DGScope
             DataBlock.Dispose();
             TargetReturn.Dispose();
         }
-        public void RedrawTarget(int top, int left)
-        {
-            TargetReturn.Top = top - TargetReturn.Height / 2;
-            TargetReturn.Left = left - TargetReturn.Width / 2;
-            DataBlock.Top = TargetReturn.Top - 50;
-            DataBlock.Left = TargetReturn.Right + 50;
-            string vrchar = " ";
-            if (VerticalRate > 100)
-                vrchar = " ";
-            else if (VerticalRate < -100)
-                vrchar = " ";
-            var oldtext = DataBlock.Text;
-            if (Squawk == "1200")
-                DataBlock.Text = (Altitude / 100).ToString("D3") + " V";
-            else if (Callsign != null)
-                DataBlock.Text = Callsign + "\r\n" + (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
-            else
-                DataBlock.Text = (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
-            DataBlock.Redraw = DataBlock.Text != oldtext;
-            TargetReturn.Text = TargetChar.ToString();
-            TargetReturn.Refresh();
-            if (Emergency)
-                DataBlock.ForeColor = Color.Red;
-            else
-                DataBlock.ForeColor = Color.Lime;
-        }
 
-        public void RedrawTarget(PointF LocationF)
+        public void RedrawDataBlock()
         {
-            this.LocationF = LocationF;
-            TargetReturn.LocationF = LocationF;
-            TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
             string vrchar = " ";
             if (VerticalRate > 100)
                 vrchar = " ";
@@ -150,27 +151,32 @@ namespace DGScope
                 vrchar = " ";
             var oldtext = DataBlock.Text;
             DataBlock.Text = "";
-            if (Ident)
-                DataBlock.Text = "ID";
             if (Squawk == "7700")
                 DataBlock.Text += "EM" + "\r\n";
             else if (Squawk == "7600")
                 DataBlock.Text += "RF" + "\r\n";
-            else if (Ident)
-                DataBlock.Text += "\r\n";
-            if (Callsign != null && Squawk != "1200")
+            if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null)|| ShowCallsignWithNoSquawk))
                 DataBlock.Text += Callsign + "\r\n";
-            if (Squawk == "1200")
-                DataBlock.Text = (Altitude / 100).ToString("D3") + " V";
-            else 
+            if (!fdb())
+                DataBlock.Text = (Altitude / 100).ToString("D3");
+            else
                 DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
-            DataBlock.Redraw = DataBlock.Text != oldtext;
+            if (Squawk == "1200")
+                DataBlock.Text += " V";
+            if (Ident)
+                DataBlock.Text += "ID";
+            if (!DataBlock.Redraw)
+                DataBlock.Redraw = DataBlock.Text != oldtext;
+        }
+        
+        public void RedrawTarget(PointF LocationF)
+        {
+            this.LocationF = LocationF;
+            TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
+            TargetReturn.LocationF = LocationF;
+            RedrawDataBlock();
             TargetReturn.Text = TargetChar.ToString();
             TargetReturn.Refresh();
-            if (Emergency)
-                DataBlock.ForeColor = Color.Red;
-            else
-                DataBlock.ForeColor = Color.Lime;
         }
 
 
