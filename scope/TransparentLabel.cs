@@ -51,6 +51,7 @@ namespace DGScope
             }
             set
             {
+                Redraw = true;
                 base.ForeColor = value;
             }
         }
@@ -242,6 +243,7 @@ namespace DGScope
                 if (value == base.Text)
                     return;
                 base.Text = value;
+                Redraw = true;
                 RecreateHandle();
             }
         }
