@@ -1405,7 +1405,7 @@ namespace DGScope
             PointF blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
             
             
-            if (AutoOffset && inRange(thisAircraft) && thisAircraft.LDRDirection == null)
+            if (AutoOffset && inRange(thisAircraft) && thisAircraft.FDB)
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
@@ -1417,7 +1417,10 @@ namespace DGScope
                     List<TransparentLabel> otherDataBlocks = new List<TransparentLabel>();
                     lock (dataBlocks)
                         otherDataBlocks.AddRange(dataBlocks);
-                    newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                    if (thisAircraft.LDRDirection != null)
+                        newDirection = (LeaderDirection)(((int)thisAircraft.LDRDirection + (i * 45)) % 360);
+                    else
+                        newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
                     blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
                     
                     bounds.Location = blockLocation;
