@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 using System.Drawing.Design;
 using DGScope.Receivers;
 using System.Threading;
+using libmetar;
 
 namespace DGScope
 {
@@ -133,8 +134,7 @@ namespace DGScope
             set { HistoryColor = Color.FromArgb(value); }
         }
 
-        [Browsable(false)]
-        public PointF PreviewLocation { get; set; } = new PointF();
+        
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
@@ -219,6 +219,19 @@ namespace DGScope
         float oldar;
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public int RangeRingInterval { get; set; } = 5;
+        [DisplayName("Altimeter Stations"), Category("Display Properties")]
+        public string[] AltimeterStations 
+        {
+            get
+            {
+                return radar.AltimeterStations.ToArray();
+            }
+            set
+            {
+                radar.AltimeterStations = value.ToList();
+                cbWxUpdateTimer(null);
+            }
+        }
         private Radar radar = new Radar();
         [Browsable(false)]
         public bool isRadarRunning  => radar.isRunning;
@@ -327,12 +340,43 @@ namespace DGScope
         public float LeaderLength { get; set; } = 10;
         [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
+        [Browsable(false)]
+        public PointF PreviewLocation
+        {
+            get
+            {
+                return PreviewArea.LocationF;
+            }
+            set
+            {
+                PreviewArea.LocationF = value;
+            }
+        }
+        [Browsable(false)]
+        public PointF StatusLocation
+        {
+            get
+            {
+                return StatusArea.LocationF;
+            }
+            set
+            {
+                StatusArea.LocationF = value;
+            }
+        }
+        [DisplayName("Wind in Status Area"), Description("Show wind values in Status Area"), Category("Display Properties")]
+        public bool WindInStatusArea { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
         private GameWindow window;
         private bool isScreenSaver = false;
 
         private TransparentLabel PreviewArea = new TransparentLabel()
+        {
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoSize = true
+        };
+        private TransparentLabel StatusArea = new TransparentLabel()
         {
             TextAlign = ContentAlignment.MiddleLeft,
             AutoSize = true
@@ -348,7 +392,7 @@ namespace DGScope
             Initialize();
         }
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
-        
+        Timer wxUpdateTimer;
         private void Initialize()
         {
             window.Load += Window_Load;
@@ -363,6 +407,7 @@ namespace DGScope
             window.MouseMove += Window_MouseMove;
             window.MouseDown += Window_MouseDown;
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
+            wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -388,6 +433,11 @@ namespace DGScope
         {
             this.isScreenSaver = isScreenSaver;
             window.Run();
+        }
+
+        private void cbWxUpdateTimer(object state)
+        {
+            
         }
 
         private void cbAircraftGarbageCollectorTimer(object state)
@@ -674,7 +724,13 @@ namespace DGScope
                             case (int)Key.Q:
                                 QuickLook = !QuickLook;
                                 break;
-
+                            case (int)Key.S:
+                                if (!clickedplane)
+                                {
+                                    StatusArea.LocationF = (PointF)clicked;
+                                    Preview.Clear();
+                                }
+                                break;
                         }
                         break;
                 }
@@ -688,7 +744,26 @@ namespace DGScope
             PreviewArea.Redraw = oldtext != PreviewArea.Text;
             PreviewArea.ForeColor = DataBlockColor;
             DrawLabel(PreviewArea);
-
+        }
+        private void RenderStatus()
+        {
+            StatusArea.ForeColor = DataBlockColor;
+            StatusArea.Font = Font;
+            var oldtext = StatusArea.Text;
+            StatusArea.Text = "";
+            foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
+            {
+                if (metar.IsParsed)
+                {
+                    StatusArea.Text += metar.Icao + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                    if (WindInStatusArea)
+                        StatusArea.Text += " " + metar.Wind.Raw;
+                    StatusArea.Text += "\r\n";
+                }
+            }
+            if (oldtext != StatusArea.Text)
+                StatusArea.Redraw = true;
+            DrawLabel(StatusArea);
         }
         private string GeneratePreviewString(List<KeyCode> keys)
         {
@@ -1028,6 +1103,7 @@ namespace DGScope
         private void DrawStatic()
         {
             RenderPreview();
+            RenderStatus();
         }
         private void Window_Load(object sender, EventArgs e)
         {
@@ -1234,6 +1310,7 @@ namespace DGScope
         }
         private void GenerateTarget(Aircraft aircraft)
         {
+            aircraft.TrueAltitude = aircraft.PressureAltitude + radar.AltimeterCorrection;
             double bearing = radar.Location.BearingTo(aircraft.Location) - ScreenRotation;
             double distance = radar.Location.DistanceTo(aircraft.Location);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
