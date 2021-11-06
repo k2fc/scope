@@ -347,8 +347,6 @@ namespace DGScope
             window = new GameWindow(1000, 1000);
             Initialize();
         }
-        //Thread deconflictThread;
-        Timer deconflictTimer;
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
         
         private void Initialize()
@@ -365,7 +363,6 @@ namespace DGScope
             window.MouseMove += Window_MouseMove;
             window.MouseDown += Window_MouseDown;
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
-            //deconflictTimer = new Timer(new TimerCallback(Deconflict), null, 100, 100);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -382,9 +379,6 @@ namespace DGScope
                 settingshash = new byte[0];
             }
             PreviewArea.Font = Font;
-
-            //deconflictThread = new Thread(new ThreadStart(Deconflict));
-            //deconflictThread.IsBackground = true;
         }
 
 
@@ -1043,7 +1037,6 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             radar.Start();
-            //deconflictThread.Start();
             oldar = aspect_ratio;
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -1485,23 +1478,13 @@ namespace DGScope
                 PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange) / ar_change);
                 target.LocationF = newLocation;
             }
-            foreach (TransparentLabel block in dataBlocks.ToList())
-            {
-                /*PointF newLocation = new PointF(block.LocationF.X * scalechange, (block.LocationF.Y * scalechange) / ar_change);
-                block.LocationF = newLocation;
-                block.NewLocation = newLocation;
-                block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X * scalechange, (block.ParentAircraft.ConnectingLine.Start.Y * scalechange) / ar_change);
-                //block.ParentAircraft.ConnectingLine.End = block.LocationF;*/
-            }
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
-                    //plane.ConnectingLine.End = newLocation;
                     plane.LocationF = newLocation;
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
-                    //plane.DataBlock.Redraw = true;
                 }
             }
         }
@@ -1539,8 +1522,6 @@ namespace DGScope
             float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
             float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
             float circleradius = 4f * xPixelScale;
-            //target.SizeF = new SizeF(2 * circleradius, 2 * circleradius * aspect_ratio);
-            //DrawCircle(target.LocationF.X, target.LocationF.Y, circleradius, aspect_ratio, 25, target.ForeColor, true);
             
             target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 * aspect_ratio);
             
@@ -1625,7 +1606,6 @@ namespace DGScope
             GL.Begin(PrimitiveType.Quads);
             GL.Color4(Label.ForeColor);
             
-            //Deconflict(Label);
             var Location = Label.LocationF;
             var x = RoundUpToNearest(Location.X, xPixelScale);
             var y = RoundUpToNearest(Location.Y, yPixelScale);
@@ -1650,8 +1630,6 @@ namespace DGScope
             {
                 ConnectingLineF line = new ConnectingLineF();
                 line = Label.ParentAircraft.ConnectingLine;
-                //line.End = ConnectingLinePoint(Label.ParentAircraft.TargetReturn.BoundsF, Label.BoundsF);
-                //line.Start = ConnectingLinePoint(Label.BoundsF, Label.ParentAircraft.TargetReturn.BoundsF);
                 GL.Vertex2(line.Start.X, line.Start.Y);
                 GL.Vertex2(line.End.X, line.End.Y);
                 
@@ -1700,66 +1678,6 @@ namespace DGScope
         
 
 
-        public PointF ConnectingLinePoint(RectangleF Start, RectangleF End)
-        {
-            PointF EndPoint = new PointF();
-
-            if (End.Right < Start.Left)
-                EndPoint.X = End.Right;
-            else if (End.Left > Start.Right)
-                EndPoint.X = End.Left;
-            else
-                EndPoint.X = End.Left + (End.Width / 2);
-
-            if (End.Top > Start.Bottom)
-                EndPoint.Y = End.Top;
-            else if (End.Bottom < Start.Top)
-                EndPoint.Y = End.Bottom;
-            else
-                EndPoint.Y = End.Bottom - (End.Height / 2); 
-            return EndPoint;
-        }
-        public PointF ShiftedLabelLocation(PointF StartPoint, float radius, double angle, SizeF Label)
-        {
-            PointF EndPoint = new PointF();
-            double degrees = ((angle * (180 / Math.PI)) + 360) % 360;
-            bool xmid = true;
-            bool ymid = false;
-            if (degrees != 90 || degrees != 270)
-            {
-                if (Math.Abs(Math.Tan(angle - (Math.PI / 2.0f)) * radius ) > (Label.Width / 4))
-                    xmid = false;
-                if (Math.Abs(Math.Tan(angle) * (radius * aspect_ratio)) < (Label.Height / 4))
-                    ymid = true;
-            }
-
-            if (xmid)
-            {
-                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - (Label.Width / 2);//X bound to mid
-            }
-            else if (degrees > 270 || degrees < 90)
-            {
-                EndPoint.X = StartPoint.X + (float)Math.Cos(angle) * radius; //X bound to left
-            }
-            else 
-            {
-                EndPoint.X = StartPoint.X + ((float)Math.Cos(angle) * radius) - Label.Width; //X bound to right
-            }
-            
-            if (ymid)
-            {
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * (radius * aspect_ratio)) - (Label.Height / 2); //Y bound to mid
-            }
-            else if (degrees >=0 && degrees <= 180)
-            {
-                EndPoint.Y = StartPoint.Y + (float)Math.Sin(angle) * (radius * aspect_ratio); //Y bound to bottom
-            }
-            else 
-            {
-                EndPoint.Y = StartPoint.Y + ((float)Math.Sin(angle) * (radius * aspect_ratio)) - Label.Height; //Y bound to top
-            }
-            return EndPoint;
-        }
         public static float RoundUpToNearest(float passednumber, float roundto)
         {
             // 105.5 up to nearest 1 = 106
