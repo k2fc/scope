@@ -51,6 +51,8 @@ namespace DGScope
             }
             set
             {
+                if (base.ForeColor == value)
+                    return;
                 Redraw = true;
                 base.ForeColor = value;
             }
@@ -287,7 +289,8 @@ namespace DGScope
             set
             {
                 base.Font = value;
-                RecreateHandle();
+                if (value != base.Font)
+                    RecreateHandle();
             }
         }
 
