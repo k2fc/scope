@@ -56,29 +56,12 @@ namespace DGScope
 
         private int _altimeterCorrection = 0;
         private MetarService metarService = new MetarService();
+        
         public List<Metar> AllMetars
         {
             get 
             {
-                if (lastMetarUpdate < DateTime.Now.AddMinutes(-5))
-                {
-                    List<Metar> tempMetars = new List<Metar>();
-                    foreach (var metar in metarService.GetBulk())
-                    {
-                        try
-                        {
-                            metar.Parse();
-                            tempMetars.Add(metar);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Excluded {0} because: {1}", metar.Icao, ex.Message);
-                        }
-                    }
-                    lastMetarUpdate = DateTime.Now;
-                    correctioncalculated = false;
-                    allMetars = tempMetars;
-                }
+                GetWeather();
                 return allMetars;
             }
         }
@@ -119,6 +102,28 @@ namespace DGScope
         }
 
         DateTime lastMetarUpdate = DateTime.MinValue;
+        public void GetWeather()
+        {
+            if (lastMetarUpdate < DateTime.Now.AddMinutes(-5))
+            {
+                List<Metar> tempMetars = new List<Metar>();
+                foreach (var metar in metarService.GetBulk())
+                {
+                    try
+                    {
+                        metar.Parse();
+                        tempMetars.Add(metar);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Excluded {0} because: {1}", metar.Icao, ex.Message);
+                    }
+                }
+                lastMetarUpdate = DateTime.Now;
+                correctioncalculated = false;
+                allMetars = tempMetars;
+            }
+        }
         public double LatitudeOfTarget(double distance, double bearing)
         {
             double R = 3443.92; // nautical miles
