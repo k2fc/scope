@@ -16,6 +16,7 @@ using System.Drawing.Design;
 using DGScope.Receivers;
 using System.Threading;
 using libmetar;
+using System.Windows.Forms.Design;
 
 namespace DGScope
 {
@@ -62,7 +63,10 @@ namespace DGScope
         [XmlIgnore]
         [DisplayName("History Color"), Description("Color of aircraft history targets"), Category("Colors")]
         public Color HistoryColor { get; set; } = Color.Lime;
-        
+        [XmlIgnore]
+        [DisplayName("RBL Color"), Description("Color of range bearing lines"), Category("Colors")]
+        public Color RBLColor { get; set; } = Color.Silver;
+
         [XmlElement("BackColor")]
         [Browsable(false)]
         public int BackColorAsArgb
@@ -133,8 +137,14 @@ namespace DGScope
             get { return HistoryColor.ToArgb(); }
             set { HistoryColor = Color.FromArgb(value); }
         }
+        [XmlElement("RBLColor")]
+        [Browsable(false)]
+        public int RBLColorAsArgb
+        {
+            get { return RBLColor.ToArgb(); }
+            set { RBLColor = Color.FromArgb(value); }
+        }
 
-        
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
@@ -219,6 +229,52 @@ namespace DGScope
         float oldar;
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public int RangeRingInterval { get; set; } = 5;
+        [DisplayName("Airports file"), Category("Navigation Data")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public string AirportsFileName
+        {
+            get
+            {
+                return airportsFileName;
+            }
+            set
+            {
+                try
+                {
+                    radar.Airports = XmlSerializer<Airports>.DeserializeFromFile(value);
+                    airportsFileName = value;
+                    OrderWaypoints();
+                }
+                catch
+                {
+                    radar.Airports = new Airports();
+                }
+            }
+        }
+        private string airportsFileName = "";
+        [DisplayName("Waypoints file"), Category("Navigation Data")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public string WaypointsFileName
+        {
+            get
+            {
+                return waypointsFileName;
+            }
+            set
+            {
+                try
+                {
+                    radar.Waypoints = XmlSerializer<Waypoints>.DeserializeFromFile(value);
+                    waypointsFileName = value;
+                    OrderWaypoints();
+                }
+                catch
+                {
+                    radar.Airports = new Airports();
+                }
+            }
+        }
+        private string waypointsFileName = "";
         [DisplayName("Altimeter Stations"), Category("Display Properties")]
         public string[] AltimeterStations 
         {
@@ -254,6 +310,7 @@ namespace DGScope
             {
                 radar.Location = value;
                 _homeLocation = value;
+                OrderWaypoints();
             }
         }
         private double _startingRange = 20;
@@ -393,6 +450,8 @@ namespace DGScope
         }
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
         Timer wxUpdateTimer;
+        List<WaypointsWaypoint> Waypoints;
+        List<Airport> Airports;
         private void Initialize()
         {
             window.Load += Window_Load;
@@ -423,7 +482,8 @@ namespace DGScope
             {
                 settingshash = new byte[0];
             }
-            PreviewArea.Font = Font;
+            
+            
         }
 
 
@@ -455,7 +515,23 @@ namespace DGScope
                 lock (dataBlocks)
                     dataBlocks.Remove(plane.DataBlock);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
+                Predicate<RangeBearingLine> deleteLine = line => line.EndPlane == plane || line.StartPlane == plane;
+                lock (rangeBearingLines)
+                {
+                    rangeBearingLines.RemoveAll(deleteLine);
+                }
+
             }
+        }
+
+        private void OrderWaypoints()
+        {
+            try
+            {
+                Airports = radar.Airports.Airport.ToList();
+                Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(ScreenCenterPoint)).ToList();
+            }
+            catch { }
         }
         private void Window_WindowStateChanged(object sender, EventArgs e)
         {
@@ -463,8 +539,12 @@ namespace DGScope
         }
 
         bool _mousesettled = false;
+        Point MouseLocation = new Point(0, 0);
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
+            MouseLocation = e.Position;
+            if (tempLine != null)
+                tempLine.End = LocationFromScreenPoint(e.Position);
             if (!e.Mouse.IsAnyButtonDown)
             {
                 double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
@@ -505,7 +585,20 @@ namespace DGScope
             var clicked = ClickedObject(e.Position);
             if (e.Mouse.LeftButton == ButtonState.Pressed)
             {
-                 ProcessCommand(Preview, clicked);
+                if (tempLine == null) 
+                    ProcessCommand(Preview, clicked);
+                else if (clicked.GetType() == typeof(Aircraft))
+                {
+                    tempLine.EndPlane = (Aircraft)clicked;
+                    tempLine = null;
+                    Preview.Clear();
+                }
+                else
+                {
+                    tempLine.EndGeo = ScreenToGeoPoint(e.Position);
+                    tempLine = null;
+                    Preview.Clear();
+                }
             }
             else if (e.Mouse.MiddleButton == ButtonState.Pressed)
             {
@@ -559,16 +652,19 @@ namespace DGScope
 
 
         bool waitingfortarget = false;
+        RangeBearingLine tempLine;
         private void ProcessCommand(List<KeyCode> KeyList, object clicked = null)
         {
             bool clickedplane = false;
             bool enter = false;
+            
             if (clicked != null)
                 clickedplane = clicked.GetType() == typeof(Aircraft);
             else
+            {
                 enter = true;
-            
-            
+            }
+
             if (KeyList.Count < 1 && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
@@ -598,6 +694,17 @@ namespace DGScope
                             
                     }
                     keys[i] = command.ToArray();
+                }
+                string lastline = KeysToString(keys[commands - 1]);
+                Aircraft typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
+                    .Find(x => x.Callsign.Trim() == lastline.Trim());
+                if (typed != null)
+                {
+                    if (typed.Squawk != "1200" && typed.Squawk!= null )
+                    {
+                        clicked = typed;
+                        clickedplane = true;
+                    }
                 }
                 switch ((int)keys[0][0])
                 {
@@ -693,19 +800,59 @@ namespace DGScope
                         switch ((int)keys[0][1])
                         {
                             case (int)Key.T:
-                                if (enter)
+                                if (clickedplane)
+                                {
+                                    if (tempLine == null)
+                                    {
+                                        tempLine = new RangeBearingLine() { StartPlane = (Aircraft)clicked, End = LocationFromScreenPoint(MouseLocation) };
+                                        lock(rangeBearingLines)
+                                            rangeBearingLines.Add(tempLine);
+                                    }
+                                    Preview.Clear();
+                                }
+                                else if (enter)
                                 {
                                     if (keys[0].Length == 2)
                                     {
-                                        rangeBearingLines.Clear();
+                                        lock (rangeBearingLines)
+                                            rangeBearingLines.Clear();
                                         Preview.Clear();
                                     }
-                                    else if (keys[0].Length > 2)
+                                    if (keys[0].Length > 2)
                                     {
-
+                                        int rblIndex = 0;
+                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        if (int.TryParse(entered, out rblIndex))
+                                        {
+                                            if (rblIndex <= rangeBearingLines.Count)
+                                            {
+                                                lock (rangeBearingLines)
+                                                    rangeBearingLines.RemoveAt(rblIndex - 1);
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var waypoint = Waypoints.Find(x => x.ID == entered);
+                                            if (waypoint != null)
+                                            {
+                                                tempLine = new RangeBearingLine() { StartGeo = waypoint.Location, End = LocationFromScreenPoint(MouseLocation) };
+                                                lock (rangeBearingLines)
+                                                    rangeBearingLines.Add(tempLine);
+                                                Preview.Clear();
+                                            }
+                                            
+                                        }
                                     }
-                                    
                                 }
+                                else if (tempLine == null)
+                                {
+                                    tempLine = new RangeBearingLine() { StartGeo = ScreenToGeoPoint((PointF)clicked) };
+                                    lock (rangeBearingLines)
+                                        rangeBearingLines.Add(tempLine);
+                                    Preview.Clear();
+                                }
+
                                 break;
                         }
                         break;
@@ -735,6 +882,136 @@ namespace DGScope
                         break;
                 }
             }
+        }
+
+        private string KeysToString (KeyCode[] keys)
+        {
+            string output = "";
+            foreach (var key in keys)
+            {
+                switch ((int)key)
+                {
+                    case (int)Key.A:
+                        output += "A";
+                        break;
+                    case (int)Key.B:
+                        output += "B";
+                        break;
+                    case (int)Key.C:
+                        output += "C";
+                        break;
+                    case (int)Key.D:
+                        output += "D";
+                        break;
+                    case (int)Key.E:
+                        output += "E";
+                        break;
+                    case (int)Key.F:
+                        output += "F";
+                        break;
+                    case (int)Key.G:
+                        output += "G";
+                        break;
+                    case (int)Key.H:
+                        output += "H";
+                        break;
+                    case (int)Key.I:
+                        output += "I";
+                        break;
+                    case (int)Key.J:
+                        output += "J";
+                        break;
+                    case (int)Key.K:
+                        output += "K";
+                        break;
+                    case (int)Key.L:
+                        output += "L";
+                        break;
+                    case (int)Key.M:
+                        output += "M";
+                        break;
+                    case (int)Key.N:
+                        output += "N";
+                        break;
+                    case (int)Key.O:
+                        output += "O";
+                        break;
+                    case (int)Key.P:
+                        output += "P";
+                        break;
+                    case (int)Key.Q:
+                        output += "Q";
+                        break;
+                    case (int)Key.R:
+                        output += "R";
+                        break;
+                    case (int)Key.S:
+                        output += "S";
+                        break;
+                    case (int)Key.T:
+                        output += "T";
+                        break;
+                    case (int)Key.U:
+                        output += "U";
+                        break;
+                    case (int)Key.V:
+                        output += "V";
+                        break;
+                    case (int)Key.W:
+                        output += "W";
+                        break;
+                    case (int)Key.X:
+                        output += "X";
+                        break;
+                    case (int)Key.Y:
+                        output += "Y";
+                        break;
+                    case (int)Key.Z:
+                        output += "Z";
+                        break;
+                    case (int)Key.Keypad0:
+                    case (int)Key.Number0:
+                        output += "0";
+                        break;
+                    case (int)Key.Keypad1:
+                    case (int)Key.Number1:
+                        output += "1";
+                        break;
+                    case (int)Key.Keypad2:
+                    case (int)Key.Number2:
+                        output += "2";
+                        break;
+                    case (int)Key.Keypad3:
+                    case (int)Key.Number3:
+                        output += "3";
+                        break;
+                    case (int)Key.Keypad4:
+                    case (int)Key.Number4:
+                        output += "4";
+                        break;
+                    case (int)Key.Keypad5:
+                    case (int)Key.Number5:
+                        output += "5";
+                        break;
+                    case (int)Key.Keypad6:
+                    case (int)Key.Number6:
+                        output += "6";
+                        break;
+                    case (int)Key.Keypad7:
+                    case (int)Key.Number7:
+                        output += "7";
+                        break;
+                    case (int)Key.Keypad8:
+                    case (int)Key.Number8:
+                        output += "8";
+                        break;
+                    case (int)Key.Keypad9:
+                    case (int)Key.Number9:
+                        output += "9";
+                        break;
+                }
+            }
+                return output;
         }
 
         private void RenderPreview()
@@ -968,12 +1245,6 @@ namespace DGScope
                         selector.BringToFront();
                         selector.Focus();
                         break;
-                    case Key.F11:
-                        if (isScreenSaver)
-                            Environment.Exit(0);
-                        else
-                            window.WindowState = window.WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
-                        break;
                     case Key.T:
                         if (!showAllCallsigns)
                         {
@@ -1004,6 +1275,20 @@ namespace DGScope
                         break;
                 }
             }
+            else if (e.Alt)
+            {
+                switch (e.Key)
+                {
+                    case Key.Enter:
+                    case Key.KeypadEnter:
+                        if (isScreenSaver)
+                            Environment.Exit(0);
+                        else
+                            window.WindowState = window.WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
+                        break;
+
+                }
+            }
             else
             {
                 switch (e.Key)
@@ -1011,6 +1296,12 @@ namespace DGScope
                     case Key.Escape:
                         Preview.Clear();
                         PreviewArea.Redraw = true;
+                        if (tempLine != null)
+                        {
+                            lock (rangeBearingLines)
+                                rangeBearingLines.Remove(tempLine);
+                            tempLine = null;
+                        }
                         break;
                     case Key.Enter:
                     case Key.KeypadEnter:
@@ -1021,7 +1312,10 @@ namespace DGScope
                             Preview.RemoveAt(Preview.Count - 1);
                         break;
                     default:
-                        Preview.Add((KeyCode)e.Key);
+                        if ((int)e.Key > 9 && (int)e.Key < 22)
+                            Preview.Clear();
+                        if ((int)e.Key < 21 || (int)e.Key > 25)
+                            Preview.Add((KeyCode)e.Key);
                         break;
                 }
             }
@@ -1095,10 +1389,96 @@ namespace DGScope
             DrawVideoMapLines();
             GenerateTargets();
             DrawTargets();
+            DrawRBLs();
             DrawStatic();
             GL.Flush();
             window.SwapBuffers();
             window.Title = $"(Vsync: {window.VSync}) FPS: {1f / e.Time:0} Aircraft: {radar.Aircraft.Count}";
+        }
+        private PointF GeoToScreenPoint(GeoPoint geoPoint)
+        {
+            double bearing = radar.Location.BearingTo(geoPoint) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(geoPoint);
+            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
+            return new PointF(x, y);
+        }
+
+        private GeoPoint ScreenToGeoPoint(PointF Point)
+        {
+            double r = Math.Sqrt(Math.Pow(Point.X, 2) + Math.Pow(Point.Y / aspect_ratio, 2));
+            double angle = Math.Atan((Point.Y / aspect_ratio) / Point.X);
+            if (Point.X < 0)
+                angle += Math.PI;
+            double bearing = 90 - (angle * 180 / Math.PI) + ScreenRotation;
+            double distance = r * scale;
+            return radar.Location.FromPoint(distance, bearing);
+        }
+        private GeoPoint ScreenToGeoPoint(Point Point)
+        {
+            return ScreenToGeoPoint(LocationFromScreenPoint(Point));
+        }
+        private void DrawRBLs()
+        {
+            List<RangeBearingLine> lines;
+            lock (rangeBearingLines)
+                lines = rangeBearingLines.ToList();
+            foreach (var line in lines)
+            {
+                var index = rangeBearingLines.IndexOf(line) + 1;
+                if (line.End == null|| (line.End.X == 0 && line.End.Y == 0))
+                    return;
+                if (line.StartPlane != null)
+                {
+                    line.Start = line.StartPlane.LocationF;
+                    line.StartGeo = line.StartPlane.Location;
+                    line.Line.End1 = line.StartPlane.Location;
+                }
+                else if (line.StartGeo != null)
+                {
+                    line.Start = GeoToScreenPoint((GeoPoint)line.StartGeo);
+                    line.Line.End1 = line.StartGeo;
+                }
+                else
+                {
+                    return;
+                }
+
+                if (line.EndPlane != null)
+                {
+                    line.End = line.EndPlane.LocationF;
+                    line.EndGeo = line.EndPlane.Location;
+                    line.Line.End2 = line.EndPlane.Location;
+                }
+                else if (line.EndGeo != null)
+                {
+                    line.End = GeoToScreenPoint((GeoPoint)line.EndGeo);
+                    line.Line.End2 = line.EndGeo;
+                }
+                
+                DrawLine(line.Start, line.End, RBLColor);
+                line.Label.ForeColor = RBLColor;
+                line.Label.LocationF = line.End;
+                int bearing = 0;
+                double range = 0;
+                if (line.EndGeo != null)
+                {
+                    bearing = (int)(line.StartGeo.BearingTo(line.EndGeo) - ScreenRotation + 720) % 360;
+                    if (bearing == 000)
+                        bearing = 360;
+                    range = line.StartGeo.DistanceTo(line.EndGeo);
+                }
+                else
+                {
+                    GeoPoint tempEndGeo = ScreenToGeoPoint(line.End);
+                    bearing = (int)(line.StartGeo.BearingTo(tempEndGeo) - ScreenRotation + 720) % 360;
+                    if (bearing == 000)
+                        bearing = 360;
+                    range = line.StartGeo.DistanceTo(tempEndGeo);
+                }
+                line.Label.Text = string.Format("{0}/{1}-{2}", bearing.ToString("000"), range.ToString("0.0"), index);
+                DrawLabel(line.Label);
+            }
         }
         private void DrawStatic()
         {
@@ -1213,6 +1593,10 @@ namespace DGScope
             }
         }
 
+        private void DrawLine(PointF Point1, PointF Point2, Color color)
+        {
+            DrawLine(Point1.X, Point1.Y, Point2.X, Point2.Y, color);
+        }
         private void DrawLine(Line line, Color color)
         {
             double scale = radar.Range / Math.Sqrt(2);

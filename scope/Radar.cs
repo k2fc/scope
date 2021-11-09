@@ -17,7 +17,8 @@ namespace DGScope
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class Radar
     {
-        public GeoPoint Location { get; set; } = new GeoPoint();
+        public GeoPoint Location { get; 
+            set; } = new GeoPoint();
         [Browsable(false)]
         public double Latitude { get => Location.Latitude; }
         [Browsable(false)]
@@ -35,6 +36,10 @@ namespace DGScope
         [Browsable(false)]
         public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
+        [XmlIgnore]
+        public Airports Airports { get; set; } = new Airports();
+        [XmlIgnore]
+        public Waypoints Waypoints { get; set; } = new Waypoints();
         public Font DataBlockFont { get; set; }
         private List<string> _altimeterStations = new List<string>();
         public List<string> AltimeterStations 
