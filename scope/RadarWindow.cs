@@ -423,6 +423,8 @@ namespace DGScope
         }
         [DisplayName("Wind in Status Area"), Description("Show wind values in Status Area"), Category("Display Properties")]
         public bool WindInStatusArea { get; set; } = false;
+        [DisplayName("FPS in Status Area"), Description("Show FPS in Status Area"), Category("Display Properties")]
+        public bool FPSInStatusArea { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
 
         private GameWindow window;
@@ -454,6 +456,7 @@ namespace DGScope
         List<Airport> Airports;
         private void Initialize()
         {
+            window.Title = "DGScope";
             window.Load += Window_Load;
             window.Closing += Window_Closing;
             window.RenderFrame += Window_RenderFrame;
@@ -515,12 +518,8 @@ namespace DGScope
                 lock (dataBlocks)
                     dataBlocks.Remove(plane.DataBlock);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
-                Predicate<RangeBearingLine> deleteLine = line => line.EndPlane == plane || line.StartPlane == plane;
                 lock (rangeBearingLines)
-                {
-                    rangeBearingLines.RemoveAll(deleteLine);
-                }
-
+                    rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
             }
         }
 
@@ -1079,6 +1078,8 @@ namespace DGScope
                     StatusArea.Text += "\r\n";
                 }
             }
+            if (FPSInStatusArea)
+                StatusArea.Text += $"FPS: {fps} AC: {radar.Aircraft.Count}";
             if (oldtext != StatusArea.Text)
                 StatusArea.Redraw = true;
             DrawLabel(StatusArea);
@@ -1413,7 +1414,7 @@ namespace DGScope
         private void Window_UpdateFrame(object sender, FrameEventArgs e)
         {
         }
-
+        private int fps = 0;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
             if (window.WindowState == WindowState.Minimized)
@@ -1434,7 +1435,7 @@ namespace DGScope
             DrawStatic();
             GL.Flush();
             window.SwapBuffers();
-            window.Title = $"(Vsync: {window.VSync}) FPS: {1f / e.Time:0} Aircraft: {radar.Aircraft.Count}";
+            fps = (int)(1f / e.Time);
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
