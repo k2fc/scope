@@ -2112,8 +2112,8 @@ namespace DGScope
             var Location = Label.LocationF;
             var x = RoundUpToNearest(Location.X, xPixelScale);
             var y = RoundUpToNearest(Location.Y, yPixelScale);
-            var width = RoundUpToNearest(Label.SizeF.Width, xPixelScale);
-            var height = RoundUpToNearest(Label.SizeF.Height, yPixelScale);
+            var width = Label.SizeF.Width;
+            var height = Label.SizeF.Height;
             GL.TexCoord2(0,0);
             GL.Vertex2(x, height + y);
             GL.TexCoord2(1, 0); 
