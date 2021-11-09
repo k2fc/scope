@@ -482,7 +482,7 @@ namespace DGScope
             {
                 settingshash = new byte[0];
             }
-            
+            OrderWaypoints();
             
         }
 
@@ -529,9 +529,21 @@ namespace DGScope
             try
             {
                 Airports = radar.Airports.Airport.ToList();
+            }
+            catch 
+            { 
+                radar.Airports.Airport = new Airport[1] { new Airport() };
+                Airports = radar.Airports.Airport.ToList();
+            }
+            try
+            {
                 Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(ScreenCenterPoint)).ToList();
             }
-            catch { }
+            catch 
+            { 
+                radar.Waypoints.Waypoint = new WaypointsWaypoint[1] { new WaypointsWaypoint() };
+                Waypoints = radar.Waypoints.Waypoint.ToList();
+            }
         }
         private void Window_WindowStateChanged(object sender, EventArgs e)
         {

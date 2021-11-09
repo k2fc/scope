@@ -17,8 +17,7 @@ namespace DGScope
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class Radar
     {
-        public GeoPoint Location { get; 
-            set; } = new GeoPoint();
+        public GeoPoint Location { get; set; } = new GeoPoint();
         [Browsable(false)]
         public double Latitude { get => Location.Latitude; }
         [Browsable(false)]
