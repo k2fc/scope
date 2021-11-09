@@ -12,7 +12,17 @@ namespace DGScope
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string Callsign { get; set; }
-        public int Altitude { get; set; }
+        public int PressureAltitude { get; set; }
+        public int TrueAltitude { get; set; }
+        public int Altitude
+        {
+            get
+            {
+                if (TrueAltitude <= 18000)
+                    return TrueAltitude;
+                return PressureAltitude;
+            }
+        }
         public GeoPoint Location
         {
             get
@@ -31,7 +41,7 @@ namespace DGScope
         public int GroundSpeed { get; set; }
         public int Track { get; set; }
         public int VerticalRate { get; set; }
-        public bool Ident { get => ident; 
+        public bool Ident { get => ident;
             set
             {
                 ident = value;
@@ -47,6 +57,9 @@ namespace DGScope
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
         public Line PTL { get; set; } = new Line();
+        public string? Destination  { get; set; }
+        public string? Scratchpad { get; set; }
+        public string? Type { get; set; }
         public bool Drawn { get; set; } = false;
         public bool Owned { get; set; } = false;
         public bool Marked { get; set; } = false;
@@ -117,7 +130,7 @@ namespace DGScope
                       Math.Sin(Δλ / 2) * Math.Sin(Δλ / 2);
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 
-            double alt = Altitude / 6076.12;
+            double alt = TrueAltitude / 6076.12;
 
 
             double dist = Math.Sqrt((R * c) * (R * c) + (alt * alt)); // in nautical miles

@@ -7,8 +7,7 @@ using DGScope.Receivers;
 
 namespace DGScope
 {
-    
-    public class ListOfIReceiver : List<Receiver>, IXmlSerializable
+     public class ListOfIReceiver : List<Receiver>, IXmlSerializable
     {
         public ListOfIReceiver() : base() { }
         public XmlSchema GetSchema()
