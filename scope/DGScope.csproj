@@ -189,6 +189,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aircraft.cs" />
+    <Compile Include="AirportsXml.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
     <Compile Include="Line.cs" />
@@ -208,7 +209,6 @@
     <Compile Include="ReceiverCollectionEditor.cs" />
     <Compile Include="Receivers.cs" />
     <Compile Include="RuntimeServiceProvider.cs" />
-    <Compile Include="Runway.cs" />
     <Compile Include="TransparentLabel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -221,6 +221,7 @@
     </Compile>
     <Compile Include="VRCFileParser.cs" />
     <Compile Include="VSTARSFileParser.cs" />
+    <Compile Include="Waypoints.cs" />
     <Compile Include="XmlSerializer.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
