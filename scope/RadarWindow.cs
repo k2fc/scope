@@ -497,7 +497,7 @@ namespace DGScope
 
         private void cbWxUpdateTimer(object state)
         {
-            
+            radar.GetWeather();
         }
 
         private void cbAircraftGarbageCollectorTimer(object state)
@@ -819,6 +819,35 @@ namespace DGScope
                                         tempLine = new RangeBearingLine() { StartPlane = (Aircraft)clicked, End = LocationFromScreenPoint(MouseLocation) };
                                         lock(rangeBearingLines)
                                             rangeBearingLines.Add(tempLine);
+                                    }
+                                    if (keys[0].Length > 2)
+                                    {
+                                        int rblIndex = 0;
+                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        if (int.TryParse(entered, out rblIndex))
+                                        {
+                                            if (rblIndex <= rangeBearingLines.Count)
+                                            {
+                                                lock (rangeBearingLines)
+                                                    rangeBearingLines.RemoveAt(rblIndex - 1);
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var waypoint = Waypoints.Find(x => x.ID == entered);
+                                            if (waypoint != null)
+                                            {
+                                                tempLine.StartGeo = waypoint.Location;
+                                                Preview.Clear();
+                                            }
+
+                                        }
+                                        if (clickedplane)
+                                        {
+                                            tempLine.EndPlane = (Aircraft)clicked;
+                                            tempLine = null;
+                                        }
                                     }
                                     Preview.Clear();
                                 }
