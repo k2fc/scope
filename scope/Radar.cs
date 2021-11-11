@@ -82,13 +82,22 @@ namespace DGScope
                 if (!correctioncalculated || lastMetarUpdate < DateTime.Now.AddMinutes(-5))
                 {
                     double totalaltimeter = 0;
+                    int metarscount = Metars.Count;
                     if (Metars.Count > 0)
                     {
                         foreach (var metar in Metars)
                         {
-                            totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
-                        }
-                        totalaltimeter /= Metars.Count;
+                            try
+                            {
+                                totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
+                            }
+                            catch
+                            {
+                                metarscount--;
+                            }
+
+                            }
+                        totalaltimeter /= metarscount;
                     }
                     else
                     {
