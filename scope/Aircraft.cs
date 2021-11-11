@@ -53,7 +53,6 @@ namespace DGScope
         public bool Alert { get; set; }
         public DateTime LastMessageTime { get; set; }
         public DateTime LastPositionTime { get; set; }
-        public char TargetChar { get; set; }
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
         public Line PTL { get; set; } = new Line();
@@ -149,6 +148,13 @@ namespace DGScope
             AutoSize = true
         };
 
+        public TransparentLabel PositionIndicator = new TransparentLabel()
+        {
+            TextAlign = ContentAlignment.MiddleCenter,
+            Text = "*",
+            AutoSize = true
+        };
+
         public void Dispose()
         {
             DataBlock.Dispose();
@@ -187,8 +193,8 @@ namespace DGScope
             this.LocationF = LocationF;
             TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
             TargetReturn.LocationF = LocationF;
+            PositionIndicator.CenterOnPoint(LocationF);
             RedrawDataBlock();
-            TargetReturn.Text = TargetChar.ToString();
             TargetReturn.Refresh();
         }
 
