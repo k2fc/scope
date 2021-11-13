@@ -229,6 +229,8 @@ namespace DGScope
         float oldar;
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public int RangeRingInterval { get; set; } = 5;
+        [DisplayName("This Position Indicator"), Category("Display Properties")]
+        public string ThisPositionIndicator { get; set; } = "A";
         [DisplayName("Airports file"), Category("Navigation Data")]
         [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
         public string AirportsFileName
@@ -797,6 +799,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = true;
+                            ((Aircraft)clicked).PositionIndicator.Text = ThisPositionIndicator.Last().ToString();
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
@@ -805,6 +808,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = false;
+                            ((Aircraft)clicked).PositionIndicator.Text = "*";
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
