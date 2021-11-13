@@ -1282,9 +1282,8 @@ namespace DGScope
                     case Key.C:
                         Environment.Exit(0);
                         break;
-                    case Key.Z:
-                        this.Window_Closing(this, null);
-                        Environment.Exit(0);
+                    case Key.S:
+                        SaveSettings(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml"));
                         break;
                     case Key.P:
                         PropertyForm properties = new PropertyForm(this);
