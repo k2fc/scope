@@ -310,7 +310,7 @@ namespace DGScope
 
         public void CenterOnPoint (PointF Point)
         {
-            LocationF = new PointF(Point.X - SizeF.Width/2, Point.Y - SizeF.Height/2);
+            LocationF = new PointF(Point.X - SizeF.Width / 2, Point.Y - SizeF.Height / 2);
         }
 
         

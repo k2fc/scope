@@ -517,6 +517,8 @@ namespace DGScope
                     radar.Aircraft.Remove(plane);
                 lock (dataBlocks)
                     dataBlocks.Remove(plane.DataBlock);
+                lock (posIndicators)
+                    posIndicators.Remove(plane.PositionIndicator);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
                 lock (rangeBearingLines)
                     rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
@@ -1072,9 +1074,16 @@ namespace DGScope
             {
                 if (metar.IsParsed)
                 {
-                    StatusArea.Text += metar.Icao + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
-                    if (WindInStatusArea)
-                        StatusArea.Text += " " + metar.Wind.Raw;
+                    try
+                    {
+                        StatusArea.Text += metar.Icao + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        if (WindInStatusArea)
+                            StatusArea.Text += " " + metar.Wind.Raw;
+                    }
+                    catch
+                    {
+                        StatusArea.Text += metar.Icao + " METAR ERR";
+                    }
                     StatusArea.Text += "\r\n";
                 }
             }
@@ -1269,6 +1278,10 @@ namespace DGScope
                     case Key.C:
                         Environment.Exit(0);
                         break;
+                    case Key.Z:
+                        this.Window_Closing(this, null);
+                        Environment.Exit(0);
+                        break;
                     case Key.P:
                         PropertyForm properties = new PropertyForm(this);
                         properties.Show();
@@ -1405,9 +1418,9 @@ namespace DGScope
             GL.Viewport(0, 0, window.Width, window.Height);
             RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
             lock (dataBlocks)
-            {
                 dataBlocks.ForEach(x => x.Redraw = true);
-            }
+            lock (posIndicators)
+                posIndicators.ForEach(x => x.Redraw = true);
             oldar = aspect_ratio;
         }
 
@@ -1695,6 +1708,7 @@ namespace DGScope
             GL.End();
         }
         private List<TransparentLabel> dataBlocks = new List<TransparentLabel>();
+        private List<TransparentLabel> posIndicators = new List<TransparentLabel>();
         private void GenerateDataBlock(Aircraft aircraft)
         {
             var oldcolor = aircraft.DataBlock.ForeColor;
@@ -1718,6 +1732,7 @@ namespace DGScope
             {
                 aircraft.DataBlock.ForeColor = LDBColor;
             }
+            aircraft.PositionIndicator.ForeColor = aircraft.DataBlock.ForeColor;
             if (oldcolor != aircraft.DataBlock.ForeColor)
                 aircraft.DataBlock.Redraw = true;
             aircraft.RedrawDataBlock();
@@ -1775,6 +1790,26 @@ namespace DGScope
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
                         dataBlocks.Remove(aircraft.DataBlock);
+
+
+                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
+                var realWidth = text_bmp.Width * xPixelScale;
+                var realHeight = text_bmp.Height * yPixelScale;
+                aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
+                aircraft.PositionIndicator.CenterOnPoint(location);
+
+                if (aircraft.Marked)
+                    aircraft.PositionIndicator.ForeColor = SelectedColor;
+                else if (aircraft.Owned)
+                    aircraft.PositionIndicator.ForeColor = OwnedColor;
+                else
+                    aircraft.PositionIndicator.ForeColor = DataBlockColor;
+
+                if (!posIndicators.Contains(aircraft.PositionIndicator))
+                {
+                    lock (posIndicators)
+                        posIndicators.Add(aircraft.PositionIndicator);
+                }
                 aircraft.Drawn = true;
 
                 lock (PrimaryReturns)
@@ -1785,6 +1820,8 @@ namespace DGScope
             {
                 lock (dataBlocks)
                     dataBlocks.Remove(aircraft.DataBlock);
+                lock (posIndicators)
+                    posIndicators.Remove(aircraft.PositionIndicator);
             }
         }
         private void GenerateTargets()
@@ -1804,7 +1841,10 @@ namespace DGScope
                         PrimaryReturns.Remove(target);
                     if (target.ParentAircraft.TargetReturn == target)
                     {
-                        dataBlocks.Remove(target.ParentAircraft.DataBlock);
+                        lock(dataBlocks)
+                            dataBlocks.Remove(target.ParentAircraft.DataBlock);
+                        lock (posIndicators)
+                            posIndicators.Remove(target.ParentAircraft.PositionIndicator);
                     }
                 }
             }            
@@ -1988,6 +2028,7 @@ namespace DGScope
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
                     plane.LocationF = newLocation;
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
+                    plane.PositionIndicator.CenterOnPoint(newLocation);
                 }
             }
         }
@@ -2007,6 +2048,8 @@ namespace DGScope
                 block.NewLocation = block.LocationF;
                 
             }
+            lock (posIndicators)
+                posIndicators.ForEach(x => x.LocationF = new PointF(x.LocationF.X + xChange, x.LocationF.Y - yChange));
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
@@ -2074,6 +2117,7 @@ namespace DGScope
                     DrawLabel(block);
                 }
             }
+            posIndicators.ForEach(x => DrawLabel(x));
         }
 
         private void DrawLabel(TransparentLabel Label)
@@ -2100,7 +2144,8 @@ namespace DGScope
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
                 if (Label.ParentAircraft != null)
-                    Label.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
+                    if (Label == Label.ParentAircraft.DataBlock)
+                        Label.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
                 //text_bmp.Save($"{text_texture}.bmp");
             }
             
@@ -2131,11 +2176,13 @@ namespace DGScope
             GL.Color4(Label.ForeColor);
             if (Label.ParentAircraft != null)
             {
-                ConnectingLineF line = new ConnectingLineF();
-                line = Label.ParentAircraft.ConnectingLine;
-                GL.Vertex2(line.Start.X, line.Start.Y);
-                GL.Vertex2(line.End.X, line.End.Y);
-                
+                if (Label == Label.ParentAircraft.DataBlock)
+                {
+                    ConnectingLineF line = new ConnectingLineF();
+                    line = Label.ParentAircraft.ConnectingLine;
+                    GL.Vertex2(line.Start.X, line.Start.Y);
+                    GL.Vertex2(line.End.X, line.End.Y);
+                }
             }
             GL.End();
 
