@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "DGScope.Receivers.FAA_SCDS": {
+      "commandName": "Project"
+    }
+  }
+}

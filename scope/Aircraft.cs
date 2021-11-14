@@ -14,6 +14,8 @@ namespace DGScope
         public string Callsign { get; set; }
         public int PressureAltitude { get; set; }
         public int TrueAltitude { get; set; }
+        public string PositionInd { get; set; }
+        public string PendingHandoff { get; set; }
         public int Altitude
         {
             get
@@ -45,7 +47,8 @@ namespace DGScope
             set
             {
                 ident = value;
-                DataBlock.Flashing = value;
+                //DataBlock.Flashing = value;
+                //DataBlock2.Flashing = value;
             }
         }
         public bool IsOnGround { get; set; }
@@ -59,6 +62,9 @@ namespace DGScope
         public string? Destination  { get; set; }
         public string? Scratchpad { get; set; }
         public string? Type { get; set; }
+        public string? Scratchpad2 { get; set; }
+        public string? FlightRules { get; set; }
+        public string? Runway { get; set; }
         public bool Drawn { get; set; } = false;
         public bool Owned { get; set; } = false;
         public bool Marked { get; set; } = false;
@@ -147,6 +153,13 @@ namespace DGScope
             TextAlign = ContentAlignment.TopLeft,
             AutoSize = true
         };
+        public TransparentLabel DataBlock2 = new TransparentLabel()
+        {
+            //ForeColor = Color.Lime,
+            //BackColor = Color.Transparent,
+            TextAlign = ContentAlignment.TopLeft,
+            AutoSize = true
+        };
 
         public TransparentLabel PositionIndicator = new TransparentLabel()
         {
@@ -163,12 +176,46 @@ namespace DGScope
 
         public void RedrawDataBlock()
         {
-            string vrchar = " ";
-            if (VerticalRate > 100)
-                vrchar = " ";
-            else if (VerticalRate < -100)
-                vrchar = " ";
+            string vrchar = "  ";
+            if (PendingHandoff != null)
+                if (PendingHandoff != PositionInd)
+                    vrchar = PendingHandoff.PadRight(2);
             var oldtext = DataBlock.Text;
+            var oldtext2 = DataBlock.Text;
+
+            string field1 = "";
+            if (Scratchpad != null)
+            {
+                field1 = Scratchpad;
+            }
+            else if (Runway != null)
+            {
+                if (Runway != "NNNN")
+                    field1 = Runway;
+            }
+            if (field1.Trim() == "" && Destination != null)
+            {
+                if (Destination != "unassigned")
+                    field1 = Destination;
+            }
+
+            if (field1.Trim() == "")
+            {
+                field1 = (Altitude / 100).ToString("D3");
+            }
+
+            field1 = field1.Trim();
+            string field2 = "";
+            if (Type == null && Scratchpad2 == null)
+                field2 = (GroundSpeed / 10).ToString("D2");
+            else if (Scratchpad2 != null)
+                field2 = Scratchpad2;
+            else
+                field2 = Type;
+            field2 = field2.Trim();
+
+
+
             DataBlock.Text = "";
             if (Squawk == "7700")
                 DataBlock.Text += "EM" + "\r\n";
@@ -176,14 +223,29 @@ namespace DGScope
                 DataBlock.Text += "RF" + "\r\n";
             if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null)|| ShowCallsignWithNoSquawk))
                 DataBlock.Text += Callsign + "\r\n";
+            DataBlock2.Text = DataBlock.Text;
             if (!fdb())
+            {
                 DataBlock.Text = (Altitude / 100).ToString("D3");
+                DataBlock2.Text = field1;
+            }
             else
-                DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + " " + (GroundSpeed / 10).ToString("D2");
-            if (Squawk == "1200")
-                DataBlock.Text += " V";
+            {
+                DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + (GroundSpeed / 10).ToString("D2");
+                DataBlock2.Text += field1 + vrchar + field2;
+            }
+            if (Squawk == "1200" && FlightRules != "IFR")
+            {
+                DataBlock.Text += "V";
+                DataBlock2.Text += "V";
+            }
             if (Ident)
+            {
+                DataBlock2.Text += "ID";
                 DataBlock.Text += "ID";
+            }
+            if (!DataBlock2.Redraw)
+                DataBlock2.Redraw = DataBlock2.Text != oldtext2;
             if (!DataBlock.Redraw)
                 DataBlock.Redraw = DataBlock.Text != oldtext;
         }

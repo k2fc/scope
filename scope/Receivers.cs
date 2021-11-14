@@ -90,6 +90,17 @@ namespace DGScope.Receivers
             return plane;
         }
 
+        public Aircraft GetPlaneBySquawk(string squawk)
+        {
+            Aircraft plane = null;
+            lock (aircraft)
+            {
+                if (aircraft.Where(x => x.Squawk == squawk).Count() == 1)
+                    plane = (from x in aircraft where x.Squawk == squawk select x).FirstOrDefault();
+            }
+            return plane;
+        }
+
         public override string ToString()
         {
             return base.ToString();
