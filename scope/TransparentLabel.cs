@@ -46,6 +46,7 @@ namespace DGScope
                 }
                 else
                 {
+                    return base.ForeColor;
                     return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
                 }
             }
@@ -55,6 +56,21 @@ namespace DGScope
                     return;
                 Redraw = true;
                 base.ForeColor = value;
+            }
+        }
+
+        public Color DrawColor
+        {
+            get
+            {
+                if (!Flashing || flashOn)
+                {
+                    return base.ForeColor;
+                }
+                else
+                {
+                    return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
+                }
             }
         }
         public bool InBoundsF => LocationF.X > -1 && LocationF.X < 1 && LocationF.Y > -1 && LocationF.Y < 1;
