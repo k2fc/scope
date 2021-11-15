@@ -59,15 +59,17 @@ namespace DGScope
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
         public Line PTL { get; set; } = new Line();
-        public string? Destination  { get; set; }
+        public string? Destination { get; set; }
         public string? Scratchpad { get; set; }
         public string? Type { get; set; }
         public string? Scratchpad2 { get; set; }
         public string? FlightRules { get; set; }
         public string? Runway { get; set; }
+        public string? Category { get; set; }
         public bool Drawn { get; set; } = false;
         public bool Owned { get; set; } = false;
         public bool Marked { get; set; } = false;
+        public bool QuickLook { get; set; } = false;
 
         public RadarWindow.LeaderDirection? LDRDirection = null;
         public bool ShowCallsignWithNoSquawk { get; set; } = false;
@@ -79,6 +81,8 @@ namespace DGScope
             set
             {
                 DataBlock.Redraw = true;
+                if (QuickLook)
+                    QuickLook = false;
                 _fdb = value;
             }
         }
@@ -92,7 +96,7 @@ namespace DGScope
                 _fdb = true;
                 return true;
             }
-            if (Emergency || ShowCallsignWithNoSquawk)
+            if (Emergency || ShowCallsignWithNoSquawk || QuickLook)
             {
                 return true;
             }
@@ -174,12 +178,18 @@ namespace DGScope
             TargetReturn.Dispose();
         }
 
-        public void RedrawDataBlock()
+        private int dbAlt, dbSpeed = 0;
+        public void RedrawDataBlock(bool updatepos = false)
         {
-            string vrchar = "  ";
+            if (updatepos || dbAlt == 0 || dbSpeed == 0)
+            {
+                dbAlt = Altitude;
+                dbSpeed = GroundSpeed;
+            }
+            string vrchar = " ";
             if (PendingHandoff != null)
                 if (PendingHandoff != PositionInd)
-                    vrchar = PendingHandoff.PadRight(2);
+                    vrchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
             var oldtext = DataBlock.Text;
             var oldtext2 = DataBlock.Text;
 
@@ -201,13 +211,13 @@ namespace DGScope
 
             if (field1.Trim() == "")
             {
-                field1 = (Altitude / 100).ToString("D3");
+                field1 = (dbAlt / 100).ToString("D3");
             }
 
             field1 = field1.Trim();
             string field2 = "";
             if (Type == null && Scratchpad2 == null)
-                field2 = (GroundSpeed / 10).ToString("D2");
+                field2 = (dbSpeed / 10).ToString("D2");
             else if (Scratchpad2 != null)
                 field2 = Scratchpad2;
             else
@@ -226,19 +236,22 @@ namespace DGScope
             DataBlock2.Text = DataBlock.Text;
             if (!fdb())
             {
-                DataBlock.Text = (Altitude / 100).ToString("D3");
+                DataBlock.Text = (dbAlt / 100).ToString("D3");
                 DataBlock2.Text = field1;
             }
             else
             {
-                DataBlock.Text += (Altitude / 100).ToString("D3") + vrchar + (GroundSpeed / 10).ToString("D2");
+                DataBlock.Text += (dbAlt / 100).ToString("D3") + vrchar + (dbSpeed / 10).ToString("D2");
                 DataBlock2.Text += field1 + vrchar + field2;
             }
-            if (Squawk == "1200" && FlightRules != "IFR")
+            if (Squawk == "1200" || (FlightRules != "IFR" && FlightRules != null))
             {
+                if (DataBlock2.Text == DataBlock.Text)
+                    DataBlock2.Text += "V ";
                 DataBlock.Text += "V";
-                DataBlock2.Text += "V";
             }
+            if (fdb())
+                DataBlock.Text += " " + Category;
             if (Ident)
             {
                 DataBlock2.Text += "ID";
@@ -248,6 +261,10 @@ namespace DGScope
                 DataBlock2.Redraw = DataBlock2.Text != oldtext2;
             if (!DataBlock.Redraw)
                 DataBlock.Redraw = DataBlock.Text != oldtext;
+            if (PositionInd != null)
+                PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
+            else
+                PositionIndicator.Text = "*";
         }
         
         public void RedrawTarget(PointF LocationF)
@@ -256,7 +273,7 @@ namespace DGScope
             TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
             TargetReturn.LocationF = LocationF;
             PositionIndicator.CenterOnPoint(LocationF);
-            RedrawDataBlock();
+            RedrawDataBlock(true);
             TargetReturn.Refresh();
         }
 
