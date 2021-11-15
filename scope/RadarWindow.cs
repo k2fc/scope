@@ -624,7 +624,8 @@ namespace DGScope
             lock (radar.Aircraft)
             {
                 clicked = radar.Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
-                && x.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds)).FirstOrDefault();
+                && x.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds) 
+                && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
                 {
                     clicked = clickpoint;
@@ -1491,7 +1492,6 @@ namespace DGScope
             DrawRangeRings();
             if(!hidewx)
                 DrawNexrad();
-            DrawReceiverLocations();
             DrawVideoMapLines();
             GenerateTargets();
             DrawTargets();
@@ -1643,6 +1643,12 @@ namespace DGScope
             try
             {
                 settingsxml = XmlSerializer<RadarWindow>.Serialize(this);
+                if (settingsxml.Length == 0)
+                {
+                    System.Windows.Forms.MessageBox.Show("There was a problem serializing the settings"
+                        , "Error writing settings file", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    return;
+                }
                 using (StreamWriter file = new StreamWriter(path))
                 {
                     file.Write(settingsxml);
