@@ -162,7 +162,16 @@ namespace DGScope
             {
                 receiver.SetAircraftList(Aircraft);
                 if(receiver.Enabled)
-                    receiver.Start();
+                    try
+                    {
+                        receiver.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.Forms.MessageBox.Show(string.Format("An error occured starting receiver {0}.\r\n{1}", 
+                            receiver.Name, ex.Message),"Error starting receiver", System.Windows.Forms.MessageBoxButtons.OK, 
+                            System.Windows.Forms.MessageBoxIcon.Warning); 
+                    }
             }
             isRunning = true;
         }

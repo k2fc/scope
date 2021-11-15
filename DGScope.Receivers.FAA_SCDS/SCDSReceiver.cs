@@ -43,14 +43,12 @@ namespace DGScope.Receivers.FAA_SCDS
 
         private async Task<bool> ReceiveMessage()
         {
-            Session session = new Session(connection);
+            session = new Session(connection);
             receiver = new ReceiverLink(session, "amqpConsumer", Queue);
 
             if (!Forever)
                 timeout = TimeSpan.FromSeconds(ClientTimeout);
-            string path = @"messages.xml";
-            using (var sw = File.CreateText(path)) { } ;
-            while (true)
+            while (!stop)
             {
                 var message = receiver.Receive(timeout);
                 Console.WriteLine("Received message from " + Name);
@@ -69,8 +67,10 @@ namespace DGScope.Receivers.FAA_SCDS
                             continue;
                         Console.WriteLine("Processing record for {0} from {1}", record.flightPlan.acid, Name);
                         Aircraft plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
-                        if (plane == null)
+                        if (plane == null && record.track.acAddress != "")
                             plane = GetPlane(Convert.ToInt32(record.track.acAddress, 16));
+                        if (plane == null)
+                            continue;
                         lock (plane)
                         {
                             plane.Type = record.flightPlan.acType;
@@ -78,13 +78,15 @@ namespace DGScope.Receivers.FAA_SCDS
                             plane.Scratchpad = record.flightPlan.scratchPad1;
                             plane.Runway = record.flightPlan.runway;
                             plane.Scratchpad2 = record.flightPlan.scratchPad2;
+                            plane.Category = record.flightPlan.category;
                             if (record.flightPlan.exitFix != null)
                                 plane.Destination = record.flightPlan.exitFix;
                             else
                                 plane.Destination = record.flightPlan.airport;
                             plane.FlightRules = record.flightPlan.flightRules;
-                            plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
-                            if (record.track.mrtTime > plane.LastPositionTime)
+                            if (record.track.reportedBeaconCode > 0)
+                                plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
+                            if (record.track.mrtTime > plane.LastPositionTime && false)
                             {
                                 plane.Location = new GeoPoint((double)record.track.lat, (double)record.track.lon);
                                 plane.LastPositionTime = record.track.mrtTime;
@@ -94,8 +96,12 @@ namespace DGScope.Receivers.FAA_SCDS
                                 plane.Callsign = record.flightPlan.acid;
                             switch (record.flightPlan.ocr)
                             {
-                                case "normal handoff":
                                 case "intrafacility handoff":
+                                    if (plane.QuickLook)
+                                        plane.QuickLook = false;
+                                    plane.PositionInd = record.flightPlan.cps;
+                                    break;
+                                case "normal handoff":
                                 case "manual":
                                 case "no change":
                                 case "consolidation":
@@ -108,16 +114,22 @@ namespace DGScope.Receivers.FAA_SCDS
                                 default:
                                     break;
                             }
+                            if (record.flightPlan.status == "drop")
+                            {
+                                plane.Owned = false;
+                                plane.PositionInd = "*";
+                                plane.PendingHandoff = null;
+                                plane.Scratchpad = null;
+                                plane.Scratchpad2 = null;
+                                plane.Runway = null;
+                                plane.Destination = null;
+                            }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    using (StreamWriter sw = File.AppendText(path))
-                    {
-                        sw.WriteLine(message.Body);
-                    }
                 }
                 
             }
@@ -131,13 +143,17 @@ namespace DGScope.Receivers.FAA_SCDS
                 return false;
         }
 
-
+        bool stop = false;
 
         public override void Stop()
         {
-            receiver.Close();
-            session.Close();
-            connection.Close();
+            stop = true;
+            if (receiver != null)
+                receiver.Close();
+            if (session != null)
+                session.Close();
+            if (connection != null)
+                connection.Close();
         }
         public SCDSReceiver() { }
     }

@@ -249,9 +249,9 @@ namespace DGScope
         [Editor(typeof(VideoMapCollectionEditor), typeof(UITypeEditor))]
         public List<VideoMap> VideoMaps { get; set; } = new List<VideoMap>();
         float scale => (float)(radar.Range / Math.Sqrt(2));
-        float xPixelScale => 2f / window.ClientRectangle.Width;
-        float yPixelScale => 2f / window.ClientRectangle.Height;
-        float aspect_ratio => (float)window.ClientRectangle.Width / (float)window.ClientRectangle.Height;
+        float xPixelScale => 2f / window.ClientSize.Width;
+        float yPixelScale => 2f / window.ClientSize.Height;
+        float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public int RangeRingInterval { get; set; } = 5;
@@ -599,7 +599,10 @@ namespace DGScope
                 double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
 
                 if (move > 10 && isScreenSaver && _mousesettled)
+                {
+                    radar.Stop();
                     Environment.Exit(0);
+                }
                 _mousesettled = true;
                
             }
@@ -835,7 +838,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = true;
-                            ((Aircraft)clicked).PositionIndicator.Text = ThisPositionIndicator.Last().ToString();
+                            ((Aircraft)clicked).PositionInd = ThisPositionIndicator;
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
@@ -844,7 +847,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = false;
-                            ((Aircraft)clicked).PositionIndicator.Text = "*";
+                            ((Aircraft)clicked).PositionInd = null;
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
@@ -1317,6 +1320,7 @@ namespace DGScope
                 {
                     case Key.C:
                         Preview.Clear();
+                        radar.Stop();
                         Environment.Exit(0);
                         break;
                     case Key.S:
@@ -1378,7 +1382,10 @@ namespace DGScope
                     case Key.Enter:
                     case Key.KeypadEnter:
                         if (isScreenSaver)
+                        {
+                            radar.Stop();
                             Environment.Exit(0);
+                        }
                         else
                             window.WindowState = window.WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
                         break;
@@ -1459,7 +1466,10 @@ namespace DGScope
             GL.Viewport(0, 0, window.Width, window.Height);
             RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
             lock (dataBlocks)
+            {
                 dataBlocks.ForEach(x => x.Redraw = true);
+                dataBlocks.ForEach(x => x.ParentAircraft.DataBlock2.Redraw = true);
+            }
             lock (posIndicators)
                 posIndicators.ForEach(x => x.Redraw = true);
             oldar = aspect_ratio;
@@ -1594,6 +1604,7 @@ namespace DGScope
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             //System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(this.GetType());
+            radar.Stop();
             byte[] newhash;
             if (isScreenSaver)
                 return;
@@ -1628,7 +1639,19 @@ namespace DGScope
 
         public void SaveSettings(string path)
         {
-            XmlSerializer<RadarWindow>.SerializeToFile(this, path);
+            var settingsxml = "";
+            try
+            {
+                settingsxml = XmlSerializer<RadarWindow>.Serialize(this);
+                using (StreamWriter file = new StreamWriter(path))
+                {
+                    file.Write(settingsxml);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message, "Error writing settings file", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
         }
         
         private void DrawRangeRings()
@@ -1879,7 +1902,7 @@ namespace DGScope
             foreach (Aircraft aircraft in targets)
             {
                 if (QuickLook)
-                    aircraft.FDB = true;
+                    aircraft.QuickLook = true;
                 GenerateTarget(aircraft);
             }
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
@@ -2086,6 +2109,7 @@ namespace DGScope
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
                     plane.DataBlock2.LocationF = plane.DataBlock.LocationF; 
                     plane.PositionIndicator.CenterOnPoint(newLocation);
+                    //plane.RedrawDataBlock();
                 }
             }
         }
@@ -2157,13 +2181,39 @@ namespace DGScope
         {
             lock (radar.Aircraft)
             {
-                radar.Aircraft.Where(x => x.PositionInd == x.PendingHandoff).ToList().ForEach(x => x.PendingHandoff = null);
                 radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator).ToList().ForEach(x => x.DataBlock.Flashing = true);
-                radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator).ToList().ForEach(x => x.DataBlock2.Flashing = true);
-                radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.DataBlock.Flashing = false);
-                radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.DataBlock2.Flashing = false);
+                foreach (var handoffPlane in radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
+                {
+                    if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
+                        continue;
+                    handoffPlane.Owned = true;
+                    handoffPlane.DataBlock.Flashing = true;
+                    handoffPlane.DataBlock2.Flashing = true;
+                    if (handoffPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                        GenerateDataBlock(handoffPlane);
+                }
+                foreach (var handedoffPlane in radar.Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
+                {
+                    if (handedoffPlane.PendingHandoff != null)
+                        handedoffPlane.PendingHandoff = null;
+                    if (handedoffPlane.DataBlock.Flashing)
+                    {
+                        handedoffPlane.DataBlock.Flashing = false;
+                        handedoffPlane.DataBlock2.Flashing = false;
+                        if (handedoffPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                            GenerateDataBlock(handedoffPlane);
+                    }
+                }
+                foreach (var flashingPlane in radar.Aircraft.Where(x => x.DataBlock.Flashing))
+                {
+                    if (flashingPlane.PendingHandoff != ThisPositionIndicator)
+                    {
+                        flashingPlane.DataBlock.Flashing = false;
+                        flashingPlane.DataBlock2.Flashing = false;
+                        if (flashingPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                            GenerateDataBlock(flashingPlane);
+                    }
+                }
             }
             foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
             {
