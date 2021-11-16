@@ -67,8 +67,9 @@ namespace DGScope.Receivers.FAA_SCDS
                             continue;
                         Console.WriteLine("Processing record for {0} from {1}", record.flightPlan.acid, Name);
                         Aircraft plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
-                        if (plane == null && record.track.acAddress != "")
-                            plane = GetPlane(Convert.ToInt32(record.track.acAddress, 16));
+                        if (record.track != null)
+                            if (plane == null && record.track.acAddress != "")
+                                plane = GetPlane(Convert.ToInt32(record.track.acAddress, 16));
                         if (plane == null)
                             continue;
                         lock (plane)
@@ -84,13 +85,17 @@ namespace DGScope.Receivers.FAA_SCDS
                             else
                                 plane.Destination = record.flightPlan.airport;
                             plane.FlightRules = record.flightPlan.flightRules;
-                            if (record.track.reportedBeaconCode > 0)
-                                plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
-                            if (record.track.mrtTime > plane.LastPositionTime && false)
+                            if (record.track != null)
                             {
-                                plane.Location = new GeoPoint((double)record.track.lat, (double)record.track.lon);
-                                plane.LastPositionTime = record.track.mrtTime;
-                                plane.LocationReceivedBy = this;
+                                if (record.track.reportedBeaconCode > 0)
+                                    plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
+
+                                if (record.track.mrtTime > plane.LastPositionTime && false)
+                                {
+                                    plane.Location = new GeoPoint((double)record.track.lat, (double)record.track.lon);
+                                    plane.LastPositionTime = record.track.mrtTime;
+                                    plane.LocationReceivedBy = this;
+                                }
                             }
                             if (plane.Callsign == null)
                                 plane.Callsign = record.flightPlan.acid;
