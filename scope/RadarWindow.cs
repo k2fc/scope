@@ -855,7 +855,7 @@ namespace DGScope
                         break;
                     case (int)KeyCode.SignOn:
                         var newpos = KeysToString(keys[0]);
-                        if (newpos = "*")
+                        if (newpos == "*")
                             ThisPositionIndicator = "NONE";
                         else
                             ThisPositionIndicator = newpos;
