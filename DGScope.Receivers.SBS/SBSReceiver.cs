@@ -74,7 +74,7 @@ namespace DGScope.Receivers.SBS
                                 {
 
                                     case "1":
-                                        plane.Callsign = sbs_data[10];
+                                        plane.Callsign = sbs_data[10].Trim();
                                         break;
                                     case "2":
                                         if (sbs_data[11] != "")
@@ -94,6 +94,11 @@ namespace DGScope.Receivers.SBS
                                                 plane.LastPositionTime = messageTime;
                                                 plane.LocationReceivedBy = this;
                                             }
+                                        }
+                                        else if(sbs_data[14] != "" && sbs_data[15] != "")
+                                        {
+                                            Console.WriteLine("Ignored positon update for {0} from {1}, because we have a newer one from {2}", 
+                                                plane.Callsign, Name, plane.LocationReceivedBy.Name);
                                         }
                                         plane.IsOnGround = sbs_data[21] == "-1";
                                         break;
