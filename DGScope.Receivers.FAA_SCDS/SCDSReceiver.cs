@@ -98,7 +98,7 @@ namespace DGScope.Receivers.FAA_SCDS
                                 }
                             }
                             if (plane.Callsign == null)
-                                plane.Callsign = record.flightPlan.acid;
+                                plane.Callsign = record.flightPlan.acid.Trim();
                             switch (record.flightPlan.ocr)
                             {
                                 case "intrafacility handoff":

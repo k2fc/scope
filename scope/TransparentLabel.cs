@@ -319,6 +319,8 @@ namespace DGScope
             get { return textAlign; }
             set
             {
+                if (value != textAlign)
+                    Redraw = true;
                 textAlign = value;
                 RecreateHandle();
             }
