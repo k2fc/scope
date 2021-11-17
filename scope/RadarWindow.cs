@@ -697,8 +697,8 @@ namespace DGScope
             VP = 15,
             MultiFunc = 16,
             FltData = 18,
-            CA = 20
-            
+            CA = 20,
+            SignOn = 21
         }
 
         public List<KeyCode> Preview = new List<KeyCode>();
@@ -852,6 +852,19 @@ namespace DGScope
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
+                        break;
+                    case (int)KeyCode.SignOn:
+                        var newpos = KeysToString(keys[0]);
+                        if (newpos == "*")
+                            ThisPositionIndicator = "NONE";
+                        else
+                            ThisPositionIndicator = newpos;
+                        lock (radar.Aircraft)
+                        {
+                            radar.Aircraft.Where(x => x.PositionInd != ThisPositionIndicator &&
+                            x.PendingHandoff != ThisPositionIndicator).ToList().ForEach(x => x.Owned = false);
+                        }
+                        Preview.Clear();
                         break;
                     case (int)Key.KeypadMultiply:
                         switch ((int)keys[0][1])
@@ -1283,6 +1296,9 @@ namespace DGScope
                     case (int)KeyCode.TermCntl:
                         output += "TC\r\n";
                         break;
+                    case (int)KeyCode.SignOn:
+                        output += "SIGN ON\r\n";
+                        break;
                     case (int)KeyCode.VP:
                         output += "VP\r\n";
                         break;
@@ -1418,7 +1434,7 @@ namespace DGScope
                     default:
                         if ((int)e.Key > 9 && (int)e.Key < 22)
                             Preview.Clear();
-                        if ((int)e.Key < 21 || (int)e.Key > 25)
+                        if (((int)e.Key > 9 && (int)e.Key < 26) || (int)e.Key > 66)
                             Preview.Add((KeyCode)e.Key);
                         break;
                 }
