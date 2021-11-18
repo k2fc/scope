@@ -1951,8 +1951,39 @@ namespace DGScope
         private PointF OffsetDatablockLocation(Aircraft thisAircraft, LeaderDirection direction)
         {
             PointF blockLocation = new PointF();
-            float xoffset = (float)(Math.Cos((Math.PI / 180) * (double)direction) * LeaderLength * xPixelScale);
-            float yoffset = (float)(Math.Sin((Math.PI / 180) * (double)direction) * LeaderLength * yPixelScale);
+            float xoffset = 0;
+            float yoffset = 0;
+            switch (direction)
+            {
+                case LeaderDirection.N:
+                    yoffset += LeaderLength * yPixelScale;
+                    break;
+                case LeaderDirection.S:
+                    yoffset -= LeaderLength * yPixelScale;
+                    break;
+                case LeaderDirection.E:
+                    xoffset += LeaderLength * xPixelScale;
+                    break;
+                case LeaderDirection.W:
+                    xoffset -= LeaderLength * xPixelScale;
+                    break;
+                case LeaderDirection.NE:
+                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2);
+                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    break;
+                case LeaderDirection.SE:
+                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2);
+                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    break;
+                case LeaderDirection.NW:
+                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2);
+                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    break;
+                case LeaderDirection.SW:
+                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2);
+                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    break;
+            }
             blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
             blockLocation.X = thisAircraft.LocationF.X + xoffset;
             switch (direction)

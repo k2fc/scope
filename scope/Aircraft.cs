@@ -231,8 +231,10 @@ namespace DGScope
                 DataBlock.Text += "EM" + "\r\n";
             else if (Squawk == "7600")
                 DataBlock.Text += "RF" + "\r\n";
-            if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null)|| ShowCallsignWithNoSquawk))
+            if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null) || ShowCallsignWithNoSquawk))
                 DataBlock.Text += Callsign + "\r\n";
+            else if (Squawk == "1200" && fdb())
+                DataBlock.Text = "1200\r\n";
             DataBlock2.Text = DataBlock.Text;
             if (!fdb())
             {
