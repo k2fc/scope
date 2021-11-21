@@ -517,10 +517,39 @@ namespace DGScope
                 settingshash = new byte[0];
             }
             OrderWaypoints();
-            
+            radar.Aircraft.CollectionChanged += Aircraft_CollectionChanged;
         }
 
+        private void Aircraft_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+                    foreach (Aircraft item in e.NewItems)
+                    {
+                        item.HandedOff += Aircraft_HandedOff;
+                        item.OwnershipChange += Aircraft_OwnershipChange;
+                    }
+                    break;
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
+                    foreach (Aircraft item in e.OldItems)
+                    {
+                        item.HandedOff -= Aircraft_HandedOff;
+                        item.OwnershipChange -= Aircraft_OwnershipChange;
+                    }
+                    break;
+            }
+        }
 
+        private void Aircraft_OwnershipChange(object sender, AircraftEventArgs e)
+        {
+            e.Aircraft.RedrawDataBlock();
+        }
+
+        private void Aircraft_HandedOff(object sender, HandoffEventArgs e)
+        {
+            Console.WriteLine("{0} handed {1} to {2}", e.PositionFrom, e.Aircraft, e.PositionTo);
+        }
 
         byte[] settingshash;
         public void Run(bool isScreenSaver)
@@ -866,7 +895,7 @@ namespace DGScope
                         }
                         Preview.Clear();
                         break;
-                    case (int)Key.KeypadMultiply:
+                    case (int)Key.KeypadMultiply: // splat commands
                         switch ((int)keys[0][1])
                         {
                             case (int)Key.T:
@@ -952,6 +981,78 @@ namespace DGScope
                                     Preview.Clear();
                                 }
 
+                                break;
+                            case (int)Key.J:
+                                if (clickedplane)
+                                {
+                                    if (keys[0].Length > 2)
+                                    {
+                                        decimal miles = 0;
+                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        if (decimal.TryParse(entered, out miles))
+                                        {
+                                            if (miles > 0 && (double)miles < radar.Range)
+                                            {
+                                                ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, ReturnColor, Font);
+                                            }
+                                            else
+                                            {
+                                                ((Aircraft)clicked).TPA = null;
+                                            }
+                                            Preview.Clear();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ((Aircraft)clicked).TPA = null;
+                                        Preview.Clear();
+                                    }
+                                }
+                                break;
+                            case (int)Key.P:
+                                if (clickedplane)
+                                {
+                                    if (keys[0].Length > 2)
+                                    {
+                                        decimal miles = 0;
+                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        if (decimal.TryParse(entered, out miles))
+                                        {
+                                            if (miles > 0 && (double)miles < radar.Range)
+                                            {
+                                                ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, ReturnColor, Font);
+                                            }
+                                            else
+                                            {
+                                                ((Aircraft)clicked).TPA = null;
+                                            }
+                                            Preview.Clear();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ((Aircraft)clicked).TPA = null;
+                                        Preview.Clear();
+                                    }
+                                }
+                                break;
+                            case (int)Key.KeypadMultiply:
+                                if (keys[0].Length > 2)
+                                {
+                                    switch ((int)keys[0][2])
+                                    {
+                                        case (int)Key.J:
+                                            lock (radar.Aircraft)
+                                                radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
+                                            Preview.Clear();
+                                            break;
+                                        case (int)Key.P:
+                                            lock (radar.Aircraft)
+                                                radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
+                                            Preview.Clear();
+                                            break;
+                                    }
+                                }
                                 break;
                         }
                         break;
@@ -1107,6 +1208,10 @@ namespace DGScope
                     case (int)Key.Keypad9:
                     case (int)Key.Number9:
                         output += "9";
+                        break;
+                    case (int)Key.Period:
+                    case (int)Key.KeypadPeriod:
+                        output += ".";
                         break;
                 }
             }
@@ -1304,7 +1409,7 @@ namespace DGScope
                         break;
                     case (int)Key.Period:
                     case (int)Key.KeypadPeriod:
-                        output += ".\r\n";
+                        output += ".";
                         break;
                     case (int)Key.Plus:
                     case (int)Key.KeypadPlus:
@@ -1553,8 +1658,8 @@ namespace DGScope
                 if (line.StartPlane != null)
                 {
                     line.Start = line.StartPlane.LocationF;
-                    line.StartGeo = line.StartPlane.Location;
-                    line.Line.End1 = line.StartPlane.Location;
+                    line.StartGeo = line.StartPlane.SweptLocation;
+                    line.Line.End1 = line.StartPlane.SweptLocation;
                 }
                 else if (line.StartGeo != null)
                 {
@@ -1569,8 +1674,8 @@ namespace DGScope
                 if (line.EndPlane != null)
                 {
                     line.End = line.EndPlane.LocationF;
-                    line.EndGeo = line.EndPlane.Location;
-                    line.Line.End2 = line.EndPlane.Location;
+                    line.EndGeo = line.EndPlane.SweptLocation;
+                    line.Line.End2 = line.EndPlane.SweptLocation;
                 }
                 else if (line.EndGeo != null)
                 {
@@ -1714,7 +1819,30 @@ namespace DGScope
             }
             GL.End();
         }
+        private void DrawCircle (GeoPoint Location, float radius, Color color, bool fill = false)
+        {
+            var LocationF = GeoToScreenPoint(Location);
+            var x = LocationF.X;
+            var y = LocationF.Y;
+            var r = radius / scale;
+            DrawCircle(x, y, r, aspect_ratio, 100, color, fill);
+        }
+        private void DrawTPA(Aircraft plane)
+        {
+            if (plane.TPA == null)
+            {
+                return;
+            }
+            else if (plane.TPA.Type == TPAType.JRing)
+            {
+                DrawCircle(plane.SweptLocation, (float)plane.TPA.Miles, plane.TPA.Color, false);
+            }
+            else if (plane.TPA.Type == TPAType.PCone)
+            {
 
+            }
+            return;
+        }
         private void DrawVideoMapLines()
         {
             List<Line> lines = new List<Line>();
@@ -2235,6 +2363,7 @@ namespace DGScope
             lock (radar.Aircraft)
             {
                 radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
+                radar.Aircraft.Where(x => x.TPA != null).ToList().ForEach(x => DrawTPA(x));
                 foreach (var handoffPlane in radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
                 {
                     if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)

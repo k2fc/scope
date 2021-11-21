@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace DGScope.Receivers
         public string Name { get; set;  }
         public bool Enabled { get; set; }
 
-        protected List<Aircraft> aircraft;
+        protected ObservableCollection<Aircraft> aircraft;
         protected double minel => MinElevation * Math.PI / 180;
         protected double maxel => MaxElevation * Math.PI / 180;
         public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
@@ -44,7 +45,7 @@ namespace DGScope.Receivers
                 return true;
             return false;
         }
-        public void SetAircraftList(List<Aircraft> Aircraft)
+        public void SetAircraftList(ObservableCollection<Aircraft> Aircraft)
         {
             aircraft = Aircraft;
         }

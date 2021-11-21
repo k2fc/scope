@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -33,7 +34,7 @@ namespace DGScope
         //public double Size { get => Math.Min(Width, Height); }
         [XmlIgnore]
         [Browsable(false)]
-        public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
+        public ObservableCollection<Aircraft> Aircraft { get; } = new ObservableCollection<Aircraft>();
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
         [XmlIgnore]
         public Airports Airports { get; set; } = new Airports();
