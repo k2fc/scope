@@ -1968,20 +1968,20 @@ namespace DGScope
                     xoffset -= LeaderLength * xPixelScale;
                     break;
                 case LeaderDirection.NE:
-                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2);
-                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    xoffset += LeaderLength * xPixelScale;// * (float)Math.Sqrt(2) / 2;
+                    yoffset += LeaderLength * yPixelScale;// * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.SE:
-                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2);
-                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    xoffset += LeaderLength * xPixelScale;// * (float)Math.Sqrt(2) / 2;
+                    yoffset -= LeaderLength * yPixelScale;// * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.NW:
-                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2);
-                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    xoffset -= LeaderLength * xPixelScale;// * (float)Math.Sqrt(2) / 2;
+                    yoffset += LeaderLength * yPixelScale;// * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.SW:
-                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2);
-                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2);
+                    xoffset -= LeaderLength * xPixelScale;// * (float)Math.Sqrt(2) / 2;
+                    yoffset -= LeaderLength * yPixelScale;// * (float)Math.Sqrt(2) / 2;
                     break;
             }
             blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
