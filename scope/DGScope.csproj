@@ -192,9 +192,13 @@
     <Compile Include="AirportsXml.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
+    <Compile Include="LeaderLine.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="CustomLists.cs" />
     <Compile Include="NexradDisplay.cs" />
+    <Compile Include="PrimaryReturn.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyForm.cs">
@@ -205,6 +209,7 @@
     </Compile>
     <Compile Include="Radar.cs" />
     <Compile Include="RadarWindow.cs" />
+    <Compile Include="RangeBearingLine.cs" />
     <Compile Include="ReadWriteBuffer.cs" />
     <Compile Include="ReceiverCollectionEditor.cs" />
     <Compile Include="Receivers.cs" />
