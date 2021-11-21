@@ -14,8 +14,33 @@ namespace DGScope
         public string Callsign { get; set; }
         public int PressureAltitude { get; set; }
         public int TrueAltitude { get; set; }
-        public string PositionInd { get; set; }
-        public string PendingHandoff { get; set; }
+        private string positionind;
+        public string PositionInd 
+        {
+            get => positionind;
+            set
+            {
+                if (value != positionind && pendinghandoff != null && pendinghandoff != value)
+                {
+                    HandedOff?.Invoke(this, new HandoffEventArgs(this, value, pendinghandoff));
+                    pendinghandoff = null;
+                }
+                positionind = value;
+            }
+        }
+        private string pendinghandoff;
+        public string PendingHandoff {
+            get => pendinghandoff;
+            set
+            {
+                if (value != pendinghandoff)
+                {
+                    HandoffInitiated?.Invoke(this, new HandoffEventArgs(this, value, PositionInd));
+                    pendinghandoff = value;
+                }
+            }
+        }
+        public TPA TPA { get; set; }
         public int Altitude
         {
             get
@@ -47,8 +72,6 @@ namespace DGScope
             set
             {
                 ident = value;
-                //DataBlock.Flashing = value;
-                //DataBlock2.Flashing = value;
             }
         }
         public bool IsOnGround { get; set; }
@@ -67,7 +90,17 @@ namespace DGScope
         public string? Runway { get; set; }
         public string? Category { get; set; }
         public bool Drawn { get; set; } = false;
-        public bool Owned { get; set; } = false;
+        bool owned = false;
+        public bool Owned 
+        {
+            get => owned;
+            set
+            {
+                if (value != owned)
+                    OwnershipChange?.Invoke(this, new AircraftEventArgs(this));
+                owned = value;
+            } 
+        }
         public bool Marked { get; set; } = false;
         public bool QuickLook { get; set; } = false;
 
@@ -108,8 +141,8 @@ namespace DGScope
         public Aircraft(int icaoID)
         {
             ModeSCode = icaoID;
+            Created?.Invoke(this, new EventArgs());
         }
-        public Aircraft() { }
         public double Bearing(GeoPoint FromPoint)
         {
             double λ2 = Longitude * (Math.PI / 180);
@@ -231,7 +264,7 @@ namespace DGScope
                 DataBlock.Text += "EM" + "\r\n";
             else if (Squawk == "7600")
                 DataBlock.Text += "RF" + "\r\n";
-            if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null) || ShowCallsignWithNoSquawk))
+            if (Callsign != null && fdb() && ((Squawk != "1200" && Squawk != null) || ShowCallsignWithNoSquawk || !(PositionInd == null || PositionInd == "*")))
                 DataBlock.Text += Callsign + "\r\n";
             else if (Squawk == "1200" && fdb())
                 DataBlock.Text = "1200\r\n";
@@ -268,23 +301,79 @@ namespace DGScope
             else
                 PositionIndicator.Text = "*";
         }
-        
+        public void DropTrack()
+        {
+            Owned = false;
+            PositionInd = "*";
+            PendingHandoff = null;
+            Scratchpad = null;
+            Scratchpad2 = null;
+            Runway = null;
+            Destination = null;
+            Dropped?.Invoke(this, new EventArgs());
+        }
         public void RedrawTarget(PointF LocationF)
         {
             this.LocationF = LocationF;
-            TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
-            TargetReturn.LocationF = LocationF;
-            PositionIndicator.CenterOnPoint(LocationF);
-            RedrawDataBlock(true);
-            TargetReturn.Refresh();
+            if (LocationF.X != 0 || LocationF.Y != 0)
+            {
+                TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
+                TargetReturn.LocationF = LocationF;
+                PositionIndicator.CenterOnPoint(LocationF);
+                RedrawDataBlock(true);
+                TargetReturn.Refresh();
+                SweptLocation = Location;
+                LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
+            }
         }
 
-
+        public GeoPoint SweptLocation;
 
         public override string ToString()
         {
             return Callsign;
         }
+
+        public event EventHandler<UpdatePositionEventArgs> LocationUpdated;
+        public event EventHandler<HandoffEventArgs> HandoffInitiated;
+        public event EventHandler<HandoffEventArgs> HandedOff;
+        public event EventHandler Created;
+        public event EventHandler<AircraftEventArgs> OwnershipChange;
+        //public event EventHandler Tracked;
+        public event EventHandler Dropped;
+        //public event EventHandler Idented;
+
     }
 
+    public class HandoffEventArgs : AircraftEventArgs
+    {
+        public string? PositionFrom { get; private set; }
+        public string PositionTo { get; private set; }
+        public HandoffEventArgs(Aircraft Aircraft, string to, string from = null) :base(Aircraft)
+        {
+            PositionFrom = from;
+            PositionTo = to;
+        }
+    }
+    public class UpdatePositionEventArgs : AircraftEventArgs
+    {
+        public GeoPoint Location { get; private set; }
+        public bool Intrafacility { get; private set; }
+        public UpdatePositionEventArgs(Aircraft Aircraft, GeoPoint Location, bool intrafacility = false) : base(Aircraft)
+        {
+            this.Location = Location;
+            Intrafacility = intrafacility;
+        }
+    }
+    
+    public class AircraftEventArgs : EventArgs
+    {
+        public Aircraft Aircraft { get; set; }
+        public DateTime Time { get; private set; }
+        public AircraftEventArgs(Aircraft Aircraft)
+        {
+            this.Aircraft = Aircraft;
+            Time = DateTime.Now;
+        }
+    }
 }

@@ -192,6 +192,7 @@
     <Compile Include="AirportsXml.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
+    <Compile Include="TPARing.cs" />
     <Compile Include="LeaderLine.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="CustomLists.cs" />

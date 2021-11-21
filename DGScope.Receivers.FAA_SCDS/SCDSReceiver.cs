@@ -65,6 +65,8 @@ namespace DGScope.Receivers.FAA_SCDS
                     {
                         if (record.flightPlan == null)
                             continue;
+                        if (stop)
+                            return false;
                         Console.WriteLine("Processing record for {0} from {1}", record.flightPlan.acid, Name);
                         Aircraft plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
                         if (record.track != null)
@@ -99,36 +101,36 @@ namespace DGScope.Receivers.FAA_SCDS
                             }
                             if (plane.Callsign == null)
                                 plane.Callsign = record.flightPlan.acid.Trim();
-                            switch (record.flightPlan.ocr)
+                            /*if (record.flightPlan.status == "drop" || record.flightPlan.delete != 0)
                             {
-                                case "intrafacility handoff":
-                                    if (plane.QuickLook)
-                                        plane.QuickLook = false;
-                                    plane.PositionInd = record.flightPlan.cps;
-                                    break;
-                                case "normal handoff":
-                                case "manual":
-                                case "no change":
-                                case "consolidation":
-                                case "directed handoff":
-                                    plane.PositionInd = record.flightPlan.cps;
-                                    break;
-                                case "pending":
-                                    plane.PendingHandoff = record.flightPlan.cps;
-                                    break;
-                                default:
-                                    break;
-                            }
-                            if (record.flightPlan.status == "drop")
+                                plane.DropTrack();
+                            }*/
+                            else
                             {
-                                plane.Owned = false;
-                                plane.PositionInd = "*";
-                                plane.PendingHandoff = null;
-                                plane.Scratchpad = null;
-                                plane.Scratchpad2 = null;
-                                plane.Runway = null;
-                                plane.Destination = null;
+                                switch (record.flightPlan.ocr)
+                                {
+                                    case "intrafacility handoff":
+                                        if (plane.QuickLook)
+                                            plane.QuickLook = false;
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                    case "normal handoff":
+                                    case "manual":
+                                    case "no change":
+                                    case "consolidation":
+                                    case "directed handoff":
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                    case "pending":
+                                        plane.PendingHandoff = record.flightPlan.cps;
+                                        break;
+                                    default:
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                }
                             }
+                            
+                            
                         }
                     }
                 }
