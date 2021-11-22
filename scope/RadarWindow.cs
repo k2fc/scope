@@ -1078,6 +1078,18 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
+                            case (int)Key.O:
+                                if (keys[0].Length == 3 && enter)
+                                {
+                                    if ((int)keys[0][2] == (int)Key.I)
+                                        AutoOffset = false;
+                                    else if ((int)keys[0][2] == (int)Key.E)
+                                        AutoOffset = true;
+                                    else
+                                        break;
+                                    Preview.Clear();
+                                }
+                                break;
                         }
                         break;
                 }
