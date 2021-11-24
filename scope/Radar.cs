@@ -112,9 +112,9 @@ namespace DGScope
         }
 
         DateTime lastMetarUpdate = DateTime.MinValue;
-        public void GetWeather()
+        public void GetWeather(bool force = false)
         {
-            if (lastMetarUpdate < DateTime.Now.AddMinutes(-5))
+            if (lastMetarUpdate < DateTime.Now.AddMinutes(-5) || force)
             {
                 List<Metar> tempMetars = new List<Metar>();
                 foreach (var metar in metarService.GetBulk())

@@ -560,7 +560,7 @@ namespace DGScope
 
         private void cbWxUpdateTimer(object state)
         {
-            radar.GetWeather();
+            radar.GetWeather(true);
         }
 
         private void cbTimeshareTimer(object state)
@@ -1071,19 +1071,19 @@ namespace DGScope
                             case (int)Key.Q:
                                 QuickLook = !QuickLook;
                                 break;
-                            case (int)Key.S:
+                            case (int)Key.S: 
                                 if (!clickedplane)
                                 {
                                     StatusArea.LocationF = (PointF)clicked;
                                     Preview.Clear();
                                 }
                                 break;
-                            case (int)Key.O:
+                            case (int)Key.O: //Multifunction O: Auto Offset
                                 if (keys[0].Length == 3 && enter)
                                 {
-                                    if ((int)keys[0][2] == (int)Key.I)
+                                    if ((int)keys[0][2] == (int)Key.I) //Inhibit
                                         AutoOffset = false;
-                                    else if ((int)keys[0][2] == (int)Key.E)
+                                    else if ((int)keys[0][2] == (int)Key.E) //Enable
                                         AutoOffset = true;
                                     else
                                         break;
