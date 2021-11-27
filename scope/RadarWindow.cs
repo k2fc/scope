@@ -826,8 +826,10 @@ namespace DGScope
                     keys[i] = command.ToArray();
                 }
                 string lastline = KeysToString(keys[commands - 1]);
-                Aircraft typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
-                    .Find(x => x.Callsign.Trim() == lastline.Trim());
+                Aircraft typed;
+                lock (radar.Aircraft)
+                    typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
+                        .Find(x => x.Callsign.Trim() == lastline.Trim());
                 if (typed != null)
                 {
                     if (typed.Squawk != "1200" && typed.Squawk!= null )
