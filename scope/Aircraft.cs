@@ -9,6 +9,7 @@ namespace DGScope
     {
         public int ModeSCode { get; set; }
         public string Squawk { get; set; }
+        private double lastlat, lastlon;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string Callsign { get; set; }
@@ -54,10 +55,20 @@ namespace DGScope
         {
             get
             {
+                if (lastlat != Latitude || lastlon != Longitude)
+                {
+                    LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(Latitude, Longitude)));
+                    lastlat = Latitude;
+                    lastlon = Longitude;
+                }
                 return new GeoPoint(Latitude, Longitude);
             }
             set
             {
+                if (value.Latitude != Latitude || value.Longitude != Longitude)
+                {
+                    LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(value.Latitude, value.Longitude)));
+                }
                 Latitude = value.Latitude;
                 Longitude = value.Longitude;
                 Drawn = false;
@@ -88,7 +99,10 @@ namespace DGScope
         public string? Scratchpad2 { get; set; }
         public string? FlightRules { get; set; }
         public string? Runway { get; set; }
+        public int RequestedAltitude { get; set; } = 0;
         public string? Category { get; set; }
+        public string FlightPlanCallsign { get; set; }
+        public DateTime LastHistoryDrawn { get; set; } = DateTime.MinValue;
         public bool Drawn { get; set; } = false;
         bool owned = false;
         public bool Owned 
@@ -109,14 +123,17 @@ namespace DGScope
         public bool FDB { 
             get
             {
+                if (Owned) _fdb = true;
                 return _fdb;
             }
             set
             {
-                DataBlock.Redraw = true;
+                var oldvalue = _fdb;
+                _fdb = value;
+                if (oldvalue != value)
+                    RedrawDataBlock(false);
                 if (QuickLook)
                     QuickLook = false;
-                _fdb = value;
             }
         }
 
@@ -124,11 +141,6 @@ namespace DGScope
         bool _fdb = false;
         private bool fdb()
         {
-            if (Owned)
-            {
-                _fdb = true;
-                return true;
-            }
             if (Emergency || ShowCallsignWithNoSquawk || QuickLook)
             {
                 return true;
@@ -187,14 +199,16 @@ namespace DGScope
         {
             //ForeColor = Color.Lime,
             //BackColor = Color.Transparent,
-            TextAlign = ContentAlignment.TopLeft,
             AutoSize = true
         };
         public TransparentLabel DataBlock2 = new TransparentLabel()
         {
             //ForeColor = Color.Lime,
             //BackColor = Color.Transparent,
-            TextAlign = ContentAlignment.TopLeft,
+            AutoSize = true
+        };
+        public TransparentLabel DataBlock3 = new TransparentLabel()
+        {
             AutoSize = true
         };
 
@@ -212,7 +226,200 @@ namespace DGScope
         }
 
         private int dbAlt, dbSpeed = 0;
-        public void RedrawDataBlock(bool updatepos = false)
+
+        public void RedrawDataBlock(bool updatepos = false, RadarWindow.LeaderDirection? leaderDirection = null)
+        {
+            if (leaderDirection == null)
+                leaderDirection = LDRDirection;
+            string oldtext = DataBlock.Text;
+            string oldtext2 = DataBlock2.Text;
+            string oldtext3 = DataBlock3.Text;
+            DataBlock.Text = "";
+            DataBlock2.Text = "";
+            DataBlock3.Text = "";
+            if (updatepos || dbAlt == 0 || dbSpeed == 0)
+            {
+                dbAlt = Altitude;
+                dbSpeed = GroundSpeed;
+            }
+            string vfrchar = " ";
+            string catchar = " ";
+            string handoffchar = " ";
+            if (PendingHandoff != null)
+                handoffchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
+
+            if (Squawk == "1200" || (FlightRules != "IFR" && FlightRules != null))
+            {
+                vfrchar = "V";
+            }
+
+            if (Category != null)
+            {
+                catchar = Category;
+            }
+            string destination = "   ";
+            string type = "    ";
+            string yscratch = "   ";
+            string hscratch = "    ";
+
+            if (Destination == null)
+            {
+                destination = (dbAlt / 100).ToString("D3");
+            }
+            else if (Destination.Trim() != "" && Destination != "unassigned")
+            {
+                destination = Destination.PadRight(3);
+            }
+            else
+            {
+                destination = (dbAlt / 100).ToString("D3");
+            }
+            
+            if (Scratchpad == null)
+            {
+                yscratch = destination;
+            }
+            else if (Scratchpad.Trim() != "")
+            {
+                yscratch = Scratchpad.PadRight(3);
+            }
+            else
+            {
+                yscratch = destination;
+            }
+
+            if (Type == null)
+            {
+                type = (dbSpeed / 10).ToString("D2") + vfrchar + catchar;
+            }
+            else if (Type.Trim() != "")
+            {
+                type = Type.PadRight(4);
+            }
+            else
+            {
+                type = (dbSpeed / 10).ToString("D2") + vfrchar + catchar;
+            }
+
+            if (Scratchpad2 == null && RequestedAltitude == 0)
+            {
+                hscratch = type;
+            }
+            else if (Scratchpad2 != null)
+            {
+                hscratch = Scratchpad2.PadRight(4);
+            }
+            else if (RequestedAltitude > 0)
+            {
+                hscratch = "R" + (RequestedAltitude / 100).ToString("D3");
+            }
+            else
+            {
+                hscratch = type;
+            }
+
+            string fdb1line2 = (dbAlt / 100).ToString("D3") + handoffchar + (dbSpeed / 10).ToString("D2") + vfrchar + catchar + " ";
+            string fdb2line2 = destination + handoffchar + type + " ";
+            string fdb3line2 = yscratch + handoffchar + hscratch + " ";
+
+
+            if (FDB || ShowCallsignWithNoSquawk)
+            {
+                if (Callsign == null)
+                {
+                    DataBlock.Text = "         ";
+                    DataBlock2.Text = "         ";
+                    DataBlock3.Text = "         ";
+                }
+                else if ((Callsign.Trim() != "" && Squawk != "1200" && Squawk != null && Squawk != "0000") || ShowCallsignWithNoSquawk)
+                {
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text = Callsign.PadLeft(9);
+                        DataBlock2.Text = Callsign.PadLeft(9); 
+                        DataBlock3.Text = Callsign.PadLeft(9); 
+                    }
+                    else
+                    {
+                        DataBlock.Text = Callsign.PadRight(9);
+                        DataBlock2.Text = Callsign.PadRight(9);
+                        DataBlock3.Text = Callsign.PadRight(9);
+                    }
+                }
+                else if (Squawk == "1200" && (PositionInd == null|| PositionInd == "*"))
+                {
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text = "     1200";
+                        DataBlock2.Text = "     1200";
+                        DataBlock3.Text = "     1200";
+                    }
+                    else
+                    {
+                        DataBlock.Text = "1200     ";
+                        DataBlock2.Text = "1200     ";
+                        DataBlock3.Text = "1200     ";
+                    }
+                }
+                else if (Squawk == "1200" && FlightPlanCallsign != null)
+                {
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text = FlightPlanCallsign.PadLeft(9);
+                        DataBlock2.Text = FlightPlanCallsign.PadLeft(9);
+                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9);
+                    }
+                    else
+                    {
+                        DataBlock.Text = FlightPlanCallsign.PadRight(9);
+                        DataBlock2.Text = FlightPlanCallsign.PadRight(9);
+                        DataBlock3.Text = FlightPlanCallsign.PadRight(9);
+                    }
+                }
+                
+                DataBlock.Text += "\r\n";
+                DataBlock2.Text += "\r\n";
+                DataBlock3.Text += "\r\n";
+
+                if (FDB)
+                {
+                    DataBlock.Text += fdb1line2;
+                    DataBlock2.Text += fdb2line2;
+                    DataBlock3.Text += fdb3line2;
+                }
+                else
+                {
+                    DataBlock.Text += (dbAlt / 100).ToString("D3") + vfrchar + catchar + "\r\n     ";
+                    DataBlock2.Text += destination.PadRight(5) + "\r\n     ";
+                    DataBlock3.Text += yscratch.PadRight(5) + "\r\n     ";
+                }
+            }
+            else
+            {
+                //This is an LDB
+                DataBlock.Text = (dbAlt / 100).ToString("D3") + " " + vfrchar + catchar + "\r\n     ";
+                DataBlock2.Text = destination.PadRight(3) + " " + vfrchar + catchar + "\r\n     ";
+                DataBlock3.Text = yscratch.PadRight(4) + vfrchar + catchar + "\r\n     ";
+            }
+
+            if (!DataBlock.Redraw)
+                DataBlock.Redraw = DataBlock2.Text != oldtext;
+            if (!DataBlock2.Redraw)
+                DataBlock2.Redraw = DataBlock.Text != oldtext2;
+            if (!DataBlock3.Redraw)
+                DataBlock3.Redraw = DataBlock.Text != oldtext3;
+            if (PositionInd != null)
+                PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
+            else
+                PositionIndicator.Text = "*";
+        }
+        public void OldRedrawDataBlock(bool updatepos = false)
         {
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
@@ -358,13 +565,14 @@ namespace DGScope
     public class UpdatePositionEventArgs : AircraftEventArgs
     {
         public GeoPoint Location { get; private set; }
-        public bool Intrafacility { get; private set; }
+        //public bool Intrafacility { get; private set; }
         public UpdatePositionEventArgs(Aircraft Aircraft, GeoPoint Location, bool intrafacility = false) : base(Aircraft)
         {
             this.Location = Location;
-            Intrafacility = intrafacility;
+            //Intrafacility = intrafacility;
         }
     }
+
     
     public class AircraftEventArgs : EventArgs
     {

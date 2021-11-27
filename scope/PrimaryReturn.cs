@@ -218,5 +218,8 @@ namespace DGScope
             base.Dispose(disposing);
         }
     }
-
+    public enum TargetShape
+    {
+        Rectangle, Circle
+    }
 }
