@@ -81,6 +81,7 @@ namespace DGScope.Receivers.FAA_SCDS
                             plane.Scratchpad = record.flightPlan.scratchPad1;
                             plane.Runway = record.flightPlan.runway;
                             plane.Scratchpad2 = record.flightPlan.scratchPad2;
+                            plane.RequestedAltitude = record.flightPlan.requestedAltitude;
                             plane.Category = record.flightPlan.category;
                             if (record.flightPlan.exitFix != null)
                                 plane.Destination = record.flightPlan.exitFix;
@@ -99,6 +100,8 @@ namespace DGScope.Receivers.FAA_SCDS
                                     plane.LocationReceivedBy = this;
                                 }
                             }
+                            plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
+
                             if (plane.Callsign == null)
                                 plane.Callsign = record.flightPlan.acid.Trim();
                             /*if (record.flightPlan.status == "drop" || record.flightPlan.delete != 0)
