@@ -262,7 +262,7 @@ namespace DGScope
                     return;
                 base.Text = value;
                 Redraw = true;
-                RecreateHandle();
+                //dg RecreateHandle();
             }
         }
 
@@ -285,9 +285,10 @@ namespace DGScope
             set
             {
                 base.RightToLeft = value;
-                RecreateHandle();
+                //dg RecreateHandle();
             }
         }
+
 
         /// <summary>
         /// Gets or sets the font of the text displayed by the control.
@@ -305,8 +306,8 @@ namespace DGScope
             set
             {
                 base.Font = value;
-                if (value != base.Font)
-                    RecreateHandle();
+                //if (value != base.Font)
+                    //dg RecreateHandle();
             }
         }
 
@@ -322,7 +323,7 @@ namespace DGScope
                 if (value != textAlign)
                     Redraw = true;
                 textAlign = value;
-                RecreateHandle();
+                //dg RecreateHandle();
             }
         }
 
