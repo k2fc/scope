@@ -77,52 +77,66 @@ namespace DGScope.Receivers.SBS
                                         plane.Callsign = sbs_data[10].Trim();
                                         break;
                                     case "2":
-                                        if (sbs_data[11] != "")
-                                            plane.PressureAltitude = Int32.Parse(sbs_data[11]);
-                                        if (sbs_data[12] != "")
-                                            plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
-                                        if (sbs_data[13] != "")
-                                            plane.Track = (int)Double.Parse(sbs_data[13]);
-                                        if (sbs_data[14] != "" && sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                        if (messageTime > plane.LastPositionTime)
                                         {
-                                            var latitude = Double.Parse(sbs_data[14]);
-                                            var longitude = Double.Parse(sbs_data[15]);
-                                            var temploc = new GeoPoint(latitude, longitude);
-                                            if (InRange(temploc, plane.PressureAltitude))
+                                            if (sbs_data[11] != "")
+                                                plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                            if (sbs_data[12] != "")
+                                                plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
+                                            if (sbs_data[13] != "")
+                                                plane.Track = (int)Double.Parse(sbs_data[13]);
+                                            if (sbs_data[14] != "" && sbs_data[15] != "")
                                             {
-                                                plane.Location = temploc;
-                                                plane.LastPositionTime = messageTime;
-                                                plane.LocationReceivedBy = this;
+                                                var latitude = Double.Parse(sbs_data[14]);
+                                                var longitude = Double.Parse(sbs_data[15]);
+                                                var temploc = new GeoPoint(latitude, longitude);
+                                                if (InRange(temploc, plane.PressureAltitude))
+                                                {
+                                                    plane.Location = temploc;
+                                                    plane.LastPositionTime = messageTime;
+                                                    plane.LocationReceivedBy = this;
+                                                }
                                             }
+                                            plane.IsOnGround = sbs_data[21] == "-1";
                                         }
-                                        else if(sbs_data[14] != "" && sbs_data[15] != "")
+                                        
+                                        else
                                         {
                                             Console.WriteLine("Ignored positon update for {0} from {1}, because we have a newer one from {2}", 
                                                 plane.Callsign, Name, plane.LocationReceivedBy.Name);
                                         }
-                                        plane.IsOnGround = sbs_data[21] == "-1";
+                                        
                                         break;
                                     case "3":
-                                        if (sbs_data[11] != "")
-                                            plane.PressureAltitude = Int32.Parse(sbs_data[11]);
-                                        if (sbs_data[14] != "" && sbs_data[15] != "" && messageTime > plane.LastPositionTime)
+                                        if (messageTime > plane.LastPositionTime)
                                         {
-                                            var latitude = Double.Parse(sbs_data[14]);
-                                            var longitude = Double.Parse(sbs_data[15]);
-                                            var temploc = new GeoPoint(latitude, longitude);
-                                            if (InRange(temploc, plane.PressureAltitude))
+                                            if (sbs_data[11] != "")
+                                                plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                            if (sbs_data[14] != "" && sbs_data[15] != "")
                                             {
-                                                plane.Location = temploc;
-                                                plane.LastPositionTime = messageTime;
-                                                plane.LocationReceivedBy = this;
+                                                var latitude = Double.Parse(sbs_data[14]);
+                                                var longitude = Double.Parse(sbs_data[15]);
+                                                var temploc = new GeoPoint(latitude, longitude);
+                                                if (InRange(temploc, plane.PressureAltitude))
+                                                {
+                                                    plane.Location = temploc;
+                                                    plane.LastPositionTime = messageTime;
+                                                    plane.LocationReceivedBy = this;
+                                                }
                                             }
+                                            plane.Alert = sbs_data[18] == "-1";
+                                            plane.Emergency = sbs_data[19] == "-1";
+                                            plane.Ident = sbs_data[20] == "-1";
+                                            plane.IsOnGround = sbs_data[21] == "-1";
                                         }
-                                        plane.Alert = sbs_data[18] == "-1";
-                                        plane.Emergency = sbs_data[19] == "-1";
-                                        plane.Ident = sbs_data[20] == "-1";
-                                        plane.IsOnGround = sbs_data[21] == "-1";
+                                        else
+                                        {
+                                            Console.WriteLine("Ignored positon update for {0} from {1}, because we have a newer one from {2}",
+                                                plane.Callsign, Name, plane.LocationReceivedBy.Name);
+                                        }
                                         break;
                                     case "4":
+
                                         if (sbs_data[12] != "")
                                             plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
                                         if (sbs_data[13] != "")
