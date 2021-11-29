@@ -93,19 +93,11 @@ namespace DGScope.Receivers.FAA_SCDS
                                 if (record.track.reportedBeaconCode > 0)
                                     plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
 
-                                if (record.track.mrtTime > plane.LastPositionTime && Convert.ToInt32(record.track.acAddress, 16) == plane.ModeSCode && false)
+                                if (record.track.mrtTime > plane.LastPositionTime && false)
                                 {
-                                    GeoPoint newloc = new GeoPoint((double)record.track.lat, (double)record.track.lon);
-                                    plane.GroundSpeed = (int)(newloc.DistanceTo(plane.Location) / (record.track.mrtTime - plane.LastPositionTime).TotalHours);
-                                    plane.Track = (int)plane.Location.BearingTo(newloc);
-                                    plane.Location = newloc;
-                                    plane.PressureAltitude = record.track.reportedAltitude;
+                                    plane.Location = new GeoPoint((double)record.track.lat, (double)record.track.lon);
                                     plane.LastPositionTime = record.track.mrtTime;
                                     plane.LocationReceivedBy = this;
-                                }
-                                else
-                                {
-
                                 }
                             }
                             plane.FlightPlanCallsign = record.flightPlan.acid.Trim();

@@ -13,7 +13,7 @@ namespace DGScope
         bool _flashing = false;
         bool flashOn = true;
         System.Threading.Timer flashtimer;
-        
+
         public bool Flashing {
             get
             {
@@ -46,12 +46,31 @@ namespace DGScope
                 }
                 else
                 {
-                    return Color.Transparent;
+                    return base.ForeColor;
+                    return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
                 }
             }
             set
             {
+                if (base.ForeColor == value)
+                    return;
+                Redraw = true;
                 base.ForeColor = value;
+            }
+        }
+
+        public Color DrawColor
+        {
+            get
+            {
+                if (!Flashing || flashOn)
+                {
+                    return base.ForeColor;
+                }
+                else
+                {
+                    return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
+                }
             }
         }
         public bool InBoundsF => LocationF.X > -1 && LocationF.X < 1 && LocationF.Y > -1 && LocationF.Y < 1;
@@ -242,7 +261,8 @@ namespace DGScope
                 if (value == base.Text)
                     return;
                 base.Text = value;
-                RecreateHandle();
+                Redraw = true;
+                //dg RecreateHandle();
             }
         }
 
@@ -265,9 +285,10 @@ namespace DGScope
             set
             {
                 base.RightToLeft = value;
-                RecreateHandle();
+                //dg RecreateHandle();
             }
         }
+
 
         /// <summary>
         /// Gets or sets the font of the text displayed by the control.
@@ -285,7 +306,8 @@ namespace DGScope
             set
             {
                 base.Font = value;
-                RecreateHandle();
+                //if (value != base.Font)
+                    //dg RecreateHandle();
             }
         }
 
@@ -298,9 +320,16 @@ namespace DGScope
             get { return textAlign; }
             set
             {
+                if (value != textAlign)
+                    Redraw = true;
                 textAlign = value;
-                RecreateHandle();
+                //dg RecreateHandle();
             }
+        }
+
+        public void CenterOnPoint (PointF Point)
+        {
+            LocationF = new PointF(Point.X - SizeF.Width / 2, Point.Y - SizeF.Height / 2);
         }
 
         

@@ -18,7 +18,14 @@ namespace DGScope
         {
             InitializeComponent();
             this.videoMaps = videoMaps;
+            this.KeyDown += VideoMapSelector_KeyDown;
             LoadListBox();
+        }
+
+        private void VideoMapSelector_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2 && e.Control)
+                this.Close();
         }
 
         private void CheckedListBox1_ItemCheck(object sender, ItemCheckEventArgs e)
