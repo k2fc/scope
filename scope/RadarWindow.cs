@@ -188,6 +188,24 @@ namespace DGScope
         public bool HideDataTags { get; set; } = false;
         [DisplayName("Quick Look"), Description("Show FDB on all"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
+        [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
+        public double TimeshareInterval
+        {
+            get
+            {
+                if (dataBlockTimeshareTimer == null)
+                    return 1;
+                return timeshareinterval / 1000d;
+            }
+            set
+            {
+                if (value != timeshareinterval && dataBlockTimeshareTimer != null)
+                {
+                    dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
+                }
+                timeshareinterval = (int)(value * 1000d);
+            }
+        }
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
         public bool HistoryFade { get; set; } = true;
         [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
@@ -499,6 +517,7 @@ namespace DGScope
         }
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
         Timer wxUpdateTimer;
+        int timeshareinterval = 1000;
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints;
         List<Airport> Airports;
@@ -519,7 +538,7 @@ namespace DGScope
             window.MouseDown += Window_MouseDown;
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
-            dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 1000, 1000);
+            dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
