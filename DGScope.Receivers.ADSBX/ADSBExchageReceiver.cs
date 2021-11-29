@@ -72,7 +72,7 @@ namespace DGScope.Receivers
                                 }
                                 if (posDataUpdate)
                                 {
-                                    plane.Altitude = (int)jsonPlane.Altitude;
+                                    plane.TrueAltitude = (int)jsonPlane.Altitude;
                                     plane.Location = jsonPlane.Location;
                                     plane.GroundSpeed = (int)jsonPlane.Speed;
                                     plane.VerticalRate = (int)jsonPlane.VerticalSpeed;
