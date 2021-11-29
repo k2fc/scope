@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Xml.Serialization;
 using DGScope.Receivers;
+using libmetar;
+using libmetar.Services;
 
 namespace DGScope
 {
@@ -29,10 +34,106 @@ namespace DGScope
         //public double Size { get => Math.Min(Width, Height); }
         [XmlIgnore]
         [Browsable(false)]
-        public List<Aircraft> Aircraft { get; } = new List<Aircraft>();
+        public ObservableCollection<Aircraft> Aircraft { get; } = new ObservableCollection<Aircraft>();
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
+        [XmlIgnore]
+        public Airports Airports { get; set; } = new Airports();
+        [XmlIgnore]
+        public Waypoints Waypoints { get; set; } = new Waypoints();
         public Font DataBlockFont { get; set; }
+        private List<string> _altimeterStations = new List<string>();
+        public List<string> AltimeterStations 
+        {
+            get
+            {
+                return _altimeterStations;
+            }
+            set
+            {
+                _altimeterStations = value;
+                correctioncalculated = false;
+            }
+        }
 
+        private int _altimeterCorrection = 0;
+        private MetarService metarService = new MetarService();
+        
+        public List<Metar> AllMetars
+        {
+            get 
+            {
+                GetWeather();
+                return allMetars;
+            }
+        }
+        private List<Metar> allMetars;
+        public List<Metar> Metars
+        {
+            get
+            {
+                return AllMetars.Where(metar => AltimeterStations.Contains(metar.Icao)).ToList();
+            }
+        }
+        private bool correctioncalculated = false;
+        
+        public int AltimeterCorrection
+        {
+            get
+            {
+                if (!correctioncalculated || lastMetarUpdate < DateTime.Now.AddMinutes(-5))
+                {
+                    double totalaltimeter = 0;
+                    int metarscount = Metars.Count;
+                    if (Metars.Count > 0)
+                    {
+                        foreach (var metar in Metars)
+                        {
+                            try
+                            {
+                                totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
+                            }
+                            catch
+                            {
+                                metarscount--;
+                            }
+
+                            }
+                        totalaltimeter /= metarscount;
+                    }
+                    else
+                    {
+                        totalaltimeter = 29.92;
+                    }
+                    _altimeterCorrection = (int)((totalaltimeter - 29.92) * 1000);
+                    correctioncalculated = true;
+                }
+                return _altimeterCorrection;
+            }
+        }
+
+        DateTime lastMetarUpdate = DateTime.MinValue;
+        public void GetWeather(bool force = false)
+        {
+            if (lastMetarUpdate < DateTime.Now.AddMinutes(-5) || force)
+            {
+                List<Metar> tempMetars = new List<Metar>();
+                foreach (var metar in metarService.GetBulk())
+                {
+                    try
+                    {
+                        metar.Parse();
+                        tempMetars.Add(metar);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Excluded {0} because: {1}", metar.Icao, ex.Message);
+                    }
+                }
+                lastMetarUpdate = DateTime.Now;
+                correctioncalculated = false;
+                allMetars = tempMetars;
+            }
+        }
         public double LatitudeOfTarget(double distance, double bearing)
         {
             double R = 3443.92; // nautical miles
@@ -62,7 +163,16 @@ namespace DGScope
             {
                 receiver.SetAircraftList(Aircraft);
                 if(receiver.Enabled)
-                    receiver.Start();
+                    try
+                    {
+                        receiver.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.Forms.MessageBox.Show(string.Format("An error occured starting receiver {0}.\r\n{1}", 
+                            receiver.Name, ex.Message),"Error starting receiver", System.Windows.Forms.MessageBoxButtons.OK, 
+                            System.Windows.Forms.MessageBoxIcon.Warning); 
+                    }
             }
             isRunning = true;
         }
@@ -86,7 +196,6 @@ namespace DGScope
         }
         public Radar()
         {
-
         }
 
     }

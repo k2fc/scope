@@ -27,6 +27,7 @@ namespace DGScope.Receivers.SBS
         {
             if (running)
                 return;
+            Enabled = true;
             client = new EventDrivenTCPClient(Host, Port, true);
             client.DataReceived += Client_DataReceived;
             client.Connect();
@@ -36,6 +37,7 @@ namespace DGScope.Receivers.SBS
         {
             if (!running)
                 return;
+            Enabled = false;
             client.Disconnect();
             while (client.ConnectionState != EventDrivenTCPClient.ConnectionStatus.DisconnectedByUser) { }
             //client.DataReceived -= Client_DataReceived;
