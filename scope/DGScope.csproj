@@ -190,6 +190,7 @@
   <ItemGroup>
     <Compile Include="Aircraft.cs" />
     <Compile Include="AirportsXml.cs" />
+    <Compile Include="Altitude.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
     <Compile Include="TPARing.cs" />

@@ -26,6 +26,7 @@ namespace DGScope
         public double Range { get; set; } = 20;
         public int MaxAltitude { get; set; } = 1000000;
         public int MinAltitude { get; set; } = 0;
+        public int TransitionAltitude { get; set; } = 18000;
         [Browsable(false)]
         public int Width { get; set; }
         [Browsable(false)]
@@ -75,6 +76,46 @@ namespace DGScope
             }
         }
         private bool correctioncalculated = false;
+        Pressure altimeter = new Pressure("");
+        private Pressure cachedalt => Altimeter;
+        public Pressure Altimeter
+        {
+            get
+            {
+                if (!correctioncalculated || lastMetarUpdate < DateTime.Now.AddMinutes(-5))
+                {
+                    double totalaltimeter = 0;
+                    int metarscount = Metars.Count;
+                    if (Metars.Count > 0)
+                    {
+                        foreach (var metar in Metars)
+                        {
+                            try
+                            {
+                                totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
+                            }
+                            catch
+                            {
+                                metarscount--;
+                            }
+
+                        }
+                        totalaltimeter /= metarscount;
+                    }
+                    else
+                    {
+                        totalaltimeter = 29.92;
+                    }
+                    altimeter = new Pressure("")
+                    {
+                        Value = totalaltimeter,
+                        Unit = libmetar.Enums.PressureUnit.inHG,
+                        Type = libmetar.Enums.PressureType.QNH
+                    };
+                }
+                return altimeter;
+            }
+        }
         
         public int AltimeterCorrection
         {

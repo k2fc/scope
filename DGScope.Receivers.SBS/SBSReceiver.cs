@@ -80,7 +80,7 @@ namespace DGScope.Receivers.SBS
                                         if (messageTime > plane.LastPositionTime)
                                         {
                                             if (sbs_data[11] != "")
-                                                plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                                plane.Altitude.PressureAltitude = Int32.Parse(sbs_data[11]);
                                             if (sbs_data[12] != "")
                                                 plane.GroundSpeed = (int)Double.Parse(sbs_data[12]);
                                             if (sbs_data[13] != "")
@@ -111,7 +111,7 @@ namespace DGScope.Receivers.SBS
                                         if (messageTime > plane.LastPositionTime)
                                         {
                                             if (sbs_data[11] != "")
-                                                plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                                plane.Altitude.PressureAltitude = Int32.Parse(sbs_data[11]);
                                             if (sbs_data[14] != "" && sbs_data[15] != "")
                                             {
                                                 var latitude = Double.Parse(sbs_data[14]);
@@ -146,14 +146,14 @@ namespace DGScope.Receivers.SBS
                                         break;
                                     case "5":
                                         if (sbs_data[11] != "")
-                                            plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                            plane.Altitude.PressureAltitude = Int32.Parse(sbs_data[11]);
                                         plane.Alert = sbs_data[18] == "-1";
                                         plane.Ident = sbs_data[20] == "-1";
                                         plane.IsOnGround = sbs_data[21] == "-1";
                                         break;
                                     case "6":
                                         if (sbs_data[11] != "")
-                                            plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                            plane.Altitude.PressureAltitude = Int32.Parse(sbs_data[11]);
                                         plane.Squawk = sbs_data[17];
                                         plane.Alert = sbs_data[18] == "-1";
                                         plane.Emergency = sbs_data[19] == "-1";
@@ -162,7 +162,7 @@ namespace DGScope.Receivers.SBS
                                         break;
                                     case "7":
                                         if (sbs_data[11] != "")
-                                            plane.PressureAltitude = Int32.Parse(sbs_data[11]);
+                                            plane.Altitude.PressureAltitude = Int32.Parse(sbs_data[11]);
                                         plane.IsOnGround = sbs_data[21] == "-1";
                                         break;
                                     case "8":
