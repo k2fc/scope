@@ -13,8 +13,8 @@ namespace DGScope
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string Callsign { get; set; }
-        public int PressureAltitude { get; set; }
-        public int TrueAltitude { get; set; }
+        public int PressureAltitude => Altitude.PressureAltitude;
+        public int TrueAltitude => Altitude.TrueAltitude;
         private string positionind;
         public string PositionInd 
         {
@@ -42,15 +42,10 @@ namespace DGScope
             }
         }
         public TPA TPA { get; set; }
-        public int Altitude
+        public Altitude Altitude
         {
-            get
-            {
-                if (TrueAltitude <= 18000)
-                    return TrueAltitude;
-                return PressureAltitude;
-            }
-        }
+            get; set;
+        } = new Altitude();
         public GeoPoint Location
         {
             get
@@ -239,7 +234,7 @@ namespace DGScope
             DataBlock3.Text = "";
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
-                dbAlt = Altitude;
+                dbAlt = TrueAltitude;
                 dbSpeed = GroundSpeed;
             }
             string vfrchar = " ";
@@ -423,7 +418,7 @@ namespace DGScope
         {
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
-                dbAlt = Altitude;
+                dbAlt = TrueAltitude;
                 dbSpeed = GroundSpeed;
             }
             string vrchar = " ";

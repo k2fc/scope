@@ -568,6 +568,7 @@ namespace DGScope
                         item.HandedOff += Aircraft_HandedOff;
                         item.HandoffInitiated += Aircraft_HandoffInitiated;
                         item.OwnershipChange += Aircraft_OwnershipChange;
+                        item.Altitude.SetAltitudeProperties(18000, radar.Altimeter);
                     }
                     break;
                 case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
@@ -2058,7 +2059,6 @@ namespace DGScope
         private void GenerateTarget(Aircraft aircraft)
         {
             
-            aircraft.TrueAltitude = aircraft.PressureAltitude + radar.AltimeterCorrection;
             double bearing = radar.Location.BearingTo(aircraft.Location) - ScreenRotation;
             double distance = radar.Location.DistanceTo(aircraft.Location);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
@@ -2098,7 +2098,7 @@ namespace DGScope
                 double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
                 aircraft.PTL.End2 = aircraft.Location.FromPoint(ptldistance, aircraft.Track);
 
-                if (aircraft.Altitude <= radar.MaxAltitude && aircraft.Altitude >= MinAltitude)
+                if (aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
