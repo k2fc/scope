@@ -2142,8 +2142,8 @@ namespace DGScope
         private void GenerateTarget(Aircraft aircraft)
         {
             
-            double bearing = radar.Location.BearingTo(aircraft.Location) - ScreenRotation;
-            double distance = radar.Location.DistanceTo(aircraft.Location);
+            double bearing = radar.Location.BearingTo(aircraft.ExtrapolatePosition()) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(aircraft.ExtrapolatePosition());
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
             var location = new PointF(x, y);
@@ -2191,9 +2191,9 @@ namespace DGScope
             if (aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
             {
                 aircraft.RedrawTarget(location);
-                aircraft.PTL.End1 = aircraft.Location;
+                aircraft.PTL.End1 = aircraft.ExtrapolatePosition();
                 double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
-                aircraft.PTL.End2 = aircraft.Location.FromPoint(ptldistance, aircraft.Track);
+                aircraft.PTL.End2 = aircraft.ExtrapolatePosition().FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
                 if (aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude)
                     GenerateDataBlock(aircraft);
