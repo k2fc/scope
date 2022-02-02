@@ -15,6 +15,7 @@ namespace DGScope
         public string Callsign { get; set; }
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
+        private double rateofturn;
         private string positionind;
         public string PositionInd 
         {
@@ -46,6 +47,7 @@ namespace DGScope
         {
             get; set;
         } = new Altitude();
+        private DateTime lastLocationSetTime = DateTime.MinValue;
         public GeoPoint Location
         {
             get
@@ -55,6 +57,7 @@ namespace DGScope
                     LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(Latitude, Longitude)));
                     lastlat = Latitude;
                     lastlon = Longitude;
+                    lastLocationSetTime = DateTime.Now;
                 }
                 return new GeoPoint(Latitude, Longitude);
             }
@@ -64,6 +67,7 @@ namespace DGScope
                 {
                     LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(value.Latitude, value.Longitude)));
                 }
+                lastLocationSetTime = DateTime.Now;
                 Latitude = value.Latitude;
                 Longitude = value.Longitude;
                 Drawn = false;
@@ -72,7 +76,22 @@ namespace DGScope
         public PointF LocationF { get; set; }
         public Receiver LocationReceivedBy { get; set; }
         public int GroundSpeed { get; set; }
-        public int Track { get; set; }
+        private double track;
+        private DateTime lastTrackUpdate = DateTime.MinValue;
+        public int Track 
+        {
+            get
+            {
+                return (int)track;
+            }
+            set
+            {
+                var change = value - track;
+                rateofturn = change / (DateTime.Now - lastTrackUpdate).TotalSeconds;
+                track = (double)value;
+                lastTrackUpdate = DateTime.Now;
+            }
+        }
         public int VerticalRate { get; set; }
         public bool Ident { get => ident;
             set
@@ -524,9 +543,20 @@ namespace DGScope
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(true);
                 TargetReturn.Refresh();
-                SweptLocation = Location;
+                SweptLocation = ExtrapolatePosition();
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             }
+        }
+
+        public double ExtrapolateTrack()
+        {
+            return track + (rateofturn * (DateTime.Now - lastTrackUpdate).TotalSeconds);
+        }
+
+        public GeoPoint ExtrapolatePosition()
+        {
+            var miles = GroundSpeed * (DateTime.Now - lastLocationSetTime).TotalHours;
+            return Location.FromPoint(miles, ExtrapolateTrack());
         }
 
         public GeoPoint SweptLocation;
