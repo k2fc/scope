@@ -208,6 +208,8 @@ namespace DGScope
         }
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
         public bool HistoryFade { get; set; } = true;
+        [DisplayName("Primary Fade"), Description("Whether or not the primary returns fade out"), Category("Display Properties")]
+        public bool PrimaryFade { get; set; } = true;
         [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
             "If false, they retain their direction with respect to the receiving radar site."), Category("Display Properties")]
         public bool HistoryDirectionAngle { get; set; } = false;
@@ -2083,6 +2085,7 @@ namespace DGScope
                     PrimaryReturn newreturn = new PrimaryReturn();
                     aircraft.TargetReturn = newreturn;
                     newreturn.ParentAircraft = aircraft;
+                    newreturn.Fading = PrimaryFade;
                     newreturn.FadeTime = FadeTime;
                     newreturn.NewLocation = location;
                     newreturn.Intensity = 1;
