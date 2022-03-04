@@ -2429,6 +2429,11 @@ namespace DGScope
 
         private void DrawTarget(PrimaryReturn target)
         {
+            if (target != target.ParentAircraft.TargetReturn) // history
+            {
+                if ((target.ParentAircraft.TrueAltitude > MaxAltitude || target.ParentAircraft.TrueAltitude < MinAltitude) && !target.ParentAircraft.FDB)
+                    return;
+            }
             switch (TargetShape)
             {
                 case TargetShape.Rectangle:
