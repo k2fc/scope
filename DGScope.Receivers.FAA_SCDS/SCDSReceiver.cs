@@ -140,6 +140,7 @@ namespace DGScope.Receivers.FAA_SCDS
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
+                    Console.WriteLine(message);
                 }
                 
             }
