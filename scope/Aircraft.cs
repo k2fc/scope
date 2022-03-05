@@ -398,9 +398,9 @@ namespace DGScope
             else
             {
                 //This is an LDB
-                DataBlock.Text = (dbAlt / 100).ToString("D3") + " " + vfrchar + catchar + "\r\n     ";
-                DataBlock2.Text = destination.PadRight(3) + " " + vfrchar + catchar + "\r\n     ";
-                DataBlock3.Text = yscratch.PadRight(4) + vfrchar + catchar + "\r\n     ";
+                DataBlock.Text = (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock2.Text = destination.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
             }
 
             if (!DataBlock.Redraw)
