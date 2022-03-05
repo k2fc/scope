@@ -1724,7 +1724,7 @@ namespace DGScope
             GL.ClearColor(BackColor);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.DstAlpha);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             DrawRangeRings();
             if(!hidewx)
                 DrawNexrad();
