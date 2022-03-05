@@ -71,7 +71,13 @@ namespace DGScope
             get
             {
                 if (!Fading)
-                    return initialColor;
+                {
+                    if (Colors == null)
+                        return initialColor;
+                    var color = Colors[currentColor];
+                    
+                    return color;
+                }
                 if (Intensity >= 1)
                     return initialColor;
                 if (Intensity <= 0)
@@ -87,6 +93,11 @@ namespace DGScope
             }
 
         }
+        public Color[] Colors
+        {
+            get; set;
+        }
+        private int currentColor = 0;
         Stopwatch Stopwatch = new Stopwatch();
         double intensity;
         public double Intensity
@@ -99,6 +110,13 @@ namespace DGScope
             {
                 ResetIntensity(value);
             }
+        }
+
+        public int IncrementColor()
+        {
+            if (currentColor < Colors.Length - 1)
+                currentColor++;
+            return currentColor;
         }
         public PrimaryReturn()
         {

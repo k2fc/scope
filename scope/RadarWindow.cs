@@ -88,11 +88,11 @@ namespace DGScope
         [DisplayName("Data Block Emergency Color"), Description("Color of emergency aircraft data blocks"), Category("Colors")]
         public Color DataBlockEmergencyColor { get; set; } = Color.Red;
         [XmlIgnore]
-        [DisplayName("History Color"), Description("Color of aircraft history targets"), Category("Colors")]
-        public Color HistoryColor { get; set; } = Color.Lime;
-        [XmlIgnore]
         [DisplayName("RBL Color"), Description("Color of range bearing lines"), Category("Colors")]
         public Color RBLColor { get; set; } = Color.Silver;
+        [XmlIgnore]
+        [DisplayName("TPA Color"), Description("Color of Terminal Proximity Alert Cones/Rings"), Category("Colors")]
+        public Color TPAColor { get; set; } = Color.FromArgb(90,180,255);
 
         [XmlElement("BackColor")]
         [Browsable(false)]
@@ -157,13 +157,6 @@ namespace DGScope
             get { return DataBlockEmergencyColor.ToArgb(); }
             set { DataBlockEmergencyColor = Color.FromArgb(value); }
         }
-        [XmlElement("HistoryColor")]
-        [Browsable(false)]
-        public int HistoryColorAsArgb
-        {
-            get { return HistoryColor.ToArgb(); }
-            set { HistoryColor = Color.FromArgb(value); }
-        }
         [XmlElement("RBLColor")]
         [Browsable(false)]
         public int RBLColorAsArgb
@@ -171,6 +164,45 @@ namespace DGScope
             get { return RBLColor.ToArgb(); }
             set { RBLColor = Color.FromArgb(value); }
         }
+        [XmlElement("TPAColor")]
+        [Browsable(false)]
+        public int TPAColorAsArgb
+        {
+            get { return TPAColor.ToArgb(); }
+            set { TPAColor = Color.FromArgb(value); }
+        }
+
+        [XmlElement("HistoryColors")]
+        [Browsable(false)]
+        public int[] HistoryColorsAsArgb
+        {
+            get
+            {
+                var array = new int[HistoryColors.Length];
+                for (int i = 0; i < array.Length; i++)
+                {
+                    array[i] = HistoryColors[i].ToArgb();
+                }
+                return array;
+            }
+            set
+            {
+                if (value == null)
+                    return;
+                HistoryColors = new Color[value.Length];
+                for (int i = 0; i < value.Length; i++)
+                {
+                    HistoryColors[i] = Color.FromArgb(value[i]);
+                }
+            }
+        }
+
+        [XmlIgnore]
+        [DisplayName("History Colors"), Description("Color of aircraft history"), Category("Colors")]
+        public Color[] HistoryColors
+        {
+            get; set;
+        } = new Color[1] { Color.Lime };
 
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
@@ -1063,7 +1095,7 @@ namespace DGScope
                                         {
                                             if (miles > 0 && (double)miles < radar.Range)
                                             {
-                                                ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, ReturnColor, Font);
+                                                ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font);
                                             }
                                             else
                                             {
@@ -2070,19 +2102,26 @@ namespace DGScope
             {
                 if (aircraft.LastHistoryDrawn < DateTime.UtcNow.AddSeconds(-HistoryInterval))
                 {
-                    aircraft.TargetReturn.ForeColor = HistoryColor;
+                    aircraft.TargetReturn.ForeColor = HistoryColors[0];
+                    aircraft.TargetReturn.Colors = HistoryColors;
                     aircraft.TargetReturn.ShapeHeight = HistoryHeight;
                     aircraft.TargetReturn.ShapeWidth = HistoryWidth;
                     if (!HistoryFade)
                     {
                         aircraft.TargetReturn.Fading = false;
                         aircraft.TargetReturn.Intensity = 1;
+                        lock(aircraft.ReturnTrails)
+                            foreach (var item in aircraft.ReturnTrails)
+                            {
+                                item.IncrementColor();
+                            }
                     }
                     if (HistoryDirectionAngle)
                     {
                         aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
                     }
                     PrimaryReturn newreturn = new PrimaryReturn();
+                    aircraft.ReturnTrails.Add(aircraft.TargetReturn);
                     aircraft.TargetReturn = newreturn;
                     newreturn.ParentAircraft = aircraft;
                     newreturn.Fading = PrimaryFade;
@@ -2155,6 +2194,8 @@ namespace DGScope
                 {
                     lock(PrimaryReturns)
                         PrimaryReturns.Remove(target);
+                    lock (target.ParentAircraft.ReturnTrails)
+                        target.ParentAircraft.ReturnTrails.Remove(target);
                     if (target.ParentAircraft.TargetReturn == target)
                     {
                         lock(dataBlocks)
