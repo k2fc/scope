@@ -2466,10 +2466,11 @@ namespace DGScope
         private void MoveTargets(float xChange, float yChange)
         {
             yChange = yChange * aspect_ratio;
-            foreach (PrimaryReturn target in PrimaryReturns.ToList())
-            {
-                target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
-            }
+            lock(PrimaryReturns)
+                foreach (PrimaryReturn target in PrimaryReturns.ToList())
+                {
+                    target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+                }
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
                 block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
