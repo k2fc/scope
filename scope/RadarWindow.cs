@@ -2009,6 +2009,20 @@ namespace DGScope
                 GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y * yscale);
             }
             GL.End();
+            if (polygon.StippleColor != null && polygon.StipplePattern.Length == 128)
+            {
+                GL.Enable(EnableCap.PolygonStipple);
+                GL.PolygonStipple(polygon.StipplePattern);
+                GL.Begin(PrimitiveType.Polygon);
+                GL.Color4(polygon.StippleColor);
+                for (int i = 0; i < polygon.vertices.Length; i++)
+                {
+                    GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y * yscale);
+                }
+                GL.End();
+                GL.Disable(EnableCap.PolygonStipple);
+            }
+            
         }
 
         private void DrawNexrad()

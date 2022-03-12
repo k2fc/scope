@@ -9,28 +9,21 @@ namespace DGScope
     public class WXColorTable
     {
         public List<WXColor> Colors { get; set; } = new List<WXColor>();
-        public Color GetColor(double value)
+        public WXColor GetWXColor(double value)
         {
             var colors = Colors.OrderBy(x => x.MinValue).ToArray();
             if (colors.Length < 1)
-                return Color.Transparent;
+                return null;
             if (value < colors[0].MinValue)
-                return Color.Transparent;
+                return null;
             for (int i = 0; i < colors.Length - 1; i++)
             {
-                if (value < colors[i + 1].MinValue && colors[i+1].MinValue > colors[i].MinValue)
+                if (value < colors[i + 1].MinValue && colors[i + 1].MinValue > colors[i].MinValue)
                 {
-                    var scaledvalue = (value - colors[i].MinValue) / (colors[i + 1].MinValue - colors[i].MinValue);
-                    var rrange = colors[i].MaxColor.R - colors[i].MinColor.R;
-                    var grange = colors[i].MaxColor.G - colors[i].MinColor.G;
-                    var brange = colors[i].MaxColor.B - colors[i].MinColor.B;
-                    var newr = (scaledvalue * rrange) + colors[i].MinColor.R;
-                    var newg = (scaledvalue * grange) + colors[i].MinColor.G;
-                    var newb = (scaledvalue * brange) + colors[i].MinColor.B;
-                    return Color.FromArgb((int)newr, (int)newg, (int)newb);
+                    return colors[i];
                 }
             }
-            return colors.Last().MaxColor;
+            return colors.Last();
         }
         public WXColorTable() { }
         public WXColorTable(List<WXColor> colors) { Colors = colors; }
@@ -42,28 +35,17 @@ namespace DGScope
         [XmlIgnore]
         public Color MinColor { get; set; }
         [XmlIgnore]
-        public Color MaxColor { get; set; }
-        public WXColor(double minvalue, Color mincolor, Color maxcolor)
+        public Color StippleColor { get; set; }
+        public WXColor(double minvalue, Color mincolor)
         {
             MinValue = minvalue;
             MinColor = mincolor;
-            MaxColor = maxcolor;
+            StipplePatternList = null;
+            StippleColor = Color.Transparent;
         }
         public WXColor() { }
 
-        [XmlElement("MaxColor")]
-        [Browsable(false)]
-        public int MaxColorAsArgb
-        {
-            get
-            {
-                return MaxColor.ToArgb();
-            }
-            set
-            {
-                MaxColor = Color.FromArgb(value);
-            }
-        }
+        
         [XmlElement("MinColor")]
         [Browsable(false)]
         public int MinColorAsArgb
@@ -77,6 +59,31 @@ namespace DGScope
                 MinColor = Color.FromArgb(value);
             }
         }
+        [XmlElement("StippleColor")]
+        [Browsable(false)]
+        public int StippleColorAsArgb
+        {
+            get
+            {
+                return StippleColor.ToArgb();
+            }
+            set
+            {
+                StippleColor = Color.FromArgb(value);
+            }
+        }
+        [XmlIgnore]
+        public byte[] StipplePattern 
+        {
+            get
+            {
+                if (StipplePatternList == null)
+                    return null;
+                return StipplePatternList.ToArray();
+            }
+        }
+        public List<byte> StipplePatternList { get; set; }
+        
 
         public override string ToString()
         {
