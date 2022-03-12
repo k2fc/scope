@@ -2130,6 +2130,11 @@ namespace DGScope
                                 item.IncrementColor();
                             }
                     }
+                    else
+                    {
+                        aircraft.TargetReturn.Fading = true;
+                        aircraft.TargetReturn.Intensity = 1;
+                    }
                     if (HistoryDirectionAngle)
                     {
                         aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
