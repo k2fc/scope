@@ -2443,11 +2443,12 @@ namespace DGScope
         private void RescaleTargets(float scalechange, float ar_change)
         {
             
-            foreach (PrimaryReturn target in PrimaryReturns.ToList())
-            {
-                PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange) / ar_change);
-                target.LocationF = newLocation;
-            }
+            lock(PrimaryReturns)
+                foreach (PrimaryReturn target in PrimaryReturns.ToList())
+                {
+                    PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange) / ar_change);
+                    target.LocationF = newLocation;
+                }
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
