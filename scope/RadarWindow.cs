@@ -218,6 +218,8 @@ namespace DGScope
         public double ScreenRotation { get; set; } = 0;
         [DisplayName("Hide Data Tags"), Category("Display Properties")]
         public bool HideDataTags { get; set; } = false;
+        [DisplayName("Show Range Rings"), Category("Display Properties")]
+        public bool ShowRangeRings { get; set; } = true;
         [DisplayName("Quick Look"), Description("Show FDB on all"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
         [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
@@ -308,7 +310,7 @@ namespace DGScope
         float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
-        public int RangeRingInterval { get; set; } = 5;
+        public double RangeRingInterval { get; set; } = 5;
         private string cps = "NONE";
         [DisplayName("This Position Indicator"), Category("Display Properties")]
         public string ThisPositionIndicator 
@@ -410,6 +412,8 @@ namespace DGScope
                 OrderWaypoints();
             }
         }
+        [DisplayName("Range Ringe Center"), Category("Display Properties")]
+        public GeoPoint RangeRingCenter { get; set; } = new GeoPoint(0, 0);
         private double _startingRange = 20;
         [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
         public double Range
@@ -827,7 +831,8 @@ namespace DGScope
             MultiFunc = 16,
             FltData = 18,
             CA = 20,
-            SignOn = 21
+            SignOn = 21,
+            RngRing = 201
         }
 
         public List<KeyCode> Preview = new List<KeyCode>();
@@ -1194,6 +1199,27 @@ namespace DGScope
                                 break;
                         }
                         break;
+                    case (int)KeyCode.RngRing:
+                        //Range Rings
+                        if (keys[0].Length == 1)
+                        {
+                            if (!enter && clicked != null)
+                            {
+                                if (clicked.GetType() == typeof(PointF))
+                                    RangeRingCenter = ScreenToGeoPoint((PointF)clicked);
+                            }
+                            else if (enter)
+                            {
+                                ShowRangeRings = !ShowRangeRings;
+                            }
+                        }
+                        else if (enter)
+                        {
+                            if (double.TryParse(KeysToString(Preview.ToArray()), out double interval))
+                                RangeRingInterval = interval;
+                        }
+                        Preview.Clear();
+                        break;
                 }
             }
         }
@@ -1539,6 +1565,9 @@ namespace DGScope
                     case (int)Key.Space:
                         output += "\r\n";
                         break;
+                    case (int)KeyCode.RngRing:
+                        output += "RR";
+                        break;
                     default:
                         break;
                 }
@@ -1608,6 +1637,10 @@ namespace DGScope
                                 showAllCallsigns = true;
                             }
                         }
+                        break;
+                    case Key.F9:
+                        Preview.Clear();
+                        Preview.Add(KeyCode.RngRing);
                         break;
                 }
             }
@@ -1898,11 +1931,13 @@ namespace DGScope
         
         private void DrawRangeRings()
         {
-            double bearing = radar.Location.BearingTo(ScreenCenterPoint) - ScreenRotation;
-            double distance = radar.Location.DistanceTo(ScreenCenterPoint);
+            if (!ShowRangeRings)
+                return;
+            double bearing = radar.Location.BearingTo(RangeRingCenter) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(RangeRingCenter);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
-            for (int i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
+            for (double i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
             {
                 DrawCircle(x,y, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
             }
