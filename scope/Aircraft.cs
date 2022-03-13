@@ -399,7 +399,7 @@ namespace DGScope
             {
                 //This is an LDB
                 DataBlock.Text = (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar + "\r\n     ";
-                DataBlock2.Text = destination.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock2.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
                 DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
             }
 
