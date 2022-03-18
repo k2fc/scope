@@ -114,6 +114,8 @@ namespace DGScope
 
         public int IncrementColor()
         {
+            if (Colors == null)
+                return -1;
             if (currentColor < Colors.Length - 1)
                 currentColor++;
             return currentColor;

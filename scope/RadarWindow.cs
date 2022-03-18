@@ -207,7 +207,7 @@ namespace DGScope
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
-        [DisplayName("History Drop Interval"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history dropped at every location"), Category("Display Properties")]
+        [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
         public double HistoryInterval { get; set; } = 0;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 10;
@@ -2147,48 +2147,49 @@ namespace DGScope
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
             var location = new PointF(x, y);
+            if (aircraft.LastHistoryDrawn < DateTime.UtcNow.AddSeconds(-HistoryInterval))
+            {
+                aircraft.TargetReturn.ForeColor = HistoryColors[0];
+                aircraft.TargetReturn.Colors = HistoryColors;
+                aircraft.TargetReturn.ShapeHeight = HistoryHeight;
+                aircraft.TargetReturn.ShapeWidth = HistoryWidth;
+                if (!HistoryFade)
+                {
+                    aircraft.TargetReturn.Fading = false;
+                    aircraft.TargetReturn.Intensity = 1;
+                    lock(aircraft.ReturnTrails)
+                        foreach (var item in aircraft.ReturnTrails)
+                        {
+                            item.IncrementColor();
+                        }
+                }
+                else
+                {
+                    aircraft.TargetReturn.Fading = true;
+                    aircraft.TargetReturn.Intensity = 1;
+                }
+                if (HistoryDirectionAngle)
+                {
+                    aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
+                }
+                PrimaryReturn newreturn = new PrimaryReturn();
+                aircraft.ReturnTrails.Add(aircraft.TargetReturn);
+                aircraft.TargetReturn = newreturn;
+                newreturn.ParentAircraft = aircraft;
+                newreturn.Fading = PrimaryFade;
+                newreturn.FadeTime = FadeTime;
+                newreturn.NewLocation = location;
+                newreturn.Intensity = 1;
+                newreturn.ForeColor = ReturnColor;
+                newreturn.ShapeHeight = TargetHeight;
+                newreturn.ShapeWidth = TargetWidth;
+                lock (PrimaryReturns)
+                    PrimaryReturns.Add(newreturn);
+                aircraft.LastHistoryDrawn = DateTime.UtcNow;
+            }
+
             if (aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
             {
-                if (aircraft.LastHistoryDrawn < DateTime.UtcNow.AddSeconds(-HistoryInterval))
-                {
-                    aircraft.TargetReturn.ForeColor = HistoryColors[0];
-                    aircraft.TargetReturn.Colors = HistoryColors;
-                    aircraft.TargetReturn.ShapeHeight = HistoryHeight;
-                    aircraft.TargetReturn.ShapeWidth = HistoryWidth;
-                    if (!HistoryFade)
-                    {
-                        aircraft.TargetReturn.Fading = false;
-                        aircraft.TargetReturn.Intensity = 1;
-                        lock(aircraft.ReturnTrails)
-                            foreach (var item in aircraft.ReturnTrails)
-                            {
-                                item.IncrementColor();
-                            }
-                    }
-                    else
-                    {
-                        aircraft.TargetReturn.Fading = true;
-                        aircraft.TargetReturn.Intensity = 1;
-                    }
-                    if (HistoryDirectionAngle)
-                    {
-                        aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
-                    }
-                    PrimaryReturn newreturn = new PrimaryReturn();
-                    aircraft.ReturnTrails.Add(aircraft.TargetReturn);
-                    aircraft.TargetReturn = newreturn;
-                    newreturn.ParentAircraft = aircraft;
-                    newreturn.Fading = PrimaryFade;
-                    newreturn.FadeTime = FadeTime;
-                    newreturn.NewLocation = location;
-                    newreturn.Intensity = 1;
-                    newreturn.ForeColor = ReturnColor;
-                    newreturn.ShapeHeight = TargetHeight;
-                    newreturn.ShapeWidth = TargetWidth;
-                    lock (PrimaryReturns)
-                        PrimaryReturns.Add(newreturn);
-                    aircraft.LastHistoryDrawn = DateTime.UtcNow;
-                }
                 aircraft.RedrawTarget(location);
                 aircraft.PTL.End1 = aircraft.Location;
                 double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
@@ -2645,7 +2646,8 @@ namespace DGScope
                         DrawLabel(block.ParentAircraft.DataBlock3);
                 }
             }
-            posIndicators.ForEach(x => DrawLabel(x));
+            lock (posIndicators)
+                posIndicators.ForEach(x => DrawLabel(x));
             
         }
 
@@ -2672,7 +2674,12 @@ namespace DGScope
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
                 text_bmp.UnlockBits(data);
                 Label.Redraw = false;
-                if (Label.ParentAircraft != null)
+                
+                    
+
+                //text_bmp.Save($"{text_texture}.bmp");
+            }
+            if (Label.ParentAircraft != null)
                 {
                     if (Label == Label.ParentAircraft.DataBlock)
                     {
@@ -2693,11 +2700,6 @@ namespace DGScope
                         Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
                     }
                 }
-                    
-
-                //text_bmp.Save($"{text_texture}.bmp");
-            }
-            
             
             GL.BindTexture(TextureTarget.Texture2D, text_texture);
             GL.Begin(PrimitiveType.Quads);
