@@ -544,6 +544,7 @@ namespace DGScope
                 RedrawDataBlock(true);
                 TargetReturn.Refresh();
                 SweptLocation = ExtrapolatePosition();
+                Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             }
         }
