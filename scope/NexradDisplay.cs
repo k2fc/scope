@@ -183,12 +183,12 @@ namespace DGScope
             if (ColorTable.Count == 0)
                 ColorTable = new List<WXColor>()
                     {
-                        new WXColor(30, Color.FromArgb(0, 255, 0), Color.FromArgb(0, 128, 0)),
-                        new WXColor(40, Color.FromArgb(255, 255, 0), Color.FromArgb(255, 128, 0)),
-                        new WXColor(50, Color.FromArgb(255, 0, 0), Color.FromArgb(160, 0, 0)),
-                        new WXColor(60, Color.FromArgb(255, 0, 255), Color.FromArgb(128, 0, 128)),
-                        new WXColor(70, Color.FromArgb(255, 255, 255), Color.FromArgb(128, 128, 128)),
-                        new WXColor(80, Color.FromArgb(128, 128, 128), Color.FromArgb(128, 128, 128)),
+                        new WXColor(30, Color.FromArgb(0, 255, 0)),
+                        new WXColor(40, Color.FromArgb(255, 255, 0)),
+                        new WXColor(50, Color.FromArgb(255, 0, 0)),
+                        new WXColor(60, Color.FromArgb(255, 0, 255)),
+                        new WXColor(70, Color.FromArgb(255, 255, 255)),
+                        new WXColor(80, Color.FromArgb(128, 128, 128)),
                     };
             var colortable = new WXColorTable(ColorTable);
             if (!gotdata)
@@ -213,10 +213,19 @@ namespace DGScope
                         polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
                         polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle));
                         //var color = Colors[radial.ColorValues[j]];
-                        var color = colortable.GetColor(symbology.Radials[i].Values[j]);
-                        polygon.Color = Color.FromArgb((int)(color.A * alphafactor), (int)(color.R * intensity), (int)(color.G * intensity), (int)(color.B * intensity));
-                        polygon.ComputeVertices(center, scale, rotation);
-                        polygons.Add(polygon);
+                        var color = colortable.GetWXColor(symbology.Radials[i].Values[j]);
+                        if (color != null)
+                        {
+                            polygon.Color = Color.FromArgb((int)(color.MinColor.A * alphafactor), (int)(color.MinColor.R * intensity), (int)(color.MinColor.G * intensity),
+                                (int)(color.MinColor.B * intensity));
+                            if (color.StippleColor != null)
+                                polygon.StippleColor = Color.FromArgb((int)(color.StippleColor.A * alphafactor), (int)(color.StippleColor.R * intensity),
+                                    (int)(color.StippleColor.G * intensity), (int)(color.StippleColor.B * intensity));
+                            if (color.StipplePattern != null)
+                                polygon.StipplePattern = color.StipplePattern;
+                            polygon.ComputeVertices(center, scale, rotation);
+                            polygons.Add(polygon);
+                        }
                     }
                 }
             }
@@ -237,6 +246,8 @@ namespace DGScope
         public PointF[] vertices;
         public List<GeoPoint> Points { get; set; } = new List<GeoPoint>();
         public Color Color { get; set; }
+        public Color StippleColor { get; set; }
+        public byte[] StipplePattern { get; set; }
 
         public void ComputeVertices(GeoPoint center, double scale, double ScreenRotation = 0)
         {

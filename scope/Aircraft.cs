@@ -13,8 +13,9 @@ namespace DGScope
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string Callsign { get; set; }
-        public int PressureAltitude { get; set; }
-        public int TrueAltitude { get; set; }
+        public int PressureAltitude => Altitude.PressureAltitude;
+        public int TrueAltitude => Altitude.TrueAltitude;
+        private double rateofturn;
         private string positionind;
         public string PositionInd 
         {
@@ -42,15 +43,11 @@ namespace DGScope
             }
         }
         public TPA TPA { get; set; }
-        public int Altitude
+        public Altitude Altitude
         {
-            get
-            {
-                if (TrueAltitude <= 18000)
-                    return TrueAltitude;
-                return PressureAltitude;
-            }
-        }
+            get; set;
+        } = new Altitude();
+        private DateTime lastLocationSetTime = DateTime.MinValue;
         public GeoPoint Location
         {
             get
@@ -60,6 +57,7 @@ namespace DGScope
                     LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(Latitude, Longitude)));
                     lastlat = Latitude;
                     lastlon = Longitude;
+                    lastLocationSetTime = DateTime.Now;
                 }
                 return new GeoPoint(Latitude, Longitude);
             }
@@ -69,6 +67,7 @@ namespace DGScope
                 {
                     LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(value.Latitude, value.Longitude)));
                 }
+                lastLocationSetTime = DateTime.Now;
                 Latitude = value.Latitude;
                 Longitude = value.Longitude;
                 Drawn = false;
@@ -77,7 +76,22 @@ namespace DGScope
         public PointF LocationF { get; set; }
         public Receiver LocationReceivedBy { get; set; }
         public int GroundSpeed { get; set; }
-        public int Track { get; set; }
+        private double track;
+        private DateTime lastTrackUpdate = DateTime.MinValue;
+        public int Track 
+        {
+            get
+            {
+                return (int)track;
+            }
+            set
+            {
+                var change = value - track;
+                rateofturn = change / (DateTime.Now - lastTrackUpdate).TotalSeconds;
+                track = (double)value;
+                lastTrackUpdate = DateTime.Now;
+            }
+        }
         public int VerticalRate { get; set; }
         public bool Ident { get => ident;
             set
@@ -239,7 +253,7 @@ namespace DGScope
             DataBlock3.Text = "";
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
-                dbAlt = Altitude;
+                dbAlt = TrueAltitude;
                 dbSpeed = GroundSpeed;
             }
             string vfrchar = " ";
@@ -403,9 +417,9 @@ namespace DGScope
             else
             {
                 //This is an LDB
-                DataBlock.Text = (dbAlt / 100).ToString("D3") + " " + vfrchar + catchar + "\r\n     ";
-                DataBlock2.Text = destination.PadRight(3) + " " + vfrchar + catchar + "\r\n     ";
-                DataBlock3.Text = yscratch.PadRight(4) + vfrchar + catchar + "\r\n     ";
+                DataBlock.Text = (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock2.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
             }
 
             if (!DataBlock.Redraw)
@@ -423,7 +437,7 @@ namespace DGScope
         {
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
-                dbAlt = Altitude;
+                dbAlt = TrueAltitude;
                 dbSpeed = GroundSpeed;
             }
             string vrchar = " ";
@@ -529,9 +543,21 @@ namespace DGScope
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(true);
                 TargetReturn.Refresh();
-                SweptLocation = Location;
+                SweptLocation = ExtrapolatePosition();
+                Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             }
+        }
+
+        public double ExtrapolateTrack()
+        {
+            return track + (rateofturn * (DateTime.Now - lastTrackUpdate).TotalSeconds);
+        }
+
+        public GeoPoint ExtrapolatePosition()
+        {
+            var miles = GroundSpeed * (DateTime.Now - lastLocationSetTime).TotalHours;
+            return Location.FromPoint(miles, ExtrapolateTrack());
         }
 
         public GeoPoint SweptLocation;
