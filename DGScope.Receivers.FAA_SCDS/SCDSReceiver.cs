@@ -16,6 +16,7 @@ namespace DGScope.Receivers.FAA_SCDS
     {
         public string Host { get; set; }
         public string Username { get; set; }
+        [PasswordPropertyText(true)]
         public string Password { get; set; }
         public string Queue { get; set; }
         public bool Forever { get; set; } = true;
@@ -51,7 +52,6 @@ namespace DGScope.Receivers.FAA_SCDS
             while (!stop)
             {
                 var message = receiver.Receive(timeout);
-                Console.WriteLine("Received message from " + Name);
                 if (message == null)
                     continue;
                 receiver.Accept(message);
@@ -67,7 +67,6 @@ namespace DGScope.Receivers.FAA_SCDS
                             continue;
                         if (stop)
                             return false;
-                        Console.WriteLine("Processing record for {0} from {1}", record.flightPlan.acid, Name);
                         Aircraft plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
                         if (record.track != null)
                             if (plane == null && record.track.acAddress != "")
@@ -95,9 +94,11 @@ namespace DGScope.Receivers.FAA_SCDS
 
                                 if (record.track.mrtTime > plane.LastPositionTime && false)
                                 {
-                                    plane.Location = new GeoPoint((double)record.track.lat, (double)record.track.lon);
-                                    plane.LastPositionTime = record.track.mrtTime;
-                                    plane.LocationReceivedBy = this;
+                                    plane.SetLocation((double)record.track.lat, (double)record.track.lon, record.track.mrtTime);
+                                    plane.Squawk = record.track.reportedBeaconCode.ToString();
+                                    plane.Altitude.PressureAltitude = record.track.reportedAltitude;
+
+                                    //plane.LocationReceivedBy = this;
                                 }
                             }
                             plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
