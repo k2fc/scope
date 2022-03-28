@@ -18,7 +18,7 @@ namespace DGScope.Receivers.ADSBX
         {
             get
             {
-                var time = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+                var time = new DateTime(1970, 1, 1, 0, 0, 0, 0,DateTimeKind.Utc);
                 return time.AddMilliseconds(ctime);
             }
         }
@@ -60,7 +60,7 @@ namespace DGScope.Receivers.ADSBX
         [JsonProperty("trkh")]
         private string trkh;
         [JsonProperty("trak")]
-        private string trak;
+        public string Trak { get; private set; }
         [JsonProperty("ttrk")]
         private string ttrk;
         [JsonProperty("trt")]
@@ -152,7 +152,7 @@ namespace DGScope.Receivers.ADSBX
         {
             get
             {
-                var time = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+                var time = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 return time.AddMilliseconds(Double.Parse(posTime));
             }
         }

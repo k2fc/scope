@@ -62,8 +62,6 @@ namespace DGScope.Receivers
                                 if (jsonPlane.PosTime > plane.LastPositionTime)
                                 {
                                     posDataUpdate = true;
-                                    plane.LastPositionTime = jsonPlane.PosTime;
-                                    plane.LocationReceivedBy = this;
                                 }
                                 plane.ModeSCode = jsonPlane.ModeSCode;
                                 if (jsonPlane.Callsign != "")
@@ -72,8 +70,13 @@ namespace DGScope.Receivers
                                 }
                                 if (posDataUpdate)
                                 {
-                                    plane.Altitude.TrueAltitude = (int)jsonPlane.Altitude;
-                                    plane.Location = jsonPlane.Location;
+                                    plane.Altitude.PressureAltitude = (int)jsonPlane.Altitude;
+                                    plane.SetLocation(jsonPlane.Location, jsonPlane.PosTime);
+                                    if (double.TryParse(jsonPlane.Trak, out double trak))
+                                    {
+                                        if (trak != 0)
+                                            plane.SetTrack(trak, jsonPlane.PosTime);
+                                    }
                                     plane.GroundSpeed = (int)jsonPlane.Speed;
                                     plane.VerticalRate = (int)jsonPlane.VerticalSpeed;
                                     plane.IsOnGround = jsonPlane.OnGround;
