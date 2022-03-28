@@ -60,7 +60,7 @@ namespace DGScope
                 return new RectangleF(LocationF.X - (SizeF.Width / 2), LocationF.Y - (SizeF.Height / 2), SizeF.Width, SizeF.Height);
             }
         }
-
+        public TargetShape Shape { get; set; } = TargetShape.Rectangle;
         public Aircraft ParentAircraft { get; set; }
         public double Angle { get; set; } = 0;
         private Color initialColor = Color.Lime;
@@ -108,7 +108,8 @@ namespace DGScope
             }
             set
             {
-                ResetIntensity(value);
+                intensity = value;
+                Stopwatch.Restart();
             }
         }
 
@@ -129,15 +130,11 @@ namespace DGScope
   ControlStyles.DoubleBuffer, false);
             BackColor = Color.Transparent;
             base.BackColor = Color.Transparent;
-            LocationChanged += PrimaryReturn_LocationChanged;
-            ResetIntensity(0);
+            //LocationChanged += PrimaryReturn_LocationChanged;
+            intensity = 1;
+
         }
 
-        void ResetIntensity(double Intensity = 1)
-        {
-            intensity = Intensity;
-            Stopwatch.Restart();
-        }
         public double FadeTime { get; set; }
 
 
