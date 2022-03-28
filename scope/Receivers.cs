@@ -53,28 +53,8 @@ namespace DGScope.Receivers
         double lastazimuth = 0;
         public List<Aircraft> Scan()
         {
-            if (aircraft == null)
-                return new List<Aircraft>();
-            if (!Stopwatch.IsRunning)
-                Stopwatch.Start();
-            double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) * 360)) % 360;
-            double slicewidth = (lastazimuth - newazimuth) % 360;
-            List<Aircraft> TargetsScanned = new List<Aircraft>();
-            if (!Rotating && (Stopwatch.ElapsedTicks / (RotationPeriod * 10000000)) < 1)
-            {
-                return TargetsScanned;    
-            }
-            Stopwatch.Restart();
-            lock (aircraft)
-                        TargetsScanned.AddRange(from x in aircraft
-                                            where ((x.Bearing(Location) >= lastazimuth &&
-                                            x.Bearing(Location) <= newazimuth) || !Rotating) && !x.IsOnGround && !x.Drawn 
-                                            && InRange(x.Location, x.TrueAltitude) && x.LocationReceivedBy == this
-                                            select x);
-            lastazimuth = newazimuth;
-            if (lastazimuth == 360)
-                lastazimuth = 0;
-            return TargetsScanned;
+            
+            return new List<Aircraft>();
         }
 
         public Aircraft GetPlane(int icaoID)
