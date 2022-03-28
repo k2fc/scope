@@ -9,9 +9,8 @@ namespace DGScope
     {
         public int ModeSCode { get; set; }
         public string Squawk { get; set; }
-        private double lastlat, lastlon;
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        public double Latitude => Location.Latitude;
+        public double Longitude => Location.Longitude;
         public string Callsign { get; set; }
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
@@ -48,50 +47,12 @@ namespace DGScope
             get; set;
         } = new Altitude();
         private DateTime lastLocationSetTime = DateTime.MinValue;
-        public GeoPoint Location
-        {
-            get
-            {
-                if (lastlat != Latitude || lastlon != Longitude)
-                {
-                    LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(Latitude, Longitude)));
-                    lastlat = Latitude;
-                    lastlon = Longitude;
-                    lastLocationSetTime = DateTime.Now;
-                }
-                return new GeoPoint(Latitude, Longitude);
-            }
-            set
-            {
-                if (value.Latitude != Latitude || value.Longitude != Longitude)
-                {
-                    LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, new GeoPoint(value.Latitude, value.Longitude)));
-                }
-                lastLocationSetTime = DateTime.Now;
-                Latitude = value.Latitude;
-                Longitude = value.Longitude;
-                Drawn = false;
-            }
-        }
-        public PointF LocationF { get; set; }
-        public Receiver LocationReceivedBy { get; set; }
-        public int GroundSpeed { get; set; }
-        private double track;
         private DateTime lastTrackUpdate = DateTime.MinValue;
-        public int Track 
-        {
-            get
-            {
-                return (int)track;
-            }
-            set
-            {
-                var change = value - track;
-                rateofturn = change / (DateTime.Now - lastTrackUpdate).TotalSeconds;
-                track = (double)value;
-                lastTrackUpdate = DateTime.Now;
-            }
-        }
+        public GeoPoint Location { get;  private set; }
+        public PointF LocationF { get; set; }
+        //public Receiver LocationReceivedBy { get; set; }
+        public int GroundSpeed { get; set; }
+        public int Track { get; private set; }
         public int VerticalRate { get; set; }
         public bool Ident { get => ident;
             set
@@ -103,7 +64,7 @@ namespace DGScope
         public bool Emergency { get; set; }
         public bool Alert { get; set; }
         public DateTime LastMessageTime { get; set; }
-        public DateTime LastPositionTime { get; set; }
+        public DateTime LastPositionTime { get { return lastLocationSetTime; } }
         public Color TargetColor { get { return TargetReturn.ForeColor; } set { TargetReturn.ForeColor = value; } }
         public Font Font { get { return DataBlock.Font; } set { DataBlock.Font = value; } }
         public Line PTL { get; set; } = new Line();
@@ -169,8 +130,50 @@ namespace DGScope
             ModeSCode = icaoID;
             Created?.Invoke(this, new EventArgs());
         }
+
+        public void SetLocation (GeoPoint Location, DateTime SetTime)
+        {
+            if (lastLocationSetTime > SetTime)
+                return;
+            lastLocationSetTime = SetTime;
+            this.Location = Location;
+            LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
+            Drawn = false;
+        }
+        public void SetLocation (double Latitude, double Longitude, DateTime SetTime)
+        {
+            if (lastLocationSetTime > SetTime)
+                return;
+            lastLocationSetTime = SetTime;
+            var newlocation = new GeoPoint(Latitude, Longitude);
+            Location = newlocation;
+            LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, newlocation));
+            Drawn = false;
+        }
+        public void SetTrack (double Track, DateTime SetTime)
+        {
+            if (lastTrackUpdate > SetTime)
+                return;
+            var diff = Track - this.Track;
+            if (Math.Abs(diff) > 180)
+            {
+                if (diff > 0)
+                    diff = 360 - diff;
+                else
+                    diff += 360;
+            }
+            var seconds = (SetTime - lastTrackUpdate).TotalSeconds;
+            this.Track = (int)Track;
+            if (seconds == 0)
+                return;
+            rateofturn = diff / seconds;
+
+            lastTrackUpdate = SetTime;
+        }
         public double Bearing(GeoPoint FromPoint)
         {
+            if (Location == null)
+                return 0;
             double λ2 = Longitude * (Math.PI / 180);
             double λ1 = FromPoint.Longitude * (Math.PI / 180);
             double φ2 = Latitude * (Math.PI / 180);
@@ -181,12 +184,14 @@ namespace DGScope
                       Math.Sin(φ1) * Math.Cos(φ2) * Math.Cos(λ2 - λ1);
             double θ = Math.Atan2(y, x);
             //θ = (Math.PI / 2) - θ;
-            return (θ * 180 / Math.PI + 360) % 360; // in degrees
-
+            var bearing = (θ * 180 / Math.PI + 360) % 360; // in degrees
+            return bearing;
         }
 
         public double Distance(GeoPoint FromPoint)
         {
+            if (Location == null)
+                return 0;
             double R = 3443.92; // nautical miles
             double φ1 = Latitude * Math.PI / 180; // φ, λ in radians
             double φ2 = FromPoint.Latitude * Math.PI / 180;
@@ -538,11 +543,11 @@ namespace DGScope
             this.LocationF = LocationF;
             if (LocationF.X != 0 || LocationF.Y != 0)
             {
-                TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
+                //TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
                 TargetReturn.LocationF = LocationF;
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(true);
-                TargetReturn.Refresh();
+                TargetReturn.Intensity = 1;
                 SweptLocation = ExtrapolatePosition();
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
@@ -551,13 +556,19 @@ namespace DGScope
 
         public double ExtrapolateTrack()
         {
-            return track + (rateofturn * (DateTime.Now - lastTrackUpdate).TotalSeconds);
+            if (Math.Abs(rateofturn) > 5) // sanity check
+            {
+                return Track;
+            }
+            return ((Track + ((rateofturn / 2) * (DateTime.UtcNow - lastTrackUpdate).TotalSeconds)) + 360) % 360;
         }
 
         public GeoPoint ExtrapolatePosition()
         {
-            var miles = GroundSpeed * (DateTime.Now - lastLocationSetTime).TotalHours;
-            return Location.FromPoint(miles, ExtrapolateTrack());
+            var miles = GroundSpeed * (DateTime.UtcNow - lastLocationSetTime).TotalHours;
+            var track = ExtrapolateTrack();
+            var location = Location.FromPoint(miles, track);
+            return location;
         }
 
         public GeoPoint SweptLocation;

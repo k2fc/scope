@@ -455,6 +455,24 @@ namespace DGScope
                 radar.MinAltitude = value;
             }
         }
+        [DisplayName("Rotating"), Category("Radar Properties"), Description("Behave as if the radar is rotating.")]
+        public bool Rotating
+        {
+            get => radar.Rotating;
+            set
+            {
+                radar.Rotating = value;
+            }
+        }
+        [DisplayName("Update Rate"), Category("Radar Properties"), Description("The rate at which to draw targets. The rate at which the radar sweep rotates, if rotating is true")]
+        public double UpdateRate
+        {
+            get => radar.UpdateRate;
+            set
+            {
+                radar.UpdateRate = value;
+            }
+        }
 
 
         [DisplayName("Vertical Sync"),Description("Limit FPS to refresh rate of monitor"), Category("Display Properties")]
@@ -474,7 +492,9 @@ namespace DGScope
         [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
         public float TargetHeight { get; set; } = 15;
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
-        public TargetShape TargetShape { get; set; } = TargetShape.Circle;
+        public TargetShape TargetShape { get; set; } = TargetShape.Rectangle;
+        [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
+        public TargetShape HistoryShape { get; set; } = TargetShape.Circle;
         [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
         public float HistoryWidth { get; set; } = 5;
         [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
@@ -631,7 +651,7 @@ namespace DGScope
                 e.Aircraft.DataBlock2.Flashing = true;
                 e.Aircraft.DataBlock3.Flashing = true;
             }
-            /*if (e.Aircraft.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+            /*if (e.Aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                 GenerateDataBlock(e.Aircraft);*/
         }
 
@@ -651,7 +671,7 @@ namespace DGScope
         }
         private void Aircraft_HandedOff(object sender, HandoffEventArgs e)
         {
-            Console.WriteLine("{0} handed {1} to {2}", e.PositionFrom, e.Aircraft, e.PositionTo);
+            e.Aircraft.RedrawDataBlock(false);
         }
             
         byte[] settingshash;
@@ -757,7 +777,7 @@ namespace DGScope
             lock (radar.Aircraft)
             {
                 clicked = radar.Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
-                && x.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds) 
+                && x.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
                 {
@@ -766,6 +786,7 @@ namespace DGScope
             }
             return clicked;
         }
+        Aircraft debugPlane;
         private void Window_MouseDown(object sender, MouseEventArgs e)
         {
             var clicked = ClickedObject(e.Position);
@@ -793,6 +814,13 @@ namespace DGScope
                     Aircraft plane = (Aircraft)clicked;
                     plane.Marked = plane.Marked ? false : true;
                     GenerateDataBlock(plane);
+                }
+            }
+            else if (e.Mouse.RightButton == ButtonState.Pressed)
+            {
+                if (clicked.GetType() == typeof(Aircraft))
+                {
+                    debugPlane = (Aircraft)clicked;
                 }
             }
         }
@@ -1622,7 +1650,6 @@ namespace DGScope
                                     //block.ParentAircraft.RedrawTarget(block.ParentAircraft.LocationF);
                                     GenerateDataBlock(block.ParentAircraft);
                                     DrawLabel(block);
-                                    Console.WriteLine(block.ParentAircraft);
                                 }
                             }
                             showAllCallsigns = true;
@@ -1709,7 +1736,6 @@ namespace DGScope
                                 block.ParentAircraft.RedrawTarget(block.ParentAircraft.LocationF);
                                 GenerateDataBlock(block.ParentAircraft);
                                 DrawLabel(block);
-                                Console.WriteLine(block.ParentAircraft);
                             }
                         }
                         showAllCallsigns = false;
@@ -1979,6 +2005,8 @@ namespace DGScope
         }
         private void DrawTPA(Aircraft plane)
         {
+            if (plane.Location == null)
+                return;
             if (plane.TPA == null)
             {
                 return;
@@ -2141,18 +2169,23 @@ namespace DGScope
         }
         private void GenerateTarget(Aircraft aircraft)
         {
-            
-            double bearing = radar.Location.BearingTo(aircraft.ExtrapolatePosition()) - ScreenRotation;
-            double distance = radar.Location.DistanceTo(aircraft.ExtrapolatePosition());
+            if (aircraft == debugPlane)
+                Console.Write("");
+            var extrapolatedpos = aircraft.ExtrapolatePosition();
+            double bearing = radar.Location.BearingTo(extrapolatedpos) - ScreenRotation;
+            double distance = radar.Location.DistanceTo(extrapolatedpos);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
             var location = new PointF(x, y);
+            if (x == 0 || y == 0)
+                return;
             if (aircraft.LastHistoryDrawn < DateTime.UtcNow.AddSeconds(-HistoryInterval))
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
                 aircraft.TargetReturn.Colors = HistoryColors;
                 aircraft.TargetReturn.ShapeHeight = HistoryHeight;
                 aircraft.TargetReturn.ShapeWidth = HistoryWidth;
+                aircraft.TargetReturn.Shape = HistoryShape;
                 if (!HistoryFade)
                 {
                     aircraft.TargetReturn.Fading = false;
@@ -2183,24 +2216,25 @@ namespace DGScope
                 newreturn.ForeColor = ReturnColor;
                 newreturn.ShapeHeight = TargetHeight;
                 newreturn.ShapeWidth = TargetWidth;
+                newreturn.Shape = TargetShape;
                 lock (PrimaryReturns)
                     PrimaryReturns.Add(newreturn);
                 aircraft.LastHistoryDrawn = DateTime.UtcNow;
             }
 
-            if (aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+            if (aircraft.LastMessageTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
             {
                 aircraft.RedrawTarget(location);
-                aircraft.PTL.End1 = aircraft.ExtrapolatePosition();
+                aircraft.PTL.End1 = extrapolatedpos;
                 double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
-                aircraft.PTL.End2 = aircraft.ExtrapolatePosition().FromPoint(ptldistance, aircraft.ExtrapolateTrack());
+                aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
                 if (aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
                         dataBlocks.Remove(aircraft.DataBlock);
-
+                
 
                 Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
                 var realWidth = text_bmp.Width * xPixelScale;
@@ -2236,12 +2270,12 @@ namespace DGScope
         }
         private void GenerateTargets()
         {
-            List<Aircraft> targets = radar.Scan();
-            foreach (Aircraft aircraft in targets)
+            foreach (Aircraft aircraft in radar.Scan())
             {
                 if (QuickLook)
                     aircraft.QuickLook = true;
-                GenerateTarget(aircraft);
+                if (aircraft.Location != null)
+                    GenerateTarget(aircraft);
             }
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
@@ -2258,6 +2292,10 @@ namespace DGScope
                         lock (posIndicators)
                             posIndicators.Remove(target.ParentAircraft.PositionIndicator);
                     }
+                }
+                else
+                {
+
                 }
             }            
         }
@@ -2530,12 +2568,16 @@ namespace DGScope
 
         private void DrawTarget(PrimaryReturn target)
         {
+            if (target.ParentAircraft.Location == null)
+                return;
+            if (target.LocationF.X == 0 || target.LocationF.Y == 0)
+                return;
             if (target != target.ParentAircraft.TargetReturn) // history
             {
                 if ((target.ParentAircraft.TrueAltitude > MaxAltitude || target.ParentAircraft.TrueAltitude < MinAltitude) && !target.ParentAircraft.FDB)
                     return;
             }
-            switch (TargetShape)
+            switch (target.Shape)
             {
                 case TargetShape.Rectangle:
                     float targetHeight = target.ShapeHeight * xPixelScale;// (window.ClientRectangle.Height/2);
@@ -2551,7 +2593,7 @@ namespace DGScope
                     GL.LoadIdentity();
                     GL.PushMatrix();
 
-                    float angle = (float)(-(target.Angle + 360) % 360) + (float)ScreenRotation;
+                    float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
                     GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                     GL.Scale(1.0f, aspect_ratio, 1.0f);
                     GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
@@ -2594,7 +2636,7 @@ namespace DGScope
                     handoffPlane.Owned = true;
                     handoffPlane.DataBlock.Flashing = true;
                     handoffPlane.DataBlock2.Flashing = true;
-                    if (handoffPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                    if (handoffPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                         GenerateDataBlock(handoffPlane);
                 }
                 foreach (var handedoffPlane in radar.Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
@@ -2606,7 +2648,7 @@ namespace DGScope
                         handedoffPlane.DataBlock.Flashing = false;
                         handedoffPlane.DataBlock2.Flashing = false;
                         handedoffPlane.DataBlock3.Flashing = false;
-                        if (handedoffPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                        if (handedoffPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                             GenerateDataBlock(handedoffPlane);
                     }
                 }
@@ -2617,14 +2659,15 @@ namespace DGScope
                         flashingPlane.DataBlock.Flashing = false;
                         flashingPlane.DataBlock2.Flashing = false;
                         flashingPlane.DataBlock3.Flashing = false;
-                        if (flashingPlane.LastPositionTime > DateTime.Now.AddSeconds(-LostTargetSeconds))
+                        if (flashingPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
                             GenerateDataBlock(flashingPlane);
                     }
                 }
             }
             foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
             {
-                DrawTarget(target);
+                if (!(target.LocationF.X == 0 && target.LocationF.Y == 0))
+                    DrawTarget(target);
             }
             foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
             {

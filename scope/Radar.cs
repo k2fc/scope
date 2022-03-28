@@ -26,6 +26,8 @@ namespace DGScope
         public double Range { get; set; } = 20;
         public int MaxAltitude { get; set; } = 1000000;
         public int MinAltitude { get; set; } = 0;
+        public bool Rotating { get; set; } = true;
+        public double UpdateRate { get; set; } = 4.8;
         public int TransitionAltitude { get; set; } = 18000;
         [Browsable(false)]
         public int Width { get; set; }
@@ -224,16 +226,43 @@ namespace DGScope
             foreach (Receiver receiver in Receivers)
                 receiver.Stop();
         }
-
-       public List<Aircraft> Scan()
+        private Stopwatch Stopwatch = new Stopwatch();
+        private double lastazimuth = 0;
+        public List<Aircraft> Scan()
         {
+            if (Aircraft == null)
+                return new List<Aircraft>();
+            if (!Stopwatch.IsRunning)
+                Stopwatch.Start();
+            double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) * 360)) % 360;
+            double slicewidth = (lastazimuth - newazimuth) % 360;
             List<Aircraft> TargetsScanned = new List<Aircraft>();
-            foreach (Receiver receiver in Receivers)
+            if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
             {
-                if (receiver.Enabled)
-                    TargetsScanned.AddRange(receiver.Scan());
+                return TargetsScanned;
             }
+            Stopwatch.Restart();
+            lock (Aircraft)
+                TargetsScanned.AddRange(from x in Aircraft
+                                        where ((x.Bearing(Location) >= lastazimuth &&
+                                        x.Bearing(Location) <= newazimuth) || !Rotating) && !x.IsOnGround 
+                                        && InRange(x.Location, x.TrueAltitude) && x.Location != null
+                                        select x);
+            //Console.WriteLine("Scanned method returned {0} aircraft", TargetsScanned.Count);
+            lastazimuth = newazimuth;
+            if (lastazimuth == 360)
+                lastazimuth = 0;
             return TargetsScanned;
+        }
+
+        public bool InRange(GeoPoint location, double altitude)
+        {
+            if (location == null)
+                return false;
+            var distance = location.DistanceTo(Location, altitude);
+            if (distance <= Range)
+                return true;
+            return false;
         }
         public Radar()
         {
