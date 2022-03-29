@@ -65,7 +65,7 @@ namespace DGScope.Receivers.SBS
                             Aircraft plane = GetPlane(icaoID);
                             lock (plane)
                             {
-                                DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] +"Z");
+                                DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] +"Z").ToUniversalTime();
                                 
                                 //DateTime messageTime = DateTime.UtcNow;
                                 if (plane.LastMessageTime < messageTime)
