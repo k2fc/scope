@@ -2544,10 +2544,14 @@ namespace DGScope
             lock(PrimaryReturns)
                 foreach (PrimaryReturn target in PrimaryReturns.ToList())
                 {
+                    if (target.LocationF.X == 0 && target.LocationF.Y == 0)
+                        continue;
                     target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
                 }
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
+                if (block.LocationF.X == 0 && block.LocationF.Y == 0)
+                    continue;
                 block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
                 block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X + xChange, block.ParentAircraft.ConnectingLine.Start.Y - yChange);
                 block.ParentAircraft.ConnectingLine.End = new PointF(block.ParentAircraft.ConnectingLine.End.X + xChange, block.ParentAircraft.ConnectingLine.End.Y - yChange);
@@ -2561,6 +2565,8 @@ namespace DGScope
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
+                    if (plane.LocationF.X == 0 && plane.LocationF.Y == 0)
+                        continue;
                     plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
                 }
             }
