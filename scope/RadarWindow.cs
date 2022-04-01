@@ -2729,6 +2729,8 @@ namespace DGScope
                 //text_bmp.Save($"{text_texture}.bmp");
             }
             if (Label.ParentAircraft != null)
+            {
+                if (Label.ParentAircraft.LocationF.X != 0 || Label.ParentAircraft.LocationF.Y != 0)
                 {
                     if (Label == Label.ParentAircraft.DataBlock)
                     {
@@ -2749,6 +2751,8 @@ namespace DGScope
                         Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
                     }
                 }
+                    
+            }
             
             GL.BindTexture(TextureTarget.Texture2D, text_texture);
             GL.Begin(PrimitiveType.Quads);
