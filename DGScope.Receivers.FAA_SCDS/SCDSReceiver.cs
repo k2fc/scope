@@ -87,18 +87,27 @@ namespace DGScope.Receivers.FAA_SCDS
                             else
                                 plane.Destination = record.flightPlan.airport;
                             plane.FlightRules = record.flightPlan.flightRules;
+                            plane.LastMessageTime = record.track.mrtTime;
                             if (record.track != null)
                             {
                                 if (record.track.reportedBeaconCode > 0)
                                     plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
 
-                                if (record.track.mrtTime > plane.LastPositionTime && false)
+                                if (record.track.mrtTime > plane.LastPositionTime)
                                 {
                                     plane.SetLocation((double)record.track.lat, (double)record.track.lon, record.track.mrtTime);
+                                    double vx = record.track.vx;
+                                    double vy = record.track.vy;
+                                    var speed = Math.Sqrt((vx * vx) + (vy * vy));
+                                    double angle = Math.Atan2(vy, vx) * (180 / Math.PI);
+                                    double track = 0;
+                                    if (!double.IsNaN(angle))
+                                        track = (90 - angle  + 360) % 360;
+                                    plane.SetTrack(track, record.track.mrtTime);
+                                    plane.GroundSpeed = (int)speed;
                                     plane.Squawk = record.track.reportedBeaconCode.ToString();
                                     plane.Altitude.PressureAltitude = record.track.reportedAltitude;
 
-                                    //plane.LocationReceivedBy = this;
                                 }
                             }
                             plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
