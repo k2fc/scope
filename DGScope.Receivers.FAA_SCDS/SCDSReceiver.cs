@@ -67,10 +67,20 @@ namespace DGScope.Receivers.FAA_SCDS
                             continue;
                         if (stop)
                             return false;
-                        Aircraft plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
+                        Aircraft plane = null; 
                         if (record.track != null)
-                            if (plane == null && record.track.acAddress != "")
-                                plane = GetPlane(Convert.ToInt32(record.track.acAddress, 16));
+                        {
+                            int address = 0;
+                            var addressString = record.track.acAddress;
+                            if (addressString != "" )
+                                address = Convert.ToInt32(record.track.acAddress, 16);
+                            if (address != 0)
+                                plane = GetPlane(address);
+                        }
+                        if (plane == null && record.flightPlan.assignedBeaconCode != 0)
+                        {
+                            plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
+                        }
                         if (plane == null)
                             continue;
                         lock (plane)
