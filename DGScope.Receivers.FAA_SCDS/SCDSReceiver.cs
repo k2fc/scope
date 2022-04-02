@@ -106,7 +106,7 @@ namespace DGScope.Receivers.FAA_SCDS
                                     plane.SetTrack(track, record.track.mrtTime);
                                     plane.GroundSpeed = (int)speed;
                                     plane.Squawk = record.track.reportedBeaconCode.ToString();
-                                    plane.Altitude.PressureAltitude = record.track.reportedAltitude;
+                                    plane.Altitude.TrueAltitude = record.track.reportedAltitude;
 
                                 }
                             }
