@@ -102,7 +102,7 @@ namespace DGScope.Receivers.FAA_SCDS
                                     double angle = Math.Atan2(vy, vx) * (180 / Math.PI);
                                     double track = 0;
                                     if (!double.IsNaN(angle))
-                                        track = (90 - angle  + 360) % 360;
+                                        track = (450 - angle) % 360;
                                     plane.SetTrack(track, record.track.mrtTime);
                                     plane.GroundSpeed = (int)speed;
                                     plane.Squawk = record.track.reportedBeaconCode.ToString();
