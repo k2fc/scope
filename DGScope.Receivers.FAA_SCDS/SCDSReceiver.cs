@@ -122,39 +122,35 @@ namespace DGScope.Receivers.FAA_SCDS
                             }
                             plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
 
-                            if (plane.Callsign == null)
-                                plane.Callsign = record.flightPlan.acid.Trim();
+                            //if (plane.Callsign == null)
+                            plane.Callsign = record.flightPlan.acid.Trim();
                             /*if (record.flightPlan.status == "drop" || record.flightPlan.delete != 0)
                             {
                                 plane.DropTrack();
                             }*/
-                            else
+                            switch (record.flightPlan.ocr)
                             {
-                                switch (record.flightPlan.ocr)
-                                {
-                                    case "intrafacility handoff":
-                                        if (plane.QuickLook)
-                                            plane.QuickLook = false;
-                                        plane.PositionInd = record.flightPlan.cps;
-                                        break;
-                                    case "normal handoff":
-                                    case "manual":
-                                    case "no change":
-                                    case "consolidation":
-                                    case "directed handoff":
-                                        plane.PositionInd = record.flightPlan.cps;
-                                        break;
-                                    case "pending":
-                                        plane.PendingHandoff = record.flightPlan.cps;
-                                        break;
-                                    default:
-                                        plane.PositionInd = record.flightPlan.cps;
-                                        break;
-                                }
+                                case "intrafacility handoff":
+                                    if (plane.QuickLook)
+                                        plane.QuickLook = false;
+                                    plane.PositionInd = record.flightPlan.cps;
+                                    break;
+                                case "normal handoff":
+                                case "manual":
+                                case "no change":
+                                case "consolidation":
+                                case "directed handoff":
+                                    plane.PositionInd = record.flightPlan.cps;
+                                    break;
+                                case "pending":
+                                    plane.PendingHandoff = record.flightPlan.cps;
+                                    break;
+                                default:
+                                    plane.PositionInd = record.flightPlan.cps;
+                                    break;
                             }
-                            
-                            
                         }
+                        
                     }
                 }
                 catch (Exception ex)
