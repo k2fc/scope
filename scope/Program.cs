@@ -10,9 +10,10 @@ namespace DGScope
 {
     static class Program
     {
-        static void Start(bool screensaver = false)
+        static void Start(bool screensaver = false, string settingsPath = null)
         {
-            string settingsPath = (screensaver || IsAdministrator()) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
+            if (settingsPath == null)
+                settingsPath = (screensaver || IsAdministrator()) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml");
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
@@ -30,7 +31,7 @@ namespace DGScope
                     radarWindow.SaveSettings(settingsPath);
                 }
             }
-            radarWindow.Run(screensaver);
+            radarWindow.Run(screensaver, settingsPath);
         }
         [STAThread]
         static void Main(string[] args)
@@ -38,36 +39,47 @@ namespace DGScope
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             LoadReceiverPlugins();
+            bool screensaver = false;
+            bool inhibit = false;
+            string settingsPath = null;
             if (args.Length > 0)
             {
-                string arg = args[0].ToUpper().Trim();
-                if (arg.Contains("/C")) 
+                foreach (var arg in args)
                 {
-                    string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
-                    RadarWindow radarWindow;
-                    if (File.Exists(settingsPath))
+                    if (arg.Contains("/C"))
                     {
-                        radarWindow = TryLoad(settingsPath);
+                        settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+                        RadarWindow radarWindow;
+                        if (File.Exists(settingsPath))
+                        {
+                            radarWindow = TryLoad(settingsPath);
+                        }
+                        else
+                        {
+                            radarWindow = new RadarWindow();
+                        }
+                        PropertyForm propertyForm = new PropertyForm(radarWindow);
+                        propertyForm.ShowDialog();
+                        radarWindow.SaveSettings(settingsPath);
+                        inhibit = true;
+                    }
+                    if (arg.Contains("/S"))
+                    {
+                        screensaver = true;
+                    }
+                    else if (arg.Contains("/P"))
+                    {
+                        inhibit = true;
                     }
                     else
                     {
-                        radarWindow = new RadarWindow();
+                        settingsPath = arg;
                     }
-                    PropertyForm propertyForm = new PropertyForm(radarWindow);
-                    propertyForm.ShowDialog();
-                    radarWindow.SaveSettings(settingsPath);
                 }
-                else if (arg.Contains("/S"))
+                
+                if (!inhibit)
                 {
-                    Start(true);
-                }
-                else if (arg.Contains("/P"))
-                {
-                    //do nothing
-                }
-                else
-                {
-                    Start(false);
+                    Start(screensaver, settingsPath);
                 }
             }
             else
