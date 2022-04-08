@@ -1902,36 +1902,7 @@ namespace DGScope
         {
             //System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(this.GetType());
             radar.Stop();
-            byte[] newhash;
-            if (isScreenSaver)
-                return;
-            using (MD5 md5 = MD5.Create())
-            {
-                md5.Initialize();
-                md5.ComputeHash(Encoding.UTF8.GetBytes(XmlSerializer<RadarWindow>.Serialize(this)));
-                newhash = md5.Hash;
-            }
-            bool changed = false;
-            if (settingshash.Length != newhash.Length)
-            {
-                changed = true;
-            }
-            else
-            {
-                for (int i = 0; i < settingshash.Length; i++)
-                {
-                    if (newhash[i] != settingshash[i])
-                    {
-                        changed = true;
-                        break;
-                    }
-                }
-            }
             
-            if (changed && !isScreenSaver)
-            {
-                SaveSettings(settingsPath);
-            }
         }
 
         public void SaveSettings(string path)
