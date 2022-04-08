@@ -82,12 +82,28 @@ namespace DGScope
             point = point.Trim();
             var lat = point.Split(' ')[0].Split('.');
             var lon = point.Split(' ')[1].Split('.');
-
-            double latitude = double.Parse(lat[0].Substring(1)) + (double.Parse(lat[1]) / 60) + (double.Parse(lat[2]) / 3600) + (double.Parse(lat[3]) / 36000000);
+            double value = 0;
+            double latitude = 0;
+            if (double.TryParse(lat[0].Substring(1), out value))
+                latitude += value;
+            if (double.TryParse(lat[1], out value))
+                latitude += value / 60;
+            if (double.TryParse(lat[2], out value))
+                latitude += value / 3600;
+            if (double.TryParse(lat[3], out value))
+                latitude += value / 3600000;
             if (lat[0].Contains('S'))
                 latitude *= -1;
 
-            double longitude = double.Parse(lon[0].Substring(1)) + (double.Parse(lon[1]) / 60) + (double.Parse(lon[2]) / 3600) + (double.Parse(lon[3]) / 36000000);
+            double longitude = 0;
+            if (double.TryParse(lon[0].Substring(1), out value))
+                longitude += value;
+            if (double.TryParse(lon[1], out value))
+                longitude += value / 60;
+            if (double.TryParse(lon[2], out value))
+                longitude += value / 3600;
+            if (double.TryParse(lon[3], out value))
+                longitude += value / 3600000;
             if (lon[0].Contains('W'))
                 longitude *= -1;
 
