@@ -22,6 +22,7 @@ namespace DGScope.Receivers.FAA_SCDS
         public bool Forever { get; set; } = true;
         public int ClientTimeout { get; set; } = 5000;
         public int InitialCredit { get; set; } = 5;
+        public string Facility { get; set; } 
         public string CertificatePath { get; set; } = @"scds.cert";
 
         TimeSpan timeout = TimeSpan.MaxValue;
@@ -60,6 +61,8 @@ namespace DGScope.Receivers.FAA_SCDS
                     
                     TATrackAndFlightPlan data = XmlSerializer<TATrackAndFlightPlan>.Deserialize(message.Body.ToString());
                     if (data.record == null)
+                        continue;
+                    if (data.src != Facility)
                         continue;
                     foreach (var record in data.record)
                     {
