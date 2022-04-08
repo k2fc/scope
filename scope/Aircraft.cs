@@ -267,9 +267,21 @@ namespace DGScope
             if (PendingHandoff != null)
                 handoffchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
 
-            if (Squawk == "1200" || (FlightRules != "IFR" && FlightRules != null))
+            if (Squawk == "1200")
             {
                 vfrchar = "V";
+            }
+            else if (FlightRules == null)
+            {
+                vfrchar = " ";
+            }
+            else if (FlightRules[0] == 'I')
+            {
+                vfrchar = " ";
+            }
+            else
+            {
+                vfrchar = FlightRules[0].ToString();
             }
 
             if (Category != null)
