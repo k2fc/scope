@@ -66,8 +66,6 @@ namespace DGScope.Receivers.FAA_SCDS
                         continue;
                     foreach (var record in data.record)
                     {
-                        if (record.flightPlan == null)
-                            continue;
                         if (stop)
                             return false;
                         Aircraft plane = null; 
@@ -80,7 +78,7 @@ namespace DGScope.Receivers.FAA_SCDS
                             if (address != 0)
                                 plane = GetPlane(address);
                         }
-                        if (plane == null && record.flightPlan.assignedBeaconCode != 0)
+                        if (plane == null && record.flightPlan != null && record.flightPlan.assignedBeaconCode != 0)
                         {
                             plane = GetPlaneBySquawk(record.flightPlan.assignedBeaconCode.ToString("0000"));
                         }
@@ -88,21 +86,47 @@ namespace DGScope.Receivers.FAA_SCDS
                             continue;
                         lock (plane)
                         {
-                            plane.Type = record.flightPlan.acType;
-                            plane.LDRDirection = RadarWindow.ParseLDR(record.flightPlan.lld);
-                            plane.Scratchpad = record.flightPlan.scratchPad1;
-                            plane.Runway = record.flightPlan.runway;
-                            plane.Scratchpad2 = record.flightPlan.scratchPad2;
-                            plane.RequestedAltitude = record.flightPlan.requestedAltitude;
-                            plane.Category = record.flightPlan.category;
-                            if (record.flightPlan.exitFix != null)
-                                plane.Destination = record.flightPlan.exitFix;
-                            else
-                                plane.Destination = record.flightPlan.airport;
-                            plane.FlightRules = record.flightPlan.flightRules;
-                            plane.LastMessageTime = record.track.mrtTime;
+                            if (record.flightPlan != null)
+                            {
+                                plane.Type = record.flightPlan.acType;
+                                plane.LDRDirection = RadarWindow.ParseLDR(record.flightPlan.lld);
+                                plane.Scratchpad = record.flightPlan.scratchPad1;
+                                plane.Runway = record.flightPlan.runway;
+                                plane.Scratchpad2 = record.flightPlan.scratchPad2;
+                                plane.RequestedAltitude = record.flightPlan.requestedAltitude;
+                                plane.Category = record.flightPlan.category;
+                                if (record.flightPlan.exitFix != null)
+                                    plane.Destination = record.flightPlan.exitFix;
+                                else
+                                    plane.Destination = record.flightPlan.airport;
+                                plane.FlightRules = record.flightPlan.flightRules;
+                                plane.Callsign = record.flightPlan.acid.Trim();
+                                plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
+                                switch (record.flightPlan.ocr)
+                                {
+                                    case "intrafacility handoff":
+                                        if (plane.QuickLook)
+                                            plane.QuickLook = false;
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                    case "normal handoff":
+                                    case "manual":
+                                    case "no change":
+                                    case "consolidation":
+                                    case "directed handoff":
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                    case "pending":
+                                        plane.PendingHandoff = record.flightPlan.cps;
+                                        break;
+                                    default:
+                                        plane.PositionInd = record.flightPlan.cps;
+                                        break;
+                                }
+                            }
                             if (record.track != null)
                             {
+                                plane.LastMessageTime = record.track.mrtTime;
                                 if (record.track.reportedBeaconCode > 0)
                                     plane.Squawk = record.track.reportedBeaconCode.ToString("0000");
 
@@ -123,35 +147,13 @@ namespace DGScope.Receivers.FAA_SCDS
 
                                 }
                             }
-                            plane.FlightPlanCallsign = record.flightPlan.acid.Trim();
 
                             //if (plane.Callsign == null)
-                            plane.Callsign = record.flightPlan.acid.Trim();
                             /*if (record.flightPlan.status == "drop" || record.flightPlan.delete != 0)
                             {
                                 plane.DropTrack();
                             }*/
-                            switch (record.flightPlan.ocr)
-                            {
-                                case "intrafacility handoff":
-                                    if (plane.QuickLook)
-                                        plane.QuickLook = false;
-                                    plane.PositionInd = record.flightPlan.cps;
-                                    break;
-                                case "normal handoff":
-                                case "manual":
-                                case "no change":
-                                case "consolidation":
-                                case "directed handoff":
-                                    plane.PositionInd = record.flightPlan.cps;
-                                    break;
-                                case "pending":
-                                    plane.PendingHandoff = record.flightPlan.cps;
-                                    break;
-                                default:
-                                    plane.PositionInd = record.flightPlan.cps;
-                                    break;
-                            }
+                            
                         }
                         
                     }
