@@ -65,13 +65,13 @@ namespace DGScope
         public Color BackColor { get; set; } = Color.Black;
         [XmlIgnore]
         [DisplayName("Range Ring Color"), Category("Colors")]
-        public Color RangeRingColor { get; set; } = Color.FromArgb(0,25,0);
+        public Color RangeRingColor { get; set; } = Color.FromArgb(140,140,140);
         [XmlIgnore]
         [DisplayName("Video Map Line Color"), Category("Colors")]
-        public Color VideoMapLineColor { get; set; } = Color.Brown;
+        public Color VideoMapLineColor { get; set; } = Color.FromArgb(140, 140, 140);
         [XmlIgnore]
         [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
-        public Color ReturnColor { get; set; } = Color.Lime;
+        public Color ReturnColor { get; set; } = Color.FromArgb(30,120,255);
         [XmlIgnore]
         [DisplayName("FDB Color"), Description("Color of aircraft full data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
@@ -80,16 +80,16 @@ namespace DGScope
         public Color OwnedColor { get; set; } = Color.White;
         [XmlIgnore]
         [DisplayName("LDB Color"), Description("Color of aircraft limited data blocks"), Category("Colors")]
-        public Color LDBColor { get; set; } = Color.Green;
+        public Color LDBColor { get; set; } = Color.Lime;
         [XmlIgnore]
         [DisplayName("Selected Data Block Color"), Description("Color of aircraft limited data blocks"), Category("Colors")]
-        public Color SelectedColor { get; set; } = Color.Aqua;
+        public Color SelectedColor { get; set; } = Color.FromArgb(0,255,255);
         [XmlIgnore]
         [DisplayName("Data Block Emergency Color"), Description("Color of emergency aircraft data blocks"), Category("Colors")]
         public Color DataBlockEmergencyColor { get; set; } = Color.Red;
         [XmlIgnore]
         [DisplayName("RBL Color"), Description("Color of range bearing lines"), Category("Colors")]
-        public Color RBLColor { get; set; } = Color.Silver;
+        public Color RBLColor { get; set; } = Color.White;
         [XmlIgnore]
         [DisplayName("TPA Color"), Description("Color of Terminal Proximity Alert Cones/Rings"), Category("Colors")]
         public Color TPAColor { get; set; } = Color.FromArgb(90,180,255);
@@ -202,17 +202,17 @@ namespace DGScope
         public Color[] HistoryColors
         {
             get; set;
-        } = new Color[1] { Color.Lime };
+        } = new Color[] { Color.FromArgb(30,80,200), Color.FromArgb(70, 70, 170), Color.FromArgb(50, 50, 130), Color.FromArgb(40, 40, 110), Color.FromArgb(30, 30, 90) };
 
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
         [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
-        public double HistoryInterval { get; set; } = 0;
+        public double HistoryInterval { get; set; } = 4.5;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
-        public int LostTargetSeconds { get; set; } = 10;
+        public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
-        public int AircraftGCInterval { get; set; } = 600;
+        public int AircraftGCInterval { get; set; } = 60;
 
         [DisplayName("Screen Rotation"), Description("The number of degrees to rotate the image"), Category("Display Properties")]
         public double ScreenRotation { get; set; } = 0;
@@ -241,9 +241,9 @@ namespace DGScope
             }
         }
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
-        public bool HistoryFade { get; set; } = true;
+        public bool HistoryFade { get; set; } = false;
         [DisplayName("Primary Fade"), Description("Whether or not the primary returns fade out"), Category("Display Properties")]
-        public bool PrimaryFade { get; set; } = true;
+        public bool PrimaryFade { get; set; } = false;
         [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
             "If false, they retain their direction with respect to the receiving radar site."), Category("Display Properties")]
         public bool HistoryDirectionAngle { get; set; } = false;
@@ -492,15 +492,15 @@ namespace DGScope
         [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
         public float TargetHeight { get; set; } = 15;
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
-        public TargetShape TargetShape { get; set; } = TargetShape.Rectangle;
+        public TargetShape TargetShape { get; set; } = TargetShape.Circle;
         [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
         public TargetShape HistoryShape { get; set; } = TargetShape.Circle;
         [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
-        public float HistoryWidth { get; set; } = 5;
+        public float HistoryWidth { get; set; } = 3;
         [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
         public float HistoryHeight { get; set; } = 15;
         [DisplayName("PTL Length"), Description("Length of Predicted Track Lines for owned tracks, in minutes"), Category("Display Properties")]
-        public float PTLlength { get; set; } = 1;
+        public float PTLlength { get; set; } = 0;
         [DisplayName("PTL Length"), Description("Length of Predicted Track Lines for unowned tracks, in minutes"), Category("Display Properties")]
         public float PTLlengthAll { get; set; } = 0;
         [DisplayName("Nexrad Weather Radars")]
@@ -515,7 +515,7 @@ namespace DGScope
         [Browsable(false)] 
         public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
         [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
-        public bool AutoOffset { get; set; } = true;
+        public bool AutoOffset { get; set; } = false;
         [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
         public float LeaderLength { get; set; } = 10;
         [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
@@ -675,8 +675,10 @@ namespace DGScope
         }
             
         byte[] settingshash;
-        public void Run(bool isScreenSaver)
+        string settingsPath;
+        public void Run(bool isScreenSaver, string settingsPath)
         {
+            this.settingsPath = settingsPath;
             this.isScreenSaver = isScreenSaver;
             window.Run();
         }
@@ -1618,7 +1620,7 @@ namespace DGScope
                         break;
                     case Key.S:
                         Preview.Clear();
-                        SaveSettings(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml"));
+                        SaveSettings(settingsPath);
                         break;
                     case Key.P:
                         PropertyForm properties = new PropertyForm(this);
@@ -1928,7 +1930,7 @@ namespace DGScope
             
             if (changed && !isScreenSaver)
             {
-                SaveSettings(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml"));
+                SaveSettings(settingsPath);
             }
         }
 
