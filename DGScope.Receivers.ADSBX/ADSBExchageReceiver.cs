@@ -42,51 +42,54 @@ namespace DGScope.Receivers
             webRequest.Headers.Add("api-auth", APIKey);
             webRequest.Headers.Add("accept-encoding", "gzip");
             webRequest.ContentType = "application/json";
-
-            using (var s = webRequest.GetResponse().GetResponseStream())
+            try
             {
-                using (GZipStream stream = new GZipStream(s, CompressionMode.Decompress))
+                using (var s = webRequest.GetResponse().GetResponseStream())
                 {
-                    using (var sr = new StreamReader(stream))
+                    using (GZipStream stream = new GZipStream(s, CompressionMode.Decompress))
                     {
-                        var jsonData = sr.ReadToEnd();
-                        var response = JsonConvert.DeserializeObject<Response>(jsonData);
-                        foreach (var jsonPlane in response.Aircraft)
+                        using (var sr = new StreamReader(stream))
                         {
-                            if (jsonPlane.LocationSource == Source.ADSB)
+                            var jsonData = sr.ReadToEnd();
+                            var response = JsonConvert.DeserializeObject<Response>(jsonData);
+                            foreach (var jsonPlane in response.Aircraft)
                             {
-                                Aircraft plane = GetPlane(jsonPlane.ModeSCode);
-                                if (plane.LastMessageTime < response.Time)
-                                    plane.LastMessageTime = response.Time;
-                                bool posDataUpdate = false;
-                                if (jsonPlane.PosTime > plane.LastPositionTime)
+                                if (jsonPlane.LocationSource == Source.ADSB)
                                 {
-                                    posDataUpdate = true;
-                                }
-                                plane.ModeSCode = jsonPlane.ModeSCode;
-                                if (jsonPlane.Callsign != "")
-                                {
-                                    plane.Callsign = jsonPlane.Callsign;
-                                }
-                                if (posDataUpdate)
-                                {
-                                    plane.Altitude.PressureAltitude = (int)jsonPlane.Altitude;
-                                    plane.SetLocation(jsonPlane.Location, jsonPlane.PosTime);
-                                    if (double.TryParse(jsonPlane.Trak, out double trak))
+                                    Aircraft plane = GetPlane(jsonPlane.ModeSCode);
+                                    if (plane.LastMessageTime < response.Time)
+                                        plane.LastMessageTime = response.Time;
+                                    bool posDataUpdate = false;
+                                    if (jsonPlane.PosTime > plane.LastPositionTime)
                                     {
-                                        if (trak != 0)
-                                            plane.SetTrack(trak, jsonPlane.PosTime);
+                                        posDataUpdate = true;
                                     }
-                                    plane.GroundSpeed = (int)jsonPlane.Speed;
-                                    plane.VerticalRate = (int)jsonPlane.VerticalSpeed;
-                                    plane.IsOnGround = jsonPlane.OnGround;
-                                    plane.Squawk = jsonPlane.Squawk;
+                                    plane.ModeSCode = jsonPlane.ModeSCode;
+                                    if (jsonPlane.Callsign != "")
+                                    {
+                                        plane.Callsign = jsonPlane.Callsign;
+                                    }
+                                    if (posDataUpdate)
+                                    {
+                                        plane.Altitude.PressureAltitude = (int)jsonPlane.Altitude;
+                                        plane.SetLocation(jsonPlane.Location, jsonPlane.PosTime);
+                                        if (double.TryParse(jsonPlane.Trak, out double trak))
+                                        {
+                                            if (trak != 0)
+                                                plane.SetTrack(trak, jsonPlane.PosTime);
+                                        }
+                                        plane.GroundSpeed = (int)jsonPlane.Speed;
+                                        plane.VerticalRate = (int)jsonPlane.VerticalSpeed;
+                                        plane.IsOnGround = jsonPlane.OnGround;
+                                        plane.Squawk = jsonPlane.Squawk;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            catch { }
         }
 
     }
