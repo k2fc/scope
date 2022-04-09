@@ -40,35 +40,38 @@ namespace DGScope
                         if (shortened)
                             linedata = "                            " + linedata.Trim();
                         linedata = linedata.Replace("\t", "    ");
-                        if (linedata.Contains("* Arrival North"))
-                            Console.WriteLine();
                         if (linedata.Contains("O O O O"))
                         {
                             shortened = true;
                             linedata += "                                                   ";
                         }
-                        if (!issectionheader && linedata.Length >= 85)
+                        if (!issectionheader && linedata.Length >= 45)
                         {
                             string linename = linedata.Substring(0, 25).Trim();
+                            Line newline;
                             switch (sectionName.ToUpper())
                             {
                                 case "SID":
                                     if (linename.Length > 0)
                                     {
+                                        if (currentMap != null && currentMap.Lines.Count == 0)
+                                            maps.Remove(currentMap);
                                         currentMap = new VideoMap() { Name = linename };
                                         maps.Add(currentMap);
                                     }
-                                    if (currentMap != null && !linedata.Contains("O O O O"))
-                                        currentMap.Lines.Add(Line.Parse(linedata.Substring(26)));
+                                    if (currentMap != null && !linedata.Contains("O O O O") && Line.TryParse(linedata.Substring(26), out newline))
+                                        currentMap.Lines.Add(newline);
                                     break;
                                 case "STAR":
                                     if (linename.Length > 0)
                                     {
+                                        if (currentMap != null && currentMap.Lines.Count == 0)
+                                            maps.Remove(currentMap);
                                         currentMap = new VideoMap() { Name = linename };
                                         maps.Add(currentMap);
                                     }
-                                    if (currentMap != null && !linedata.Contains("O O O O"))
-                                        currentMap.Lines.Add(Line.Parse(linedata.Substring(26)));
+                                    if (currentMap != null && !linedata.Contains("O O O O") && Line.TryParse(linedata.Substring(26), out newline))
+                                        currentMap.Lines.Add(newline);
                                     break;
                                 default:
                                     break;
