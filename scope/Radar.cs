@@ -246,7 +246,7 @@ namespace DGScope
                 TargetsScanned.AddRange(from x in Aircraft
                                         where ((x.Bearing(Location) >= lastazimuth &&
                                         x.Bearing(Location) <= newazimuth) || !Rotating) && !x.IsOnGround 
-                                        && InRange(x.Location, x.TrueAltitude) && x.Location != null
+                                        && x.Location != null
                                         select x);
             //Console.WriteLine("Scanned method returned {0} aircraft", TargetsScanned.Count);
             lastazimuth = newazimuth;
