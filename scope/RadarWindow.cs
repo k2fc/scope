@@ -1619,6 +1619,21 @@ namespace DGScope
                         Environment.Exit(0);
                         break;
                     case Key.S:
+                        if (e.Shift)
+                        {
+                            using (System.Windows.Forms.SaveFileDialog dialog = new System.Windows.Forms.SaveFileDialog())
+                            {
+                                dialog.RestoreDirectory = true;
+                                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                                {
+                                    settingsPath = dialog.FileName;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
                         Preview.Clear();
                         SaveSettings(settingsPath);
                         break;
