@@ -77,37 +77,60 @@ namespace DGScope
 
         }
 
-        public static GeoPoint Parse(string point)
+        public static bool TryParse(string pointString, out GeoPoint point)
         {
-            point = point.Trim();
-            var lat = point.Split(' ')[0].Split('.');
-            var lon = point.Split(' ')[1].Split('.');
+            point = new GeoPoint();
+            pointString = pointString.Trim();
+            var pointSplit = pointString.Split(' ');
+            if (pointSplit.Length < 2)
+                return false;
+            var lat = pointSplit[0].Split('.');
+            var lon = pointSplit[1].Split('.');
             double value = 0;
             double latitude = 0;
-            if (double.TryParse(lat[0].Substring(1), out value))
-                latitude += value;
-            if (double.TryParse(lat[1], out value))
-                latitude += value / 60;
-            if (double.TryParse(lat[2], out value))
-                latitude += value / 3600;
-            if (double.TryParse(lat[3], out value))
-                latitude += value / 3600000;
-            if (lat[0].Contains('S'))
+            if (lat.Length == 2 && double.TryParse(pointSplit[0], out latitude))
+            {
+
+            }
+            else //  Try VRC format
+            {
+                if (double.TryParse(lat[0].Substring(1), out value))
+                    latitude += value;
+                else
+                    return false;
+                if (lat.Length > 2 && double.TryParse(lat[1], out value))
+                    latitude += value / 60;
+                if (lat.Length >= 3 && double.TryParse(lat[2], out value))
+                    latitude += value / 3600;
+                if (lat.Length >= 4 && double.TryParse(lat[3], out value))
+                    latitude += value / 3600000;
+            }
+            if (pointSplit[0].Contains('S'))
                 latitude *= -1;
 
             double longitude = 0;
-            if (double.TryParse(lon[0].Substring(1), out value))
-                longitude += value;
-            if (double.TryParse(lon[1], out value))
-                longitude += value / 60;
-            if (double.TryParse(lon[2], out value))
-                longitude += value / 3600;
-            if (double.TryParse(lon[3], out value))
-                longitude += value / 3600000;
-            if (lon[0].Contains('W'))
-                longitude *= -1;
+            if (lon.Length == 2 && double.TryParse(pointSplit[1], out longitude))
+            {
 
-            return new GeoPoint(latitude, longitude);
+            }
+            else //  Try VRC format
+            {
+                if (double.TryParse(lon[0].Substring(1), out value))
+                    longitude += value;
+                else
+                    return false;
+                if (lon.Length > 2 && double.TryParse(lon[1], out value))
+                    longitude += value / 60;
+                if (lon.Length >= 3 && double.TryParse(lon[2], out value))
+                    longitude += value / 3600;
+                if (lon.Length >= 4 && double.TryParse(lon[3], out value))
+                    longitude += value / 3600000;
+            }
+            if (pointSplit[1].Contains('W'))
+                longitude *= -1;
+            point.Latitude = latitude;
+            point.Longitude = longitude;
+            return true;
         }
     }
 }
