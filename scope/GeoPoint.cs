@@ -94,6 +94,8 @@ namespace DGScope
             }
             else //  Try VRC format
             {
+                if (lat[0].Length < 2)
+                    return false;
                 if (double.TryParse(lat[0].Substring(1), out value))
                     latitude += value;
                 else
