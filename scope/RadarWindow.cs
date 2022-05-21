@@ -37,6 +37,8 @@ namespace DGScope
 
         public static LeaderDirection ParseLDR(string direction)
         {
+            if (direction == null)
+                return LeaderDirection.N;
             direction = direction.ToUpper().Trim();
             switch (direction)
             {
