@@ -69,8 +69,10 @@ namespace DGScope
         [DisplayName("Range Ring Color"), Category("Colors")]
         public Color RangeRingColor { get; set; } = Color.FromArgb(140,140,140);
         [XmlIgnore]
-        [DisplayName("Video Map Line Color"), Category("Colors")]
+        [DisplayName("Video Map Category A Color"), Category("Colors")]
         public Color VideoMapLineColor { get; set; } = Color.FromArgb(140, 140, 140);
+        [DisplayName("Video Map Category B Color"), Category("Colors")]
+        public Color VideoMapBLineColor { get; set; } = Color.FromArgb(140, 140, 140);
         [XmlIgnore]
         [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
         public Color ReturnColor { get; set; } = Color.FromArgb(30,120,255);
@@ -305,7 +307,48 @@ namespace DGScope
         }
         [DisplayName("Video Maps")]
         [Editor(typeof(VideoMapCollectionEditor), typeof(UITypeEditor))]
-        public List<VideoMap> VideoMaps { get; set; } = new List<VideoMap>();
+        [XmlIgnore]
+        public VideoMapList VideoMaps { get; set; } = new VideoMapList();
+        private int[] visibleMaps = new int[0];
+        [Browsable(false)]
+        public int[] VisibleMaps
+        {
+            get
+            {
+                if (VideoMaps.Count > 0)
+                    return (VideoMaps.Where(x => x.Visible).Select(y => y.Number).ToArray());
+                else
+                    return visibleMaps;
+            }
+            set
+            {
+                visibleMaps = value;
+                if (VideoMaps.Count > 0)
+                    VideoMaps.ForEach(x => x.Visible = visibleMaps.Contains(x.Number));
+            }
+        }
+        private string videoMapFilename = null;
+        [Browsable(false)]
+        public string VideoMapFilename 
+        {
+            get
+            {
+                return videoMapFilename;
+            }
+            set
+            {
+                try
+                {
+                    VideoMaps = VideoMapList.DeserializeFromJsonFile(value);
+                    videoMapFilename = value;
+                    VideoMaps.ForEach(x => x.Visible = visibleMaps.Contains(x.Number));
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+            }
+        }
         float scale => (float)(radar.Range / Math.Sqrt(2));
         float xPixelScale => 2f / window.ClientSize.Width;
         float yPixelScale => 2f / window.ClientSize.Height;
@@ -2014,12 +2057,19 @@ namespace DGScope
         private void DrawVideoMapLines()
         {
             List<Line> lines = new List<Line>();
-            foreach (var map in VideoMaps)
+            foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.A))
             {
                 if (map.Visible)
                     lines.AddRange(map.Lines);
             }
             DrawLines(lines, VideoMapLineColor);
+            lines.Clear();
+            foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.B))
+            {
+                if (map.Visible)
+                    lines.AddRange(map.Lines);
+            }
+            DrawLines(lines, VideoMapBLineColor);
         }
 
         private void DrawLines (List<Line> lines, Color color)

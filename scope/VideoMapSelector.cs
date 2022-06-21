@@ -12,9 +12,9 @@ namespace DGScope
     
     public partial class VideoMapSelector : Form
     {
-        private List<VideoMap> videoMaps;
+        private VideoMapList videoMaps;
         
-        public VideoMapSelector(List<VideoMap> videoMaps)
+        public VideoMapSelector(VideoMapList videoMaps)
         {
             InitializeComponent();
             this.videoMaps = videoMaps;
@@ -55,9 +55,6 @@ namespace DGScope
                         case 1:
                             videoMaps.AddRange(VRCFileParser.GetMapsFromFile(filePath));
                             break;
-                        case 2:
-                            videoMaps.AddRange(VSTARSFileParser.GetMapsFromFile(filePath));
-                            break;
                     }
                 }
             }
@@ -72,11 +69,7 @@ namespace DGScope
             checkedListBox1.ItemCheck += CheckedListBox1_ItemCheck;
         }
 
-        private void VideoMapSelector_Load(object sender, EventArgs e)
-        {
-            button5.Text = char.ConvertFromUtf32(0x2193);
-            button4.Text = char.ConvertFromUtf32(0x2191);
-        }
+        
 
         private void button6_Click(object sender, EventArgs e)
         {
@@ -149,7 +142,7 @@ namespace DGScope
                 MoveMap(checkedListBox1.SelectedIndex, checkedListBox1.SelectedIndex + 1);
         }
     }
-    public class VideoMapCollectionEditor : UITypeEditor
+    public class OldVideoMapCollectionEditor : UITypeEditor
     {
         public override System.Drawing.Design.UITypeEditorEditStyle GetEditStyle(System.ComponentModel.ITypeDescriptorContext context)
         {
@@ -158,7 +151,7 @@ namespace DGScope
         public override object EditValue(System.ComponentModel.ITypeDescriptorContext context, System.IServiceProvider provider, object value)
         {
             // Return the value if the value is not of type Int32, Double and Single.
-            if (value.GetType() != typeof(List<VideoMap>))
+            if (value.GetType() != typeof(VideoMapList))
                 return value;
 
             // Uses the IWindowsFormsEditorService to display a
@@ -166,7 +159,7 @@ namespace DGScope
             IWindowsFormsEditorService edSvc = (IWindowsFormsEditorService)provider.GetService(typeof(IWindowsFormsEditorService));
             if (edSvc != null)
             {
-                VideoMapSelector sel = new VideoMapSelector((List<VideoMap>)value);
+                VideoMapSelector sel = new VideoMapSelector((VideoMapList)value);
                 sel.ShowDialog();
             }
             return value;
