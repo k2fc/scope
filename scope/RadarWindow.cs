@@ -337,6 +337,8 @@ namespace DGScope
             }
             set
             {
+                if (value == videoMapFilename)
+                    return;
                 try
                 {
                     VideoMaps = VideoMapList.DeserializeFromJsonFile(value);

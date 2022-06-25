@@ -27,12 +27,13 @@ namespace DGScope
             {
                 if (adaptation != null)
                     return adaptation.VideoMapFilename;
-                return null;
+                return _filename;
             }
             set
             {
                 if (adaptation != null)
                     adaptation.VideoMapFilename = value;
+                _filename = value;
             }
         }
         public VideoMapForm(VideoMapList list, string filename, RadarWindow adaptation = null)
