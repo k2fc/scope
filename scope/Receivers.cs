@@ -10,13 +10,30 @@ namespace DGScope.Receivers
 {
    public abstract class Receiver
     {
+        private bool enabled;
         public string Name { get; set;  }
-        public bool Enabled { get; set; }
+        public bool Enabled 
+        {
+            get
+            {
+                return enabled;
+            }
+            set
+            {
+                if (value && aircraft != null)
+                {
+                    Start();
+                }
+                else
+                    Stop();
+                enabled = value;
+            }
+        }
 
         protected ObservableCollection<Aircraft> aircraft;
         public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
-        public double RotationPeriod { get; set; } = 4.8;
         public double Range { get; set; } = 250;
+        public bool CreateNewAircraft { get; set; } = true;
         public abstract void Start();
         public abstract void Stop();
         public void Restart(int sleep = 0)
@@ -36,6 +53,8 @@ namespace DGScope.Receivers
         public void SetAircraftList(ObservableCollection<Aircraft> Aircraft)
         {
             aircraft = Aircraft;
+            if (Enabled)
+                Start();
         }
         Stopwatch Stopwatch = new Stopwatch();
         double lastazimuth = 0;
@@ -86,6 +105,13 @@ namespace DGScope.Receivers
             return plane;
         }
 
+        public void Remove(Aircraft plane)
+        {
+            lock (aircraft)
+            {
+                aircraft.Where(x => x == plane).ToList().ForEach(y => aircraft.Remove(y));
+            }
+        }
         public override string ToString()
         {
             return base.ToString();
