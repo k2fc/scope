@@ -14,15 +14,9 @@ namespace DGScope.Receivers
         public bool Enabled { get; set; }
 
         protected ObservableCollection<Aircraft> aircraft;
-        protected double minel => MinElevation * Math.PI / 180;
-        protected double maxel => MaxElevation * Math.PI / 180;
         public GeoPoint Location { get; set; } = new GeoPoint(0, 0);
-        public double Altitude { get; set; } = 0;
-        public double MaxElevation { get; set; } = 90;
-        public double MinElevation { get; set; } = -90;
         public double RotationPeriod { get; set; } = 4.8;
-        public double Range { get; set; } = 100;
-        public bool Rotating { get; set; } = true;
+        public double Range { get; set; } = 250;
         public abstract void Start();
         public abstract void Stop();
         public void Restart(int sleep = 0)
@@ -34,14 +28,8 @@ namespace DGScope.Receivers
 
         public bool InRange(GeoPoint location, double altitude)
         {
-            var distance = location.DistanceTo(Location, altitude - Altitude);
-            double elevation;
-            if (location != Location)
-                elevation = Math.Atan(((altitude - Altitude) / 6076.12) / distance);
-            else if (altitude < Altitude)
-                elevation = -90;
-            else elevation = 90;
-            if (distance <= Range && elevation > minel && elevation < maxel && distance < Range)
+            var distance = location.DistanceTo(Location);
+            if (distance <= Range)
                 return true;
             return false;
         }
@@ -56,14 +44,28 @@ namespace DGScope.Receivers
             
             return new List<Aircraft>();
         }
-
-        public Aircraft GetPlane(int icaoID)
+        public Aircraft GetPlane(Guid guid, bool createnew = false)
+        {
+            Aircraft plane;
+            lock (aircraft)
+            {
+                plane = (from x in aircraft where x.Guid == guid select x).FirstOrDefault();
+                if (plane == null && createnew)
+                {
+                    plane = new Aircraft(guid);
+                    aircraft.Add(plane);
+                    Debug.WriteLine("Added airplane {0} from {1}", guid.ToString(), Name);
+                }
+            }
+            return plane;
+        }
+        public Aircraft GetPlane(int icaoID, bool createnew = true)
         {
             Aircraft plane;
             lock (aircraft)
             {
                 plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
-                if (plane == null)
+                if (plane == null && createnew)
                 {
                     plane = new Aircraft(icaoID);
                     aircraft.Add(plane);

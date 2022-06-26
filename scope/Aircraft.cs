@@ -7,6 +7,7 @@ namespace DGScope
 {
     public class Aircraft : IDisposable
     {
+        public Guid Guid { get; set; } = Guid.NewGuid();
         public int ModeSCode { get; set; }
         public string Squawk { get; set; }
         public double Latitude => Location.Latitude;
@@ -128,6 +129,11 @@ namespace DGScope
         public Aircraft(int icaoID)
         {
             ModeSCode = icaoID;
+            Created?.Invoke(this, new EventArgs());
+        }
+        public Aircraft(Guid guid)
+        {
+            Guid = guid;
             Created?.Invoke(this, new EventArgs());
         }
 
@@ -264,7 +270,7 @@ namespace DGScope
             string vfrchar = " ";
             string catchar = " ";
             string handoffchar = " ";
-            if (PendingHandoff != null)
+            if (!string.IsNullOrEmpty(PendingHandoff))
                 handoffchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
 
             if (Squawk == "1200")
