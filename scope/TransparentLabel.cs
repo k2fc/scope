@@ -12,7 +12,19 @@ namespace DGScope
     {
         bool _flashing = false;
         bool flashOn = true;
-        System.Threading.Timer flashtimer;
+        private static System.Timers.Timer _flashtimer;
+        public static System.Timers.Timer FlashTimer
+        {
+            get
+            {
+                if (_flashtimer == null)
+                {
+                    _flashtimer = new System.Timers.Timer(750);
+                    FlashTimer.Start();
+                }
+                return _flashtimer;
+            }
+        }
 
         public bool Flashing {
             get
@@ -23,17 +35,19 @@ namespace DGScope
             {
                 if (value && value != _flashing)
                 {
-                    flashtimer = new System.Threading.Timer(new TimerCallback(cbFlashTimerElapsed), null, 750, 750);
+                    FlashTimer.Elapsed += FlashTimer_Elapsed; ;
                 }
                 else if (!value)
                 {
-                    if (flashtimer != null)
-                    {
-                        flashtimer.Dispose();
-                    }
+                    FlashTimer.Elapsed -= FlashTimer_Elapsed;
                 }
                 _flashing = value;
             }
+        }
+
+        private void FlashTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            flashOn = flashOn ? false : true;
         }
 
         public override Color ForeColor 
@@ -143,10 +157,6 @@ namespace DGScope
             DrawText();
         }
 
-        private void cbFlashTimerElapsed(object state)
-        {
-            flashOn = flashOn ? false : true;
-        }
 
         private Bitmap _backBuffer;
         public void DrawText()
