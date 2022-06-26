@@ -27,7 +27,6 @@ namespace DGScope.Receivers.SBS
         {
             if (running)
                 return;
-            Enabled = true;
             client = new EventDrivenTCPClient(Host, Port, true);
             client.DataReceived += Client_DataReceived;
             client.Connect();
@@ -37,7 +36,6 @@ namespace DGScope.Receivers.SBS
         {
             if (!running)
                 return;
-            Enabled = false;
             client.Disconnect();
             while (client.ConnectionState != EventDrivenTCPClient.ConnectionStatus.DisconnectedByUser) { }
             //client.DataReceived -= Client_DataReceived;
@@ -62,7 +60,9 @@ namespace DGScope.Receivers.SBS
                     {
                         case "MSG":
                             int icaoID = Convert.ToInt32(sbs_data[4], 16);
-                            Aircraft plane = GetPlane(icaoID);
+                            Aircraft plane = GetPlane(icaoID, CreateNewAircraft);
+                            if (plane == null)
+                                return;
                             lock (plane)
                             {
                                 DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] +"Z").ToUniversalTime();

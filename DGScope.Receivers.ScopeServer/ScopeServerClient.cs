@@ -71,13 +71,7 @@ namespace DGScope.Receivers.ScopeServer
                         return;
                     break;
             }
-            if (update.ModeSCode != null)
-            {
-                plane = GetPlane((int)update.ModeSCode, true);
-                plane.Guid = updateGuid;
-            }
-            if (plane == null)
-                plane = GetPlane(updateGuid, true);
+            plane = GetPlane(updateGuid, true);
             if (plane == null)
                 return;
             switch (update.UpdateType)
