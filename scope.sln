@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DGScope.Receivers.Beast", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DGScope.Receivers.FAA_SCDS", "DGScope.Receivers.FAA_SCDS\DGScope.Receivers.FAA_SCDS.csproj", "{4BF19932-3BD0-41D0-883A-7A1DFBC2DEB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DGScope.Receivers.ScopeServer", "DGScope.Receivers.ScopeServer\DGScope.Receivers.ScopeServer.csproj", "{D5233442-294C-40D2-B698-1D7D1B399A2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{4BF19932-3BD0-41D0-883A-7A1DFBC2DEB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BF19932-3BD0-41D0-883A-7A1DFBC2DEB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BF19932-3BD0-41D0-883A-7A1DFBC2DEB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5233442-294C-40D2-B698-1D7D1B399A2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5233442-294C-40D2-B698-1D7D1B399A2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5233442-294C-40D2-B698-1D7D1B399A2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5233442-294C-40D2-B698-1D7D1B399A2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
