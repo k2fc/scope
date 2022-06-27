@@ -10,9 +10,18 @@ namespace DGScope
     /// </summary>
     public class TransparentLabel : Control, IScreenObject
     {
-        bool _flashing = false;
-        bool flashOn = true;
+
         private static System.Timers.Timer _flashtimer;
+        private static bool flashOn = true;
+
+        public bool FlashOn
+        {
+            get
+            {
+                _ = FlashTimer;
+                return flashOn;
+            }
+        }
         public static System.Timers.Timer FlashTimer
         {
             get
@@ -21,31 +30,14 @@ namespace DGScope
                 {
                     _flashtimer = new System.Timers.Timer(750);
                     FlashTimer.Start();
+                    FlashTimer.Elapsed += FlashTimer_Elapsed;
                 }
                 return _flashtimer;
             }
         }
-
-        public bool Flashing {
-            get
-            {
-                return _flashing;
-            }
-            set
-            {
-                if (value && value != _flashing)
-                {
-                    FlashTimer.Elapsed += FlashTimer_Elapsed; ;
-                }
-                else if (!value)
-                {
-                    FlashTimer.Elapsed -= FlashTimer_Elapsed;
-                }
-                _flashing = value;
-            }
-        }
-
-        private void FlashTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        bool flashing = false;
+        public bool Flashing { get; set; }
+        private static void FlashTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             flashOn = flashOn ? false : true;
         }
@@ -54,7 +46,7 @@ namespace DGScope
         {
             get
             {
-                if (!Flashing || flashOn)
+                if (!Flashing || FlashOn)
                 {
                     return base.ForeColor;
                 }
@@ -77,7 +69,7 @@ namespace DGScope
         {
             get
             {
-                if (!Flashing || flashOn)
+                if (!Flashing || FlashOn)
                 {
                     return base.ForeColor;
                 }
