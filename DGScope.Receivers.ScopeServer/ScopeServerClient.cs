@@ -13,6 +13,7 @@ namespace DGScope.Receivers.ScopeServer
         private Dictionary<Guid, Guid> associatedFlightPlans = new Dictionary<Guid, Guid>();
         private bool stop = true;
         private bool running = false;
+        public string Url { get; set; }
         public override void Start()
         {
             if (running)
@@ -44,7 +45,7 @@ namespace DGScope.Receivers.ScopeServer
                         }
                     }
                 };
-                client.OpenReadAsync(new Uri("http://localhost:5000/N90/updates"));
+                client.OpenReadAsync(new Uri(Url));
             }
                 running = false;
 
