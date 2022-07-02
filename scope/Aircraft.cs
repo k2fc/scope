@@ -273,11 +273,7 @@ namespace DGScope
             if (!string.IsNullOrEmpty(PendingHandoff))
                 handoffchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
 
-            if (Squawk == "1200")
-            {
-                vfrchar = "V";
-            }
-            else if (FlightRules == null)
+            if (FlightRules == null)
             {
                 vfrchar = " ";
             }
@@ -362,21 +358,49 @@ namespace DGScope
 
             if (FDB || ShowCallsignWithNoSquawk)
             {
-                if (Callsign == null)
+                if (!string.IsNullOrEmpty(FlightPlanCallsign) && !ShowCallsignWithNoSquawk)
                 {
-                    DataBlock.Text = "         ";
-                    DataBlock2.Text = "         ";
-                    DataBlock3.Text = "         ";
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text = FlightPlanCallsign.PadLeft(9);
+                        DataBlock2.Text = FlightPlanCallsign.PadLeft(9); 
+                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9); 
+                    }
+                    else
+                    {
+                        DataBlock.Text = FlightPlanCallsign.PadRight(9);
+                        DataBlock2.Text = FlightPlanCallsign.PadRight(9);
+                        DataBlock3.Text = FlightPlanCallsign.PadRight(9);
+                    }
                 }
-                else if ((Callsign.Trim() != "" && Squawk != "1200" && Squawk != null && Squawk != "0000") || ShowCallsignWithNoSquawk)
+                else if (!ShowCallsignWithNoSquawk && Squawk != null)
+                {
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text = Squawk.PadLeft(9);
+                        DataBlock2.Text = Squawk.PadLeft(9);
+                        DataBlock3.Text = Squawk.PadLeft(9);
+                    }
+                    else
+                    {
+                        DataBlock.Text = Squawk.PadRight(9);
+                        DataBlock2.Text = Squawk.PadRight(9);
+                        DataBlock3.Text = Squawk.PadRight(9);
+                    }
+                }
+                else if (ShowCallsignWithNoSquawk)
                 {
                     if (leaderDirection == RadarWindow.LeaderDirection.W ||
                 leaderDirection == RadarWindow.LeaderDirection.NW ||
                 leaderDirection == RadarWindow.LeaderDirection.SW)
                     {
                         DataBlock.Text = Callsign.PadLeft(9);
-                        DataBlock2.Text = Callsign.PadLeft(9); 
-                        DataBlock3.Text = Callsign.PadLeft(9); 
+                        DataBlock2.Text = Callsign.PadLeft(9);
+                        DataBlock3.Text = Callsign.PadLeft(9);
                     }
                     else
                     {
@@ -385,39 +409,11 @@ namespace DGScope
                         DataBlock3.Text = Callsign.PadRight(9);
                     }
                 }
-                else if (Squawk == "1200" && (PositionInd == null|| PositionInd == "*"))
+                else
                 {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
-                    {
-                        DataBlock.Text = "     1200";
-                        DataBlock2.Text = "     1200";
-                        DataBlock3.Text = "     1200";
-                    }
-                    else
-                    {
-                        DataBlock.Text = "1200     ";
-                        DataBlock2.Text = "1200     ";
-                        DataBlock3.Text = "1200     ";
-                    }
-                }
-                else if (Squawk == "1200" && FlightPlanCallsign != null)
-                {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
-                    {
-                        DataBlock.Text = FlightPlanCallsign.PadLeft(9);
-                        DataBlock2.Text = FlightPlanCallsign.PadLeft(9);
-                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9);
-                    }
-                    else
-                    {
-                        DataBlock.Text = FlightPlanCallsign.PadRight(9);
-                        DataBlock2.Text = FlightPlanCallsign.PadRight(9);
-                        DataBlock3.Text = FlightPlanCallsign.PadRight(9);
-                    }
+                    DataBlock.Text = "";
+                    DataBlock2.Text = "";
+                    DataBlock3.Text = "";
                 }
                 
                 DataBlock.Text += "\r\n";
