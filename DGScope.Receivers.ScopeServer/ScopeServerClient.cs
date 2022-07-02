@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using DGScope.Receivers;
 using Newtonsoft.Json;
@@ -33,27 +34,35 @@ namespace DGScope.Receivers.ScopeServer
         {
             using (var client = new WebClient())
             {
+                client.Credentials = new NetworkCredential(Username, Password);
                 client.OpenReadCompleted += (sender, e) =>
                 {
-                    using (var reader = new StreamReader(e.Result))
+                    if (e.Error == null)
                     {
-                        while (!stop)
+                        using (var reader = new StreamReader(e.Result))
                         {
-                            try
+                            while (!stop)
                             {
-                                var line = reader.ReadLine();
-                                if (line == null)
-                                    continue;
-                                JsonUpdate obj = JsonConvert.DeserializeObject(line, typeof(JsonUpdate)) as JsonUpdate;
-                                ProcessUpdate(obj);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.Message);
+                                try
+                                {
+                                    var line = reader.ReadLine();
+                                    if (line == null)
+                                        continue;
+                                    JsonUpdate obj = JsonConvert.DeserializeObject(line, typeof(JsonUpdate)) as JsonUpdate;
+                                    ProcessUpdate(obj);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                }
                             }
                         }
-                        streamended = true;
                     }
+                    else
+                    {
+                        Console.WriteLine(e.Error.ToString());
+                    }
+                    streamended = true;
                 };
                 
                 while (!stop)
@@ -86,6 +95,34 @@ namespace DGScope.Receivers.ScopeServer
                     updateGuid = (Guid)update.AssociatedTrackGuid;
                     if (!associatedFlightPlans.ContainsKey(update.Guid))
                         associatedFlightPlans.Add(update.Guid, (Guid)update.AssociatedTrackGuid);
+                    var fpPlane = GetPlane(update.Guid, false);
+                    var trackPlane = GetPlane(updateGuid, false);
+                    if (fpPlane != null && trackPlane != null)
+                    {
+                        lock (fpPlane)
+                        {
+                            lock (trackPlane)
+                            {
+                                foreach (PropertyInfo property in fpPlane.GetType().GetProperties())
+                                {
+                                    if (property.CanWrite)
+                                        property.SetValue(trackPlane, property.GetValue(fpPlane));
+                                }
+                                trackPlane.Guid = updateGuid;
+                            }
+                            fpPlane.Guid = updateGuid;
+                        }
+                    }
+                    else if (fpPlane != null)
+                    {
+                        lock (fpPlane)
+                        {
+                            fpPlane.Guid = updateGuid;
+                        }
+                    }
+                    break;
+                case 1 when update.AssociatedTrackGuid == null:
+                    updateGuid = update.Guid;
                     break;
                 default:
                     if (!associatedFlightPlans.TryGetValue(update.Guid, out updateGuid))
@@ -102,7 +139,8 @@ namespace DGScope.Receivers.ScopeServer
             //    case 1 when update.TimeStamp < plane.LastMessageTime:
             //        return;
             //}
-            plane.LastMessageTime = update.TimeStamp;
+            if (update.TimeStamp > plane.LastMessageTime)
+                plane.LastMessageTime = update.TimeStamp;
             if (update.AircraftType != null)
                 plane.Type = update.AircraftType;
             if (update.Altitude != null)
@@ -110,8 +148,16 @@ namespace DGScope.Receivers.ScopeServer
                 plane.Altitude.AltitudeType = (AltitudeType)update.Altitude.AltitudeType;
                 plane.Altitude.Value = update.Altitude.Value;
             }
-            if (update.Callsign != null)
-                plane.Callsign = update.Callsign;
+            switch (update.UpdateType)
+            {
+                case 0 when update.Callsign != null:
+                    plane.Callsign = update.Callsign;
+                    break;
+                case 1 when update.Callsign != null:
+                    plane.FlightPlanCallsign = update.Callsign;
+                    break;
+            }
+                
             if (update.Destination != null)
                 plane.Destination = update.Destination;
             if (update.FlightRules != null)
