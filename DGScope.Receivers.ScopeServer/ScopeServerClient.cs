@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using DGScope.Receivers;
 using Newtonsoft.Json;
@@ -14,6 +16,9 @@ namespace DGScope.Receivers.ScopeServer
         private bool stop = true;
         private bool running = false;
         public string Url { get; set; }
+        public string Username { get; set; }
+        [PasswordPropertyText(true)]
+        public string Password { get; set; }
         public override void Start()
         {
             if (running)
@@ -23,6 +28,7 @@ namespace DGScope.Receivers.ScopeServer
             Task.Run(Receive);
         }
 
+        private bool streamended = true;
         private async Task<bool> Receive()
         {
             using (var client = new WebClient())
@@ -31,11 +37,14 @@ namespace DGScope.Receivers.ScopeServer
                 {
                     using (var reader = new StreamReader(e.Result))
                     {
-                        while (!reader.EndOfStream || !stop)
+                        while (!stop)
                         {
                             try
                             {
-                                JsonUpdate obj = JsonConvert.DeserializeObject(reader.ReadLine(), typeof(JsonUpdate)) as JsonUpdate;
+                                var line = reader.ReadLine();
+                                if (line == null)
+                                    continue;
+                                JsonUpdate obj = JsonConvert.DeserializeObject(line, typeof(JsonUpdate)) as JsonUpdate;
                                 ProcessUpdate(obj);
                             }
                             catch (Exception ex)
@@ -43,15 +52,26 @@ namespace DGScope.Receivers.ScopeServer
                                 Console.WriteLine(ex.Message);
                             }
                         }
+                        streamended = true;
                     }
                 };
-                client.OpenReadAsync(new Uri(Url));
+                
+                while (!stop)
+                {
+                    streamended = false;
+                    client.OpenReadAsync(new Uri(Url));
+                    while (!streamended)
+                    {
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
             }
                 running = false;
 
             if (stop)
                 return true;
             return false;
+                
         }
         public void ProcessUpdate(JsonUpdate update)
         {
@@ -75,16 +95,14 @@ namespace DGScope.Receivers.ScopeServer
             plane = GetPlane(updateGuid, true);
             if (plane == null)
                 return;
-            switch (update.UpdateType)
-            {
-                case 0 when update.TimeStamp < plane.LastPositionTime:
-                    return;
-                case 1 when update.TimeStamp < plane.LastMessageTime:
-                    return;
-                case 1:
-                    plane.LastMessageTime = update.TimeStamp;
-                    break;
-            }
+            //switch (update.UpdateType)
+            //{
+            //    case 0 when update.TimeStamp < plane.LastPositionTime:
+            //        return;
+            //    case 1 when update.TimeStamp < plane.LastMessageTime:
+            //        return;
+            //}
+            plane.LastMessageTime = update.TimeStamp;
             if (update.AircraftType != null)
                 plane.Type = update.AircraftType;
             if (update.Altitude != null)
@@ -98,6 +116,8 @@ namespace DGScope.Receivers.ScopeServer
                 plane.Destination = update.Destination;
             if (update.FlightRules != null)
                 plane.FlightRules = update.FlightRules;
+            if (update.WakeCategory != null)
+                plane.Category = update.WakeCategory;
             if (update.GroundSpeed != null)
                 plane.GroundSpeed = (int)update.GroundSpeed;
             if (update.GroundTrack != null)
