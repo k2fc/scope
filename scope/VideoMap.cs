@@ -31,10 +31,7 @@ namespace DGScope
             {
                 return Number.Equals(otherVideoMap.Number);
             }
-            else
-            {
-                throw new ArgumentException();
-            }
+            return false;
         }
         public override string ToString()
         {
