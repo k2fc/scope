@@ -82,6 +82,8 @@ namespace DGScope
                     return initialColor;
                 if (Intensity <= 0)
                     return Color.Transparent;
+                if (double.IsNaN(Intensity))
+                    return initialColor;
                 //return Color.FromArgb((int)(initialColor.R * Intensity * Intensity), (int)(initialColor.G * Intensity * Intensity), (int)(initialColor.B * Intensity * Intensity));
                 var newcolor = Color.FromArgb((int)(Math.Pow(initialColor.A, Intensity)), (int)(initialColor.R), (int)(initialColor.G), (int)(initialColor.B));
                 return newcolor;
