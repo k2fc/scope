@@ -10,7 +10,17 @@ namespace DGScope
     public class Altitude
     {
         public int Value { get; set; }
-        public AltitudeType AltitudeType { get; set;}
+        private AltitudeType _alttype;
+        public AltitudeType AltitudeType {
+            get => _alttype;
+            set
+            {
+                _alttype = value;
+                if (value == AltitudeType.Pressure)
+                    ;
+            }
+                 
+        }
         public int TransitionAltitude { get; set; }
         public int PressureAltitude 
         { 
@@ -49,6 +59,20 @@ namespace DGScope
             }
         }
 
+        public static Altitude Clone (Altitude altitude)
+        {
+            Altitude newAlt = new Altitude();
+            newAlt.TransitionAltitude = altitude.TransitionAltitude;
+            newAlt.Altimeter = altitude.Altimeter;
+            newAlt.Value = altitude.Value;
+            newAlt.AltitudeType = altitude.AltitudeType;
+            return newAlt;
+        }
+        public Altitude Clone()
+        {
+            return Clone(this);
+        }
+
         private object convertLockObject = new object();
 
         public Altitude (){}
@@ -68,9 +92,10 @@ namespace DGScope
             }
         }
 
-        private Pressure Altimeter;
+        private Pressure Altimeter = new Pressure("");
         public Altitude ConvertTo (AltitudeType type)
         {
+            Altitude newAlt = new Altitude();
             lock (convertLockObject)
             {
                 if (type != AltitudeType)
@@ -79,16 +104,16 @@ namespace DGScope
                     {
                         if (this.AltitudeType == AltitudeType.True)
                         {
-                            Value = PressureAltitude;
-                            AltitudeType = AltitudeType.Pressure;
+                            newAlt.Value = PressureAltitude;
+                            newAlt.AltitudeType = AltitudeType.Pressure;
                         }
                     }
                     else if (type == AltitudeType.True)
                     {
                         if (this.AltitudeType == AltitudeType.Pressure)
                         {
-                            Value = TrueAltitude;
-                            AltitudeType = AltitudeType.True;
+                            newAlt.Value = TrueAltitude;
+                            newAlt.AltitudeType = AltitudeType.True;
                         }
                     }
                     else
@@ -96,12 +121,17 @@ namespace DGScope
                         throw new NotImplementedException();
                     }
                 }
-                return this;
+                else
+                {
+                    newAlt.Value = Value;
+                    newAlt.AltitudeType = AltitudeType;
+                }
+                return newAlt;
             }
         }
         public override string ToString()
         {
-            if (ConvertTo(AltitudeType.True).Value > TransitionAltitude)
+            if (AltitudeType == AltitudeType.Pressure)
             {
                 return string.Format("FL{0}", (Value / 100).ToString("D3"));
             }

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace DGScope.Receivers
 {
@@ -56,19 +53,13 @@ namespace DGScope.Receivers
             if (Enabled)
                 Start();
         }
-        Stopwatch Stopwatch = new Stopwatch();
-        double lastazimuth = 0;
-        public List<Aircraft> Scan()
-        {
-            
-            return new List<Aircraft>();
-        }
+        
         public Aircraft GetPlane(Guid guid, bool createnew = false)
         {
             Aircraft plane;
             lock (aircraft)
             {
-                plane = (from x in aircraft where x.Guid == guid select x).FirstOrDefault();
+                plane = (from x in aircraft where x.TrackGuid == guid select x).FirstOrDefault();
                 if (plane == null && createnew)
                 {
                     plane = new Aircraft(guid);

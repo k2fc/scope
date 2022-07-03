@@ -7,7 +7,8 @@ namespace DGScope
 {
     public class Aircraft : IDisposable
     {
-        public Guid Guid { get; set; } = Guid.NewGuid();
+        public Guid TrackGuid { get; set; } = Guid.NewGuid();
+        public Guid FlightPlanGuid { get; set; }
         public int ModeSCode { get; set; }
         public string Squawk { get; set; }
         public double Latitude => Location.Latitude;
@@ -133,7 +134,7 @@ namespace DGScope
         }
         public Aircraft(Guid guid)
         {
-            Guid = guid;
+            TrackGuid = guid;
             Created?.Invoke(this, new EventArgs());
         }
 
@@ -308,11 +309,11 @@ namespace DGScope
                 destination = (dbAlt / 100).ToString("D3");
             }
             
-            if (Scratchpad == null)
+            if (string.IsNullOrEmpty(Scratchpad))
             {
                 yscratch = destination;
             }
-            else if (Scratchpad.Trim() != "")
+            else if (!string.IsNullOrEmpty(Scratchpad2))
             {
                 yscratch = Scratchpad.PadRight(3);
             }
@@ -334,11 +335,11 @@ namespace DGScope
                 type = (dbSpeed / 10).ToString("D2") + vfrchar + catchar;
             }
 
-            if (Scratchpad2 == null && RequestedAltitude == 0)
+            if (string.IsNullOrEmpty(Scratchpad2) && RequestedAltitude == 0)
             {
                 hscratch = type;
             }
-            else if (Scratchpad2 != null)
+            else if (!string.IsNullOrEmpty(Scratchpad2))
             {
                 hscratch = Scratchpad2.PadRight(4);
             }
