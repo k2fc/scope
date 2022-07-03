@@ -673,6 +673,8 @@ namespace DGScope
                         item.HandedOff += Aircraft_HandedOff;
                         item.HandoffInitiated += Aircraft_HandoffInitiated;
                         item.OwnershipChange += Aircraft_OwnershipChange;
+                        if (item.Altitude == null)
+                            item.Altitude = new Altitude();
                         item.Altitude.SetAltitudeProperties(18000, radar.Altimeter);
                     }
                     break;
@@ -718,7 +720,7 @@ namespace DGScope
         }
         private void Aircraft_HandedOff(object sender, HandoffEventArgs e)
         {
-            e.Aircraft.RedrawDataBlock(false);
+            /*e.Aircraft.RedrawDataBlock(false);*/
         }
             
         byte[] settingshash;

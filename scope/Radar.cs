@@ -78,7 +78,7 @@ namespace DGScope
             }
         }
         private bool correctioncalculated = false;
-        Pressure altimeter = new Pressure("");
+        Pressure altimeter;
         private Pressure cachedalt => Altimeter;
         public Pressure Altimeter
         {
@@ -108,12 +108,11 @@ namespace DGScope
                     {
                         totalaltimeter = 29.92;
                     }
-                    altimeter = new Pressure("")
-                    {
-                        Value = totalaltimeter,
-                        Unit = libmetar.Enums.PressureUnit.inHG,
-                        Type = libmetar.Enums.PressureType.QNH
-                    };
+                    if (altimeter == null)
+                        altimeter = new Pressure("");
+                    altimeter.Value = totalaltimeter;
+                    altimeter.Unit = libmetar.Enums.PressureUnit.inHG;
+                    altimeter.Type = libmetar.Enums.PressureType.QNH;
                 }
                 return altimeter;
             }

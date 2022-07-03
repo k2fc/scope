@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using DGScope.Library;
 using DGScope.Receivers;
+using libmetar;
 using Newtonsoft.Json;
 
 namespace DGScope.Receivers.ScopeServer
@@ -14,6 +17,9 @@ namespace DGScope.Receivers.ScopeServer
     public class ScopeServerClient : Receiver
     {
         private Dictionary<Guid, Guid> associatedFlightPlans = new Dictionary<Guid, Guid>();
+        private List<Track> tracks = new List<Track>();
+        private List<FlightPlan> flightPlans = new List<FlightPlan>();
+        private UpdateConverter updateConverter = new UpdateConverter();
         private bool stop = true;
         private bool running = false;
         public string Url { get; set; }
@@ -48,8 +54,20 @@ namespace DGScope.Receivers.ScopeServer
                                     var line = reader.ReadLine();
                                     if (line == null)
                                         continue;
-                                    JsonUpdate obj = JsonConvert.DeserializeObject(line, typeof(JsonUpdate)) as JsonUpdate;
-                                    ProcessUpdate(obj);
+                                    JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line);
+                                    Update update;
+                                    switch (obj.UpdateType)
+                                    {
+                                        case 0:
+                                            update = JsonConvert.DeserializeObject<TrackUpdate>(line);
+                                            ProcessUpdate(update);
+                                            break;
+                                        case 1:
+                                            update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line);
+                                            ProcessUpdate(update);
+                                            break;
+                                    }
+                                    //ProcessUpdate(obj);
                                 }
                                 catch (Exception ex)
                                 {
@@ -82,123 +100,90 @@ namespace DGScope.Receivers.ScopeServer
             return false;
                 
         }
-        public void ProcessUpdate(JsonUpdate update)
+        public void ProcessUpdate(Update update)
         {
             Aircraft plane = null; ;
-            Guid updateGuid;
+            Guid updateGuid = update.Guid;
+            Track track = null;
+            FlightPlan flightPlan = null;
             switch (update.UpdateType)
             {
-                case 0:
-                    updateGuid = update.Guid;
-                    break;
-                case 1 when update.AssociatedTrackGuid != null:
-                    updateGuid = (Guid)update.AssociatedTrackGuid;
-                    if (!associatedFlightPlans.ContainsKey(update.Guid))
-                        associatedFlightPlans.Add(update.Guid, (Guid)update.AssociatedTrackGuid);
-                    var fpPlane = GetPlane(update.Guid, false);
-                    var trackPlane = GetPlane(updateGuid, false);
-                    if (fpPlane != null && trackPlane != null)
+                case UpdateType.Track:
+                    lock (tracks)
                     {
-                        lock (fpPlane)
+                        track = tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        if (track == null)
                         {
-                            lock (trackPlane)
-                            {
-                                foreach (PropertyInfo property in fpPlane.GetType().GetProperties())
-                                {
-                                    if (property.CanWrite)
-                                        property.SetValue(trackPlane, property.GetValue(fpPlane));
-                                }
-                                trackPlane.Guid = updateGuid;
-                            }
-                            fpPlane.Guid = updateGuid;
+                            track = new Track(updateGuid);
+                            tracks.Add(track);
                         }
                     }
-                    else if (fpPlane != null)
+                    track.UpdateTrack(update as TrackUpdate);
+                    flightPlan = flightPlans.Where(x => x.AssociatedTrack == track).FirstOrDefault();
+                    plane = GetPlane(updateGuid, true);
+                    break;
+                case UpdateType.Flightplan:
+                    lock (flightPlans)
                     {
-                        lock (fpPlane)
+                        flightPlan = flightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        if (flightPlan == null)
                         {
-                            fpPlane.Guid = updateGuid;
+                            flightPlan = new FlightPlan(updateGuid);
+                            flightPlans.Add(flightPlan);
                         }
                     }
-                    break;
-                case 1 when update.AssociatedTrackGuid == null:
-                    updateGuid = update.Guid;
-                    break;
-                default:
-                    if (!associatedFlightPlans.TryGetValue(update.Guid, out updateGuid))
-                        return;
+                    flightPlan.UpdateFlightPlan(update as FlightPlanUpdate);
+                    var associatedTrack = (update as FlightPlanUpdate).AssociatedTrackGuid;
+                    if (associatedTrack != null)
+                        flightPlan.AssociateTrack(tracks.Where(x => x.Guid == associatedTrack).FirstOrDefault());
+                    if (flightPlan.AssociatedTrack != null)
+                    {
+                        plane = GetPlane(flightPlan.AssociatedTrack.Guid, false);
+                        track = flightPlan.AssociatedTrack;
+                    }
                     break;
             }
-            plane = GetPlane(updateGuid, true);
             if (plane == null)
                 return;
-            //switch (update.UpdateType)
-            //{
-            //    case 0 when update.TimeStamp < plane.LastPositionTime:
-            //        return;
-            //    case 1 when update.TimeStamp < plane.LastMessageTime:
-            //        return;
-            //}
+            
             if (update.TimeStamp > plane.LastMessageTime)
                 plane.LastMessageTime = update.TimeStamp;
-            if (update.AircraftType != null)
-                plane.Type = update.AircraftType;
-            if (update.Altitude != null)
+            if (flightPlan != null)
             {
-                plane.Altitude.AltitudeType = (AltitudeType)update.Altitude.AltitudeType;
-                plane.Altitude.Value = update.Altitude.Value;
+                plane.Type = flightPlan.AircraftType;
+                plane.FlightPlanCallsign = flightPlan.Callsign;
+                plane.Destination = flightPlan.Destination;
+                plane.FlightRules = flightPlan.FlightRules;
+                plane.Category = flightPlan.WakeCategory;
+                plane.PositionInd = flightPlan.Owner;
+                plane.PendingHandoff = flightPlan.PendingHandoff;
+                plane.RequestedAltitude = flightPlan.RequestedAltitude;
+                plane.Scratchpad = flightPlan.Scratchpad1;
+                plane.Scratchpad2 = flightPlan.Scratchpad2;
+                plane.LDRDirection = RadarWindow.ParseLDR(flightPlan.LDRDirection.ToString());
             }
-            switch (update.UpdateType)
+            if (track != null)
             {
-                case 0 when update.Callsign != null:
-                    plane.Callsign = update.Callsign;
-                    break;
-                case 1 when update.Callsign != null:
-                    plane.FlightPlanCallsign = update.Callsign;
-                    break;
+                if (track.Altitude != null)
+                {
+                    if (plane.Altitude != null)
+                    {
+                        plane.Altitude.Value = track.Altitude.Value;
+                        plane.Altitude.AltitudeType = track.Altitude.AltitudeType;
+                    }
+                }
+                plane.Callsign = track.Callsign;
+                plane.GroundSpeed = track.GroundSpeed;
+                if (track.PropertyUpdatedTimes.ContainsKey(track.GetType().GetProperty("GroundTrack")))
+                    plane.SetTrack(track.GroundTrack, track.PropertyUpdatedTimes[track.GetType().GetProperty("GroundTrack")]);
+                plane.Ident = track.Ident;
+                plane.IsOnGround = track.IsOnGround;
+                if (track.PropertyUpdatedTimes.ContainsKey(track.GetType().GetProperty("Location")))
+                    plane.SetLocation(track.Location, track.PropertyUpdatedTimes[track.GetType().GetProperty("Location")]);
+                plane.ModeSCode = track.ModeSCode;
+                plane.Squawk = track.Squawk;
+                plane.VerticalRate = track.VerticalRate;
             }
-                
-            if (update.Destination != null)
-                plane.Destination = update.Destination;
-            if (update.FlightRules != null)
-                plane.FlightRules = update.FlightRules;
-            if (update.WakeCategory != null)
-                plane.Category = update.WakeCategory;
-            if (update.GroundSpeed != null)
-                plane.GroundSpeed = (int)update.GroundSpeed;
-            if (update.GroundTrack != null)
-                plane.SetTrack((int)update.GroundTrack, update.TimeStamp);
-            if (update.Ident != null)
-                plane.Ident = (bool)update.Ident;
-            if (update.IsOnGround != null)
-                plane.IsOnGround = (bool)update.IsOnGround;
-            if (update.LDRDirection != null)
-                plane.LDRDirection = LDRDirection.ParseLDR(update.LDRDirection);
-            if (update.Location != null)
-                plane.SetLocation(update.Location.Latitude, update.Location.Longitude, update.TimeStamp);
-            if (update.ModeSCode != null)
-                plane.ModeSCode = (int)update.ModeSCode;
-            if (update.Owner != null)
-                plane.PositionInd = update.Owner;
-            if (update.PendingHandoff != null)
-                plane.PendingHandoff = update.PendingHandoff;
-            if (update.RequestedAltitude != null)
-                plane.RequestedAltitude = (int)update.RequestedAltitude;
-            if (!string.IsNullOrEmpty(update.Scratchpad1))
-                plane.Scratchpad = update.Scratchpad1;
-            else if (update.Scratchpad1 == string.Empty)
-                plane.Scratchpad = null;
-            if (!string.IsNullOrEmpty(update.Scratchpad2))
-                plane.Scratchpad2 = update.Scratchpad2;
-            else if (update.Scratchpad2 == string.Empty)
-                plane.Scratchpad2 = null;
-            if (update.Squawk != null)
-                plane.Squawk = update.Squawk;
-            if (update.VerticalRate != null)
-                plane.VerticalRate = (int)update.VerticalRate;
-                
-
-
         }
 
         public override void Stop()
