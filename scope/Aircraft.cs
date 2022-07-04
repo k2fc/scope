@@ -313,7 +313,7 @@ namespace DGScope
             {
                 yscratch = destination;
             }
-            else if (!string.IsNullOrEmpty(Scratchpad2))
+            else if (!string.IsNullOrEmpty(Scratchpad))
             {
                 yscratch = Scratchpad.PadRight(3);
             }
