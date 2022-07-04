@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using DGScope.Receivers;
 using libmetar;
@@ -61,20 +62,13 @@ namespace DGScope
         private int _altimeterCorrection = 0;
         private MetarService metarService = new MetarService();
         
-        public List<Metar> AllMetars
-        {
-            get 
-            {
-                GetWeather();
-                return allMetars;
-            }
-        }
-        private List<Metar> allMetars;
+        
         public List<Metar> Metars
         {
             get
             {
-                return AllMetars.Where(metar => AltimeterStations.Contains(metar.Icao)).ToList();
+                Task.Run(() => GetWeather(false));
+                return parsedMetars.Where(x => this.AltimeterStations.Contains(x.Icao)).ToList();
             }
         }
         private bool correctioncalculated = false;
@@ -154,28 +148,36 @@ namespace DGScope
         }
 
         DateTime lastMetarUpdate = DateTime.MinValue;
-        public void GetWeather(bool force = false)
+        List<Metar> parsedMetars = new List<Metar>();
+        bool gettingWx = false;
+        public async Task<bool> GetWeather(bool force = false)
         {
-            if (lastMetarUpdate < DateTime.Now.AddMinutes(-5) || force)
+            if ((lastMetarUpdate < DateTime.Now.AddMinutes(-5) || force) && !gettingWx) 
             {
+                gettingWx = true;
                 List<Metar> tempMetars = new List<Metar>();
-                foreach (var metar in metarService.GetBulk())
+                var metars = await metarService.GetBulkAsync();
+                metars.ToList().ForEach(metar =>
                 {
-                    try
+                    if (AltimeterStations.Contains(metar.Icao))
                     {
-                        metar.Parse();
-                        tempMetars.Add(metar);
+                        try
+                        {
+                            metar.Parse();
+                        } catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Excluded {0} because: {1}", metar.Icao, ex.Message);
-                    }
-                }
+                });
                 lastMetarUpdate = DateTime.Now;
+                parsedMetars = metars.Where(x => x.IsParsed).ToList();
                 correctioncalculated = false;
-                allMetars = tempMetars;
             }
+            gettingWx = false;
+            return true;
         }
+
         public double LatitudeOfTarget(double distance, double bearing)
         {
             double R = 3443.92; // nautical miles
