@@ -118,7 +118,7 @@ namespace DGScope
         bool _fdb = false;
         private bool fdb()
         {
-            if (Emergency || ShowCallsignWithNoSquawk || QuickLook)
+            if (Emergency || QuickLook)
             {
                 return true;
             }
@@ -255,6 +255,8 @@ namespace DGScope
 
         public void RedrawDataBlock(bool updatepos = false, RadarWindow.LeaderDirection? leaderDirection = null)
         {
+            if (Callsign == null)
+                Callsign = string.Empty;
             if (leaderDirection == null)
                 leaderDirection = LDRDirection;
             string oldtext = DataBlock.Text;
@@ -429,9 +431,9 @@ namespace DGScope
                 }
                 else
                 {
-                    DataBlock.Text += (dbAlt / 100).ToString("D3") + vfrchar + catchar + "\r\n     ";
-                    DataBlock2.Text += destination.PadRight(5) + "\r\n     ";
-                    DataBlock3.Text += yscratch.PadRight(5) + "\r\n     ";
+                    DataBlock.Text += (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar;
+                    DataBlock2.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
+                    DataBlock3.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
                 }
             }
             else
