@@ -734,7 +734,7 @@ namespace DGScope
 
         private void cbWxUpdateTimer(object state)
         {
-            radar.GetWeather(true);
+            Task.Run(() => radar.GetWeather(true));
         }
 
         private void cbTimeshareTimer(object state)
@@ -769,7 +769,10 @@ namespace DGScope
         {
             try
             {
-                Airports = radar.Airports.Airport.ToList();
+                if (radar.Airports.Airport != null)
+                    Airports = radar.Airports.Airport.ToList();
+                else
+                    Airports = new List<Airport>();
             }
             catch 
             { 
@@ -778,7 +781,10 @@ namespace DGScope
             }
             try
             {
-                Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(ScreenCenterPoint)).ToList();
+                if (radar.Waypoints.Waypoint != null)
+                    Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(ScreenCenterPoint)).ToList();
+                else
+                    Waypoints = new List<WaypointsWaypoint>();
             }
             catch 
             { 
