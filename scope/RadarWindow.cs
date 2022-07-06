@@ -25,13 +25,13 @@ namespace DGScope
     {
         public enum LeaderDirection
         {
-            NW = 135, 
-            N  = 90,
+            NW = 135,
+            N = 90,
             NE = 45,
-            W  = 180,
-            E  = 0,
+            W = 180,
+            E = 0,
             SW = 225,
-            S  = 270, 
+            S = 270,
             SE = 315
         }
 
@@ -63,11 +63,11 @@ namespace DGScope
             }
         }
         [XmlIgnore]
-        [DisplayName("Background Color"),Description("Radar Background Color"), Category("Colors")] 
+        [DisplayName("Background Color"), Description("Radar Background Color"), Category("Colors")]
         public Color BackColor { get; set; } = Color.Black;
         [XmlIgnore]
         [DisplayName("Range Ring Color"), Category("Colors")]
-        public Color RangeRingColor { get; set; } = Color.FromArgb(140,140,140);
+        public Color RangeRingColor { get; set; } = Color.FromArgb(140, 140, 140);
         [XmlIgnore]
         [DisplayName("Video Map Category A Color"), Category("Colors")]
         public Color VideoMapLineColor { get; set; } = Color.FromArgb(140, 140, 140);
@@ -75,7 +75,7 @@ namespace DGScope
         public Color VideoMapBLineColor { get; set; } = Color.FromArgb(140, 140, 140);
         [XmlIgnore]
         [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
-        public Color ReturnColor { get; set; } = Color.FromArgb(30,120,255);
+        public Color ReturnColor { get; set; } = Color.FromArgb(30, 120, 255);
         [XmlIgnore]
         [DisplayName("FDB Color"), Description("Color of aircraft full data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
@@ -87,7 +87,7 @@ namespace DGScope
         public Color LDBColor { get; set; } = Color.Lime;
         [XmlIgnore]
         [DisplayName("Selected Data Block Color"), Description("Color of aircraft limited data blocks"), Category("Colors")]
-        public Color SelectedColor { get; set; } = Color.FromArgb(0,255,255);
+        public Color SelectedColor { get; set; } = Color.FromArgb(0, 255, 255);
         [XmlIgnore]
         [DisplayName("Data Block Emergency Color"), Description("Color of emergency aircraft data blocks"), Category("Colors")]
         public Color DataBlockEmergencyColor { get; set; } = Color.Red;
@@ -96,7 +96,7 @@ namespace DGScope
         public Color RBLColor { get; set; } = Color.White;
         [XmlIgnore]
         [DisplayName("TPA Color"), Description("Color of Terminal Proximity Alert Cones/Rings"), Category("Colors")]
-        public Color TPAColor { get; set; } = Color.FromArgb(90,180,255);
+        public Color TPAColor { get; set; } = Color.FromArgb(90, 180, 255);
 
         [XmlElement("BackColor")]
         [Browsable(false)]
@@ -206,7 +206,7 @@ namespace DGScope
         public Color[] HistoryColors
         {
             get; set;
-        } = new Color[] { Color.FromArgb(30,80,200), Color.FromArgb(70, 70, 170), Color.FromArgb(50, 50, 130), Color.FromArgb(40, 40, 110), Color.FromArgb(30, 30, 90) };
+        } = new Color[] { Color.FromArgb(30, 80, 200), Color.FromArgb(70, 70, 170), Color.FromArgb(50, 50, 130), Color.FromArgb(40, 40, 110), Color.FromArgb(30, 30, 90) };
 
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
@@ -329,7 +329,7 @@ namespace DGScope
         }
         private string videoMapFilename = null;
         [Browsable(false)]
-        public string VideoMapFilename 
+        public string VideoMapFilename
         {
             get
             {
@@ -356,6 +356,11 @@ namespace DGScope
         float yPixelScale => 2f / window.ClientSize.Height;
         float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
+        [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
+        public List<int> SelectedBeaconCodes { get; set; } = new List<int>() { 1200 };
+        [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
+        public char SelectedBeaconCodeChar { get; set; } = '□';
+
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public double RangeRingInterval { get; set; } = 5;
         private string cps = "NONE";
@@ -676,6 +681,7 @@ namespace DGScope
                         if (item.Altitude == null)
                             item.Altitude = new Altitude();
                         item.Altitude.SetAltitudeProperties(18000, radar.Altimeter);
+                        item.SetSelectedSquawkList(SelectedBeaconCodes, SelectedBeaconCodeChar);
                     }
                     break;
                 case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
@@ -1253,6 +1259,24 @@ namespace DGScope
                         //MultiFuntion
                         switch ((int)keys[0][1])
                         {
+                            case (int)Key.B: //Mutlifunction B: Beacons
+                                if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
+                                {
+                                    if(int.TryParse(KeysToString(keys[0],2),out int squawk))
+                                    {
+                                        if (SelectedBeaconCodes.Contains(squawk))
+                                            SelectedBeaconCodes.Remove(squawk);
+                                        else
+                                            SelectedBeaconCodes.Add(squawk);
+                                    }
+                                    Preview.Clear();
+                                }
+                                else if (keys[0].Length == 3 && (int)keys[0][2] == (int)Key.KeypadMultiply)
+                                {
+                                    SelectedBeaconCodes.Clear();
+                                    Preview.Clear();
+                                }
+                                break;
                             case (int)Key.P:
                                 if (!clickedplane)
                                 {
@@ -1309,11 +1333,12 @@ namespace DGScope
             }
         }
 
-        private string KeysToString (KeyCode[] keys)
+        private string KeysToString (KeyCode[] keys, int start = 0)
         {
             string output = "";
-            foreach (var key in keys)
+            for (int i = start; i < keys.Length; i++)
             {
+                var key = keys[i];
                 switch ((int)key)
                 {
                     case (int)Key.A:
@@ -1438,8 +1463,8 @@ namespace DGScope
                     case (int)Key.KeypadPeriod:
                         output += ".";
                         break;
+                    }
                 }
-            }
                 return output;
         }
 

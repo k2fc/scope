@@ -452,8 +452,29 @@ namespace DGScope
                 DataBlock3.Redraw = DataBlock.Text != oldtext3;
             if (PositionInd != null)
                 PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
+            else if (isSquawkSelected())
+                PositionIndicator.Text = selectedSquawkChar.ToString();
             else
                 PositionIndicator.Text = "*";
+        }
+
+        private List<int> selectedSquawks;
+        private char selectedSquawkChar;
+        public void SetSelectedSquawkList(List<int> selectedSquawks, char selectedChar)
+        {
+            this.selectedSquawks = selectedSquawks;
+            this.selectedSquawkChar = selectedChar;
+        }
+        private bool isSquawkSelected()
+        {
+            if (selectedSquawks == null || Squawk == null)
+                return false;
+            foreach (int squawk in selectedSquawks)
+            {
+                if (Squawk.StartsWith(squawk.ToString()))
+                    return true;
+            }
+            return false;
         }
         public void OldRedrawDataBlock(bool updatepos = false)
         {
