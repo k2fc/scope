@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DGScope.Library;
 using DGScope.Receivers;
@@ -36,71 +40,126 @@ namespace DGScope.Receivers.ScopeServer
         }
 
         private bool streamended = true;
+        private static async Task<string> ReadString(ClientWebSocket ws)
+        {
+            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[49316]);
+
+            WebSocketReceiveResult result = null;
+            using (var ms = new MemoryStream())
+            {
+                do
+                {
+                    result = await ws.ReceiveAsync(buffer, CancellationToken.None);
+                    ms.Write(buffer.Array, buffer.Offset, result.Count);
+                }
+                while (!result.EndOfMessage);
+                ms.Seek(0, SeekOrigin.Begin);
+                using (var reader = new StreamReader(ms, Encoding.UTF8))
+                    return reader.ReadToEnd();
+            }
+        }
+
+        private async Task ProcessLine(string line)
+        {
+            JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line);
+            Update update;
+            switch (obj.UpdateType)
+            {
+                case 0:
+                    update = JsonConvert.DeserializeObject<TrackUpdate>(line);
+                    ProcessUpdate(update);
+                    break;
+                case 1:
+                    update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line);
+                    ProcessUpdate(update);
+                    break;
+            }
+        }
         private async Task<bool> Receive()
         {
-            using (var client = new WebClient())
+            /// Try some websocket
+            Uri uri = new Uri(Url);
+            NetworkCredential credentials = new NetworkCredential(Username, Password);
+            
+            var scheme = uri.GetLeftPart(UriPartial.Scheme);
+            switch (scheme.ToLower())
             {
-                client.Credentials = new NetworkCredential(Username, Password);
-                client.OpenReadCompleted += (sender, e) =>
-                {
-                    if (e.Error == null)
+                case "wss://":
+                case "ws://":
+                    using (var client = new ClientWebSocket())
                     {
-                        using (var reader = new StreamReader(e.Result))
+                        var cts = new CancellationTokenSource();
+                        client.Options.Credentials = credentials;
+                        client.Options.KeepAliveInterval = TimeSpan.FromMinutes(30);
+                        client.ConnectAsync(uri, cts.Token);
+                        while (client.State == WebSocketState.Connecting)
                         {
-                            while (!stop)
+                            Thread.Sleep(1000);
+                        }
+                        Debug.WriteLine("connected!");
+                        while (client.State == WebSocketState.Open)
+                        {
+                            Debug.WriteLine("reading a line");
+                            
+                            var line = await ReadString(client);
+                            ProcessLine(line);
+                        }
+                    }
+                    break;
+                case "http://":
+                case "https://":
+                    using (var client = new WebClient())
+                    {
+                        client.Credentials = new NetworkCredential(Username, Password);
+                        client.OpenReadCompleted += (sender, e) =>
+                        {
+                            if (e.Error == null)
                             {
-                                try
+                                using (var reader = new StreamReader(e.Result))
                                 {
-                                    var line = reader.ReadLine();
-                                    if (line == null)
-                                        continue;
-                                    JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line);
-                                    Update update;
-                                    switch (obj.UpdateType)
+                                    while (!stop)
                                     {
-                                        case 0:
-                                            update = JsonConvert.DeserializeObject<TrackUpdate>(line);
-                                            ProcessUpdate(update);
-                                            break;
-                                        case 1:
-                                            update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line);
-                                            ProcessUpdate(update);
-                                            break;
+                                        try
+                                        {
+                                            var line = reader.ReadLine();
+                                            if (line == null)
+                                                continue;
+                                            ProcessLine(line);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine(ex.Message);
+                                        }
                                     }
-                                    //ProcessUpdate(obj);
                                 }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine(ex.Message);
-                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine(e.Error.ToString());
+                            }
+                            streamended = true;
+                        };
+
+                        while (!stop)
+                        {
+                            streamended = false;
+                            client.OpenReadAsync(new Uri(Url));
+                            while (!streamended)
+                            {
+                                System.Threading.Thread.Sleep(1000);
                             }
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine(e.Error.ToString());
-                    }
-                    streamended = true;
-                };
-                
-                while (!stop)
-                {
-                    streamended = false;
-                    client.OpenReadAsync(new Uri(Url));
-                    while (!streamended)
-                    {
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                }
+                    break;
             }
-                running = false;
+            running = false;
 
             if (stop)
                 return true;
             return false;
                 
         }
-        public void ProcessUpdate(Update update)
+        public async Task ProcessUpdate(Update update)
         {
             Aircraft plane = null; ;
             Guid updateGuid = update.Guid;
