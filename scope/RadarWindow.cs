@@ -2540,6 +2540,8 @@ namespace DGScope
 
                     foreach (var otherDataBlock in otherDataBlocks)
                     {
+                        if (!otherDataBlock.ParentAircraft.FDB)
+                            continue; //both must be fdbs
                         var otherPlane = otherDataBlock.ParentAircraft;
                         if (thisAircraft.ModeSCode != otherPlane.ModeSCode)
                         {
