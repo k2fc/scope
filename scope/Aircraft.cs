@@ -100,7 +100,9 @@ namespace DGScope
         public bool FDB { 
             get
             {
-                if (Owned) _fdb = true;
+                if (Owned && !QuickLook) _fdb = true;
+                else if (QuickLook) 
+                    return true;
                 return _fdb;
             }
             set
@@ -323,7 +325,7 @@ namespace DGScope
 
             if (!string.IsNullOrEmpty(Scratchpad2))
             {
-                yscratch2 = Scratchpad2.PadRight(4) + "+";
+                yscratch2 = Scratchpad2.PadRight(3) + "+";
             }
             else if (!string.IsNullOrEmpty(Scratchpad))
             {
@@ -361,7 +363,7 @@ namespace DGScope
             string fdb3line2;
             if (string.IsNullOrEmpty(yscratch2))
                 fdb3line2 = yscratch + handoffchar + type + " ";
-            else if (yscratch2.Length == 5)
+            else if (yscratch2.Length == 4)
                 fdb3line2 = yscratch2 + type;
             else
                 fdb3line2 = yscratch2 + handoffchar + type + " ";
