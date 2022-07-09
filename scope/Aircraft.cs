@@ -388,7 +388,7 @@ namespace DGScope
                         DataBlock3.Text = FlightPlanCallsign.PadRight(9);
                     }
                 }
-                else if (!ShowCallsignWithNoSquawk && Squawk != null)
+                else if (Squawk != null)
                 {
                     if (leaderDirection == RadarWindow.LeaderDirection.W ||
                 leaderDirection == RadarWindow.LeaderDirection.NW ||
@@ -403,23 +403,6 @@ namespace DGScope
                         DataBlock.Text = Squawk.PadRight(9);
                         DataBlock2.Text = Squawk.PadRight(9);
                         DataBlock3.Text = Squawk.PadRight(9);
-                    }
-                }
-                else if (ShowCallsignWithNoSquawk)
-                {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
-                    {
-                        DataBlock.Text = Callsign.PadLeft(9);
-                        DataBlock2.Text = Callsign.PadLeft(9);
-                        DataBlock3.Text = Callsign.PadLeft(9);
-                    }
-                    else
-                    {
-                        DataBlock.Text = Callsign.PadRight(9);
-                        DataBlock2.Text = Callsign.PadRight(9);
-                        DataBlock3.Text = Callsign.PadRight(9);
                     }
                 }
                 else
@@ -441,9 +424,37 @@ namespace DGScope
                 }
                 else
                 {
-                    DataBlock.Text += (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar;
-                    DataBlock2.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
-                    DataBlock3.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text += ((dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar).PadLeft(9);
+                        DataBlock2.Text += (yscratch.PadRight(3) + handoffchar + vfrchar + catchar).PadLeft(9);
+                        DataBlock3.Text += (yscratch.PadRight(3) + handoffchar + vfrchar + catchar).PadLeft(9);
+                    }
+                    else
+                    {
+                        DataBlock.Text += (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar;
+                        DataBlock2.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
+                        DataBlock3.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
+                    }
+                }
+                if (ShowCallsignWithNoSquawk && Callsign != null)
+                {
+                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
+                leaderDirection == RadarWindow.LeaderDirection.NW ||
+                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    {
+                        DataBlock.Text += "\r\n" + Callsign.PadLeft(9);
+                        DataBlock2.Text += "\r\n" + Callsign.PadLeft(9);
+                        DataBlock3.Text += "\r\n" + Callsign.PadLeft(9);
+                    }
+                    else
+                    {
+                        DataBlock.Text = "\r\n" + Callsign.PadRight(9);
+                        DataBlock2.Text = "\r\n" + Callsign.PadRight(9);
+                        DataBlock3.Text = "\r\n" + Callsign.PadRight(9);
+                    }
                 }
             }
             else
