@@ -224,8 +224,8 @@ namespace DGScope
         public bool HideDataTags { get; set; } = false;
         [DisplayName("Show Range Rings"), Category("Display Properties")]
         public bool ShowRangeRings { get; set; } = true;
-        [DisplayName("Quick Look"), Description("Show FDB on all"), Category("Display Properties")]
-        public bool QuickLook { get; set; } = false;
+        [DisplayName("Quick Look"), Description("Show FDB on these positions"), Category("Display Properties")]
+        public List<string> QuickLookList { get; set; } = new List<string>();
         [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
         public double TimeshareInterval
         {
@@ -1285,7 +1285,32 @@ namespace DGScope
                                 }
                                 break;
                             case (int)Key.Q:
-                                QuickLook = !QuickLook;
+                                if((keys[0].Length == 4 || keys[0].Length == 5) && enter)
+                                {
+                                    var qlstring = KeysToString(keys[0]).Substring(1);
+                                    var qlpos = qlstring.Substring(0, 2);
+                                    var qlplus = qlstring.Last() == '+';
+                                    if (qlplus)
+                                    {
+                                        if (QuickLookList.Contains(qlpos))
+                                            QuickLookList.Remove(qlpos);
+                                        if (QuickLookList.Contains(qlpos + "+"))
+                                            QuickLookList.Remove(qlpos + "+");
+                                        else
+                                            QuickLookList.Add(qlpos + "+");
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        if (QuickLookList.Contains(qlpos))
+                                            QuickLookList.Remove(qlpos);
+                                        else if (QuickLookList.Contains(qlpos + "+"))
+                                            QuickLookList.Remove(qlpos + "+");
+                                        else
+                                            QuickLookList.Add(qlpos);
+                                    }
+                                    Preview.Clear();
+                                }
                                 break;
                             case (int)Key.S: 
                                 if (!clickedplane)
@@ -1463,7 +1488,11 @@ namespace DGScope
                     case (int)Key.KeypadPeriod:
                         output += ".";
                         break;
-                    }
+                    case (int)Key.Plus:
+                    case (int)Key.KeypadPlus:
+                        output += "+";
+                        break;
+                }
                 }
                 return output;
         }
@@ -1500,7 +1529,19 @@ namespace DGScope
                 }
             }
             if (FPSInStatusArea)
+            {
                 StatusArea.Text += $"FPS: {fps} AC: {radar.Aircraft.Count}";
+                StatusArea.Text += "\r\n";
+            }
+            if (QuickLookList.Count > 0)
+            {
+                StatusArea.Text += "QL: ";
+                foreach (string quicklook in QuickLookList)
+                {
+                    StatusArea.Text += $"{quicklook} ";
+                }
+                StatusArea.Text += "\r\n";
+            }
             if (oldtext != StatusArea.Text)
                 StatusArea.Redraw = true;
             DrawLabel(StatusArea);
@@ -2304,7 +2345,8 @@ namespace DGScope
                 double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
-                if (aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude)
+                if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) || 
+                    aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
@@ -2347,8 +2389,23 @@ namespace DGScope
         {
             foreach (Aircraft aircraft in radar.Scan())
             {
-                if (QuickLook)
+                if (QuickLookList.Contains(aircraft.PositionInd))
+                {
+                    if (aircraft.PositionInd != ThisPositionIndicator)
+                        aircraft.Owned = false;
                     aircraft.QuickLook = true;
+                }
+                else if (QuickLookList.Contains(aircraft.PositionInd + "+"))
+                {
+                    aircraft.QuickLook = true;
+                    aircraft.Owned = true;
+                }
+                else
+                {
+                    if (aircraft.PositionInd != ThisPositionIndicator)
+                        aircraft.Owned = false;
+                    aircraft.QuickLook = false;
+                }
                 if (aircraft.Location != null)
                     GenerateTarget(aircraft);
             }
@@ -2376,6 +2433,8 @@ namespace DGScope
         }
         private bool inRange (Aircraft plane)
         {
+            if (plane.Location == null)
+                return false;
             return plane.Location.DistanceTo(radar.Location) <= radar.Range;
         }
 
@@ -2760,7 +2819,7 @@ namespace DGScope
                     {
                         DrawLine(block.ParentAircraft.PTL, Color.White);
                     }
-                    else if (PTLlengthAll > 0 && !block.ParentAircraft.Owned)
+                    else if (PTLlengthAll > 0 && !block.ParentAircraft.Owned && block.ParentAircraft.FDB)
                     {
                         DrawLine(block.ParentAircraft.PTL, Color.White);
                     }
