@@ -296,7 +296,8 @@ namespace DGScope
             string destination = "   ";
             string type = "    ";
             string yscratch = "   ";
-            string hscratch = "    ";
+            string yscratch2;
+            string reqalt = "    ";
 
             if (Destination == null)
             {
@@ -311,17 +312,26 @@ namespace DGScope
                 destination = (dbAlt / 100).ToString("D3");
             }
             
-            if (string.IsNullOrEmpty(Scratchpad))
-            {
-                yscratch = destination;
-            }
-            else if (!string.IsNullOrEmpty(Scratchpad))
+            if (!string.IsNullOrEmpty(Scratchpad))
             {
                 yscratch = Scratchpad.PadRight(3);
             }
             else
             {
                 yscratch = destination;
+            }
+
+            if (!string.IsNullOrEmpty(Scratchpad2))
+            {
+                yscratch2 = Scratchpad2.PadRight(4) + "+";
+            }
+            else if (!string.IsNullOrEmpty(Scratchpad))
+            {
+                yscratch2 = Scratchpad.PadRight(3);
+            }
+            else
+            {
+                yscratch2 = destination;
             }
 
             if (Type == null)
@@ -337,26 +347,24 @@ namespace DGScope
                 type = (dbSpeed / 10).ToString("D2") + vfrchar + catchar;
             }
 
-            if (string.IsNullOrEmpty(Scratchpad2) && RequestedAltitude == 0)
+            if (RequestedAltitude > 0)
             {
-                hscratch = type;
-            }
-            else if (!string.IsNullOrEmpty(Scratchpad2))
-            {
-                hscratch = Scratchpad2.PadRight(4);
-            }
-            else if (RequestedAltitude > 0)
-            {
-                hscratch = "R" + (RequestedAltitude / 100).ToString("D3");
+                reqalt = "R" + (RequestedAltitude / 100).ToString("D3");
             }
             else
             {
-                hscratch = type;
+                reqalt = type;
             }
 
             string fdb1line2 = (dbAlt / 100).ToString("D3") + handoffchar + (dbSpeed / 10).ToString("D2") + vfrchar + catchar + " ";
-            string fdb2line2 = destination + handoffchar + type + " ";
-            string fdb3line2 = yscratch + handoffchar + hscratch + " ";
+            string fdb2line2 = yscratch + handoffchar + reqalt + " ";
+            string fdb3line2;
+            if (string.IsNullOrEmpty(yscratch2))
+                fdb3line2 = yscratch + handoffchar + type + " ";
+            else if (yscratch2.Length == 5)
+                fdb3line2 = yscratch2 + type;
+            else
+                fdb3line2 = yscratch2 + handoffchar + type + " ";
 
 
             if (FDB || ShowCallsignWithNoSquawk)
