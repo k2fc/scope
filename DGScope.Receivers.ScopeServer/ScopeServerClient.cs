@@ -233,12 +233,16 @@ namespace DGScope.Receivers.ScopeServer
                 }
                 plane.Callsign = track.Callsign;
                 plane.GroundSpeed = track.GroundSpeed;
-                if (track.PropertyUpdatedTimes.ContainsKey(track.GetType().GetProperty("GroundTrack")))
-                    plane.SetTrack(track.GroundTrack, track.PropertyUpdatedTimes[track.GetType().GetProperty("GroundTrack")]);
+                if (update.GetType() == typeof(TrackUpdate))
+                {
+                    var tu = update as TrackUpdate;
+                    if (tu.GroundTrack != null)
+                        plane.SetTrack((double)tu.GroundTrack, tu.TimeStamp);
+                    if (tu.Location != null)
+                        plane.SetLocation(tu.Location, tu.TimeStamp);
+                }
                 plane.Ident = track.Ident;
                 plane.IsOnGround = track.IsOnGround;
-                if (track.PropertyUpdatedTimes.ContainsKey(track.GetType().GetProperty("Location")))
-                    plane.SetLocation(track.Location, track.PropertyUpdatedTimes[track.GetType().GetProperty("Location")]);
                 plane.ModeSCode = track.ModeSCode;
                 plane.Squawk = track.Squawk;
                 plane.VerticalRate = track.VerticalRate;
