@@ -73,6 +73,10 @@ namespace DGScope.Receivers.ScopeServer
                     update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line);
                     ProcessUpdate(update);
                     break;
+                case 2:
+                    update = JsonConvert.DeserializeObject<DeletionUpdate>(line);
+                    ProcessUpdate(update);
+                    break;
             }
         }
         private async Task<bool> Receive()
@@ -201,6 +205,43 @@ namespace DGScope.Receivers.ScopeServer
                         track = flightPlan.AssociatedTrack;
                     }
                     break;
+                case UpdateType.Deletion:
+                    lock (flightPlans)
+                    {
+                        flightPlan = flightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        if (flightPlan != null)
+                        {
+                            update = new FlightPlanUpdate();
+                            flightPlans.Remove(flightPlan);
+                            if (flightPlan.AssociatedTrack != null)
+                            {
+                                plane = GetPlane(flightPlan.AssociatedTrack.Guid, false);
+                                track = flightPlan.AssociatedTrack;
+                            }
+                            flightPlan = new FlightPlan("");
+                        }
+                    }
+                    lock (tracks)
+                    {
+                        track = tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        if (track != null)
+                        {
+                            flightPlans.ToList().ForEach(fp =>
+                            {
+                                if (fp.AssociatedTrack == track)
+                                    fp.AssociateTrack(null);
+                            });
+                            tracks.Remove(track);
+                            plane = GetPlane(updateGuid, false);
+                        }
+                    }
+                    lock (aircraft)
+                    {
+                        if (plane != null && track != null)
+                            aircraft.Remove(plane);
+                    }
+                    break;
+                    
             }
             if (plane == null)
                 return;
