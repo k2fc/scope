@@ -480,9 +480,9 @@ namespace DGScope
                 PositionIndicator.Text = "*";
         }
 
-        private List<int> selectedSquawks;
+        private List<string> selectedSquawks;
         private char selectedSquawkChar;
-        public void SetSelectedSquawkList(List<int> selectedSquawks, char selectedChar)
+        public void SetSelectedSquawkList(List<string> selectedSquawks, char selectedChar)
         {
             this.selectedSquawks = selectedSquawks;
             this.selectedSquawkChar = selectedChar;
@@ -491,9 +491,9 @@ namespace DGScope
         {
             if (selectedSquawks == null || Squawk == null)
                 return false;
-            foreach (int squawk in selectedSquawks)
+            foreach (string squawk in selectedSquawks)
             {
-                if (Squawk.StartsWith(squawk.ToString()))
+                if (Squawk.StartsWith(squawk))
                     return true;
             }
             return false;
