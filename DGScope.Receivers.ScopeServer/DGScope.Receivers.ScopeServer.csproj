@@ -177,6 +177,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DeletionUpdate.cs" />
     <Compile Include="FlightPlan.cs" />
     <Compile Include="FlightPlanUpdate.cs" />
     <Compile Include="IUpdatable.cs" />
