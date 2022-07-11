@@ -357,7 +357,7 @@ namespace DGScope
         float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
-        public List<int> SelectedBeaconCodes { get; set; } = new List<int>() { 1200 };
+        public List<string> SelectedBeaconCodes { get; set; } = new List<string>() { "1200" };
         [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
         public char SelectedBeaconCodeChar { get; set; } = '□';
 
@@ -1263,13 +1263,11 @@ namespace DGScope
                             case (int)Key.B: //Mutlifunction B: Beacons
                                 if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
                                 {
-                                    if(int.TryParse(KeysToString(keys[0],2),out int squawk))
-                                    {
-                                        if (SelectedBeaconCodes.Contains(squawk))
-                                            SelectedBeaconCodes.Remove(squawk);
-                                        else
-                                            SelectedBeaconCodes.Add(squawk);
-                                    }
+                                    var squawk = KeysToString(keys[0], 2);
+                                    if (SelectedBeaconCodes.Contains(squawk))
+                                        SelectedBeaconCodes.Remove(squawk);
+                                    else
+                                        SelectedBeaconCodes.Add(squawk);
                                     Preview.Clear();
                                 }
                                 else if (keys[0].Length == 3 && (int)keys[0][2] == (int)Key.KeypadMultiply)
