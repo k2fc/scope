@@ -364,6 +364,7 @@ namespace DGScope
         [DisplayName("Range Ring Interval"), Category("Display Properties")]
         public double RangeRingInterval { get; set; } = 5;
         private string cps = "NONE";
+        [XmlIgnore]
         [DisplayName("This Position Indicator"), Category("Display Properties")]
         public string ThisPositionIndicator 
         {
@@ -1285,20 +1286,21 @@ namespace DGScope
                                 }
                                 break;
                             case (int)Key.Q:
-                                if((keys[0].Length == 4 || keys[0].Length == 5) && enter)
+                                if((keys[0].Length >= 4 || keys[0].Length <= 6) && enter)
                                 {
                                     var qlstring = KeysToString(keys[0]).Substring(1);
-                                    var qlpos = qlstring.Substring(0, 2);
                                     var qlplus = qlstring.Last() == '+';
+                                    string qlpos = qlstring;
+                                    
                                     if (qlplus)
                                     {
+                                        qlpos = qlstring.Substring(0, qlstring.Length - 1);
                                         if (QuickLookList.Contains(qlpos))
                                             QuickLookList.Remove(qlpos);
                                         if (QuickLookList.Contains(qlpos + "+"))
                                             QuickLookList.Remove(qlpos + "+");
                                         else
                                             QuickLookList.Add(qlpos + "+");
-                                        break;
                                     }
                                     else
                                     {
@@ -2246,7 +2248,7 @@ namespace DGScope
                 aircraft.DataBlock2.ForeColor = SelectedColor;
                 aircraft.DataBlock3.ForeColor = SelectedColor;
             }
-            else if (aircraft.Owned)
+            else if (aircraft.Owned || aircraft.QuickLookPlus)
             {
                 aircraft.DataBlock.ForeColor = OwnedColor;
                 aircraft.DataBlock2.ForeColor = OwnedColor;
@@ -2389,21 +2391,24 @@ namespace DGScope
         {
             foreach (Aircraft aircraft in radar.Scan())
             {
-                if (QuickLookList.Contains(aircraft.PositionInd))
+                if (aircraft == debugPlane)
+                    ;
+                var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
+                var qlall = associated && QuickLookList.Contains("ALL");
+                var qlallplus = associated && QuickLookList.Contains("ALL+");
+                if (QuickLookList.Contains(aircraft.PositionInd) || qlall)
                 {
-                    if (aircraft.PositionInd != ThisPositionIndicator)
-                        aircraft.Owned = false;
+                    aircraft.QuickLookPlus = false;
                     aircraft.QuickLook = true;
                 }
-                else if (QuickLookList.Contains(aircraft.PositionInd + "+"))
+                else if (QuickLookList.Contains(aircraft.PositionInd + "+") || qlallplus)
                 {
                     aircraft.QuickLook = true;
-                    aircraft.Owned = true;
+                    aircraft.QuickLookPlus = true;
                 }
                 else
                 {
-                    if (aircraft.PositionInd != ThisPositionIndicator)
-                        aircraft.Owned = false;
+                    aircraft.QuickLookPlus = false;
                     aircraft.QuickLook = false;
                 }
                 if (aircraft.Location != null)

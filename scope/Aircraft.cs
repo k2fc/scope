@@ -94,6 +94,7 @@ namespace DGScope
         }
         public bool Marked { get; set; } = false;
         public bool QuickLook { get; set; } = false;
+        public bool QuickLookPlus { get; set; } = false;
 
         public RadarWindow.LeaderDirection? LDRDirection = null;
         public bool ShowCallsignWithNoSquawk { get; set; } = false;
