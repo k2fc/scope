@@ -756,11 +756,15 @@ namespace DGScope
         {
             lock (radar.Aircraft)
             {
-                radar.Aircraft.ToList().ForEach(x => x.Owned = x.PositionInd == ThisPositionIndicator || x.PendingHandoff == ThisPositionIndicator);
-                radar.Aircraft.ToList().ForEach(x => x.DataBlock.Flashing = x.PendingHandoff == ThisPositionIndicator);
-                radar.Aircraft.ToList().ForEach(x => x.DataBlock2.Flashing = x.PendingHandoff == ThisPositionIndicator);
-                radar.Aircraft.ToList().ForEach(x => x.DataBlock3.Flashing = x.PendingHandoff == ThisPositionIndicator);
+                var aclist = radar.Aircraft.ToList();
+                aclist.ForEach(x => x.Owned = x.PositionInd == ThisPositionIndicator || x.PendingHandoff == ThisPositionIndicator);
+                aclist.ForEach(x => x.DataBlock.Flashing = x.PendingHandoff == ThisPositionIndicator);
+                aclist.ForEach(x => x.DataBlock2.Flashing = x.PendingHandoff == ThisPositionIndicator);
+                aclist.ForEach(x => x.DataBlock3.Flashing = x.PendingHandoff == ThisPositionIndicator);
+                aclist.ForEach(x => x.FDB = false);
             }
+            QuickLookList.Remove(ThisPositionIndicator);
+            QuickLookList.Remove(ThisPositionIndicator +"+");
         }
         private void Aircraft_HandedOff(object sender, HandoffEventArgs e)
         {
