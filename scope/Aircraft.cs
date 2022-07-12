@@ -589,14 +589,22 @@ namespace DGScope
         }
         public void DropTrack()
         {
+            Dropped?.Invoke(this, new EventArgs());
+        }
+        public void DeleteFP()
+        {
             Owned = false;
+            QuickLook = false;
+            QuickLookPlus = false;
             PositionInd = "*";
             PendingHandoff = null;
             Scratchpad = null;
             Scratchpad2 = null;
+            Type = null;
+            LDRDirection = null;
             Runway = null;
             Destination = null;
-            Dropped?.Invoke(this, new EventArgs());
+            FpDeleted?.Invoke(this, new EventArgs());
         }
         public void RedrawTarget(PointF LocationF)
         {
@@ -643,8 +651,9 @@ namespace DGScope
         public event EventHandler<HandoffEventArgs> HandedOff;
         public event EventHandler Created;
         public event EventHandler<AircraftEventArgs> OwnershipChange;
-        //public event EventHandler Tracked;
         public event EventHandler Dropped;
+        public event EventHandler FpDeleted;
+        //public event EventHandler Tracked;
         //public event EventHandler Idented;
 
     }

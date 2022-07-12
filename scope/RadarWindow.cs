@@ -691,11 +691,48 @@ namespace DGScope
                         item.HandedOff -= Aircraft_HandedOff;
                         item.OwnershipChange -= Aircraft_OwnershipChange;
                         item.HandoffInitiated -= Aircraft_HandoffInitiated;
+
+                        DeletePlane(item, false);
                     }
                     break;
             }
         }
 
+        private void DeletePlane(Aircraft plane, bool leaveHistory = true)
+        {
+            lock(plane)if (!leaveHistory)
+            {
+                lock (PrimaryReturns)
+                {
+                    PrimaryReturns.ToList().ForEach(p =>
+                    {
+                        if (p.ParentAircraft == plane)
+                            PrimaryReturns.Remove(p);
+                    });
+                }
+            }
+            else
+            {
+                lock (PrimaryReturns)
+                    PrimaryReturns.Remove(plane.TargetReturn);
+            }
+            lock (dataBlocks)
+                dataBlocks.Remove(plane.DataBlock);
+            lock (posIndicators)
+                posIndicators.Remove(plane.PositionIndicator);
+            lock (rangeBearingLines)
+                rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
+            if (plane.DataBlock.TextureID != 0)
+            {
+                GL.DeleteTexture(plane.DataBlock.TextureID);
+                GL.DeleteTexture(plane.DataBlock2.TextureID);
+                GL.DeleteTexture(plane.DataBlock3.TextureID);
+                plane.DataBlock.TextureID = 0;
+                plane.DataBlock2.TextureID = 0;
+                plane.DataBlock3.TextureID = 0;
+            }
+        }
+        
         private void Aircraft_HandoffInitiated(object sender, HandoffEventArgs e)
         {
             if (e.PositionTo == ThisPositionIndicator)
@@ -757,18 +794,10 @@ namespace DGScope
                 delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddSeconds(-AircraftGCInterval)).ToList();
             foreach (var plane in delplane)
             {
-                GL.DeleteTexture(plane.DataBlock.TextureID);
-                plane.DataBlock.TextureID = 0;
-                //plane.Dispose();
                 lock(radar.Aircraft)
                     radar.Aircraft.Remove(plane);
-                lock (dataBlocks)
-                    dataBlocks.Remove(plane.DataBlock);
-                lock (posIndicators)
-                    posIndicators.Remove(plane.PositionIndicator);
+                DeletePlane(plane);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
-                lock (rangeBearingLines)
-                    rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
             }
         }
 
@@ -2809,7 +2838,7 @@ namespace DGScope
                     }
                 }
             }
-            foreach (var target in PrimaryReturns.OrderBy(x => x.Intensity).ToList())
+            foreach (var target in PrimaryReturns.ToList().OrderBy(x => x.Intensity))
             {
                 if (!(target.LocationF.X == 0 && target.LocationF.Y == 0))
                     DrawTarget(target);
