@@ -133,6 +133,8 @@ namespace DGScope.Receivers.ScopeServer
                                         catch (Exception ex)
                                         {
                                             Console.WriteLine(ex.Message);
+                                            streamended = true;
+                                            break;
                                         }
                                     }
                                 }
