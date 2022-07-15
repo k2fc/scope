@@ -700,36 +700,40 @@ namespace DGScope
 
         private void DeletePlane(Aircraft plane, bool leaveHistory = true)
         {
-            lock(plane)if (!leaveHistory)
+            lock (plane)
             {
-                lock (PrimaryReturns)
+                if (!leaveHistory)
                 {
-                    PrimaryReturns.ToList().ForEach(p =>
+                    lock (PrimaryReturns)
                     {
-                        if (p.ParentAircraft == plane)
-                            PrimaryReturns.Remove(p);
-                    });
+                        PrimaryReturns.ToList().ForEach(p =>
+                        {
+                            if (p.ParentAircraft == plane)
+                                PrimaryReturns.Remove(p);
+                        });
+                    }
                 }
-            }
-            else
-            {
-                lock (PrimaryReturns)
-                    PrimaryReturns.Remove(plane.TargetReturn);
-            }
-            lock (dataBlocks)
-                dataBlocks.Remove(plane.DataBlock);
-            lock (posIndicators)
-                posIndicators.Remove(plane.PositionIndicator);
-            lock (rangeBearingLines)
-                rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
-            if (plane.DataBlock.TextureID != 0)
-            {
-                GL.DeleteTexture(plane.DataBlock.TextureID);
-                GL.DeleteTexture(plane.DataBlock2.TextureID);
-                GL.DeleteTexture(plane.DataBlock3.TextureID);
-                plane.DataBlock.TextureID = 0;
-                plane.DataBlock2.TextureID = 0;
-                plane.DataBlock3.TextureID = 0;
+                else
+                {
+                    lock (PrimaryReturns)
+                        PrimaryReturns.Remove(plane.TargetReturn);
+                }
+                lock (dataBlocks)
+                    dataBlocks.Remove(plane.DataBlock);
+                lock (posIndicators)
+                    posIndicators.Remove(plane.PositionIndicator);
+                lock (rangeBearingLines)
+                    rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
+                if (plane.DataBlock.TextureID != 0)
+                {
+                    GL.DeleteTexture(plane.DataBlock.TextureID);
+                    GL.DeleteTexture(plane.DataBlock2.TextureID);
+                    GL.DeleteTexture(plane.DataBlock3.TextureID);
+                    plane.DataBlock.TextureID = 0;
+                    plane.DataBlock2.TextureID = 0;
+                    plane.DataBlock3.TextureID = 0;
+                }
+                plane.Deleted = true;
             }
         }
         
@@ -2266,53 +2270,58 @@ namespace DGScope
         private List<TransparentLabel> posIndicators = new List<TransparentLabel>();
         private void GenerateDataBlock(Aircraft aircraft)
         {
-            var oldcolor = aircraft.DataBlock.ForeColor;
-            if (aircraft.Emergency)
+            lock (aircraft)
             {
-                aircraft.DataBlock.ForeColor = DataBlockEmergencyColor;
-                aircraft.DataBlock2.ForeColor = DataBlockEmergencyColor;
-                aircraft.DataBlock3.ForeColor = DataBlockEmergencyColor;
-            }
-            else if (aircraft.Marked)
-            {
-                aircraft.DataBlock.ForeColor = SelectedColor;
-                aircraft.DataBlock2.ForeColor = SelectedColor;
-                aircraft.DataBlock3.ForeColor = SelectedColor;
-            }
-            else if (aircraft.Owned || aircraft.QuickLookPlus)
-            {
-                aircraft.DataBlock.ForeColor = OwnedColor;
-                aircraft.DataBlock2.ForeColor = OwnedColor;
-            }
-            else if (aircraft.FDB)
-            {
-                aircraft.DataBlock.ForeColor = DataBlockColor;
-                aircraft.DataBlock2.ForeColor = DataBlockColor;
-            }
-            else
-            {
-                aircraft.DataBlock.ForeColor = LDBColor;
-                aircraft.DataBlock2.ForeColor = LDBColor;
-            }
-            aircraft.PositionIndicator.ForeColor = aircraft.DataBlock.ForeColor;
-            aircraft.DataBlock3.ForeColor = aircraft.DataBlock.ForeColor;
-            if (oldcolor != aircraft.DataBlock.ForeColor)
-                aircraft.DataBlock.Redraw = true;
-            aircraft.RedrawDataBlock();
-            Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
-            var realWidth = text_bmp.Width * xPixelScale;
-            var realHeight = text_bmp.Height * yPixelScale;
-            aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
-            aircraft.DataBlock.ParentAircraft = aircraft;
-            aircraft.DataBlock2.ParentAircraft = aircraft;
-            aircraft.DataBlock3.ParentAircraft = aircraft;
-            aircraft.DataBlock.LocationF = OffsetDatablockLocation(aircraft);
-            aircraft.DataBlock2.LocationF = aircraft.DataBlock.LocationF;
-            aircraft.DataBlock3.LocationF = aircraft.DataBlock.LocationF;
-            if (!dataBlocks.Contains(aircraft.DataBlock))
-            {
-                lock (dataBlocks)
-                    dataBlocks.Add(aircraft.DataBlock);
+                if (aircraft.Deleted)
+                    return;
+                var oldcolor = aircraft.DataBlock.ForeColor;
+                if (aircraft.Emergency)
+                {
+                    aircraft.DataBlock.ForeColor = DataBlockEmergencyColor;
+                    aircraft.DataBlock2.ForeColor = DataBlockEmergencyColor;
+                    aircraft.DataBlock3.ForeColor = DataBlockEmergencyColor;
+                }
+                else if (aircraft.Marked)
+                {
+                    aircraft.DataBlock.ForeColor = SelectedColor;
+                    aircraft.DataBlock2.ForeColor = SelectedColor;
+                    aircraft.DataBlock3.ForeColor = SelectedColor;
+                }
+                else if (aircraft.Owned || aircraft.QuickLookPlus)
+                {
+                    aircraft.DataBlock.ForeColor = OwnedColor;
+                    aircraft.DataBlock2.ForeColor = OwnedColor;
+                }
+                else if (aircraft.FDB)
+                {
+                    aircraft.DataBlock.ForeColor = DataBlockColor;
+                    aircraft.DataBlock2.ForeColor = DataBlockColor;
+                }
+                else
+                {
+                    aircraft.DataBlock.ForeColor = LDBColor;
+                    aircraft.DataBlock2.ForeColor = LDBColor;
+                }
+                aircraft.PositionIndicator.ForeColor = aircraft.DataBlock.ForeColor;
+                aircraft.DataBlock3.ForeColor = aircraft.DataBlock.ForeColor;
+                if (oldcolor != aircraft.DataBlock.ForeColor)
+                    aircraft.DataBlock.Redraw = true;
+                aircraft.RedrawDataBlock();
+                Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
+                var realWidth = text_bmp.Width * xPixelScale;
+                var realHeight = text_bmp.Height * yPixelScale;
+                aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
+                aircraft.DataBlock.ParentAircraft = aircraft;
+                aircraft.DataBlock2.ParentAircraft = aircraft;
+                aircraft.DataBlock3.ParentAircraft = aircraft;
+                aircraft.DataBlock.LocationF = OffsetDatablockLocation(aircraft);
+                aircraft.DataBlock2.LocationF = aircraft.DataBlock.LocationF;
+                aircraft.DataBlock3.LocationF = aircraft.DataBlock.LocationF;
+                if (!dataBlocks.Contains(aircraft.DataBlock))
+                {
+                    lock (dataBlocks)
+                        dataBlocks.Add(aircraft.DataBlock);
+                }
             }
 
         }
