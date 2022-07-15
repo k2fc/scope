@@ -2411,8 +2411,14 @@ namespace DGScope
 
                 if (!posIndicators.Contains(aircraft.PositionIndicator))
                 {
-                    lock (posIndicators)
-                        posIndicators.Add(aircraft.PositionIndicator);
+                    lock (aircraft)
+                    {
+                        if (aircraft.Deleted)
+                            return;
+                        lock (posIndicators)
+                            posIndicators.Add(aircraft.PositionIndicator);
+
+                    }
                 }
                 aircraft.Drawn = true;
 
@@ -2456,6 +2462,8 @@ namespace DGScope
             }
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
+                if (target == null)
+                    continue;
                 if (target.Intensity < .001)
                 {
                     lock(PrimaryReturns)
