@@ -10,14 +10,12 @@ namespace DGScope
     public class Altitude
     {
         public int Value { get; set; }
-        private AltitudeType _alttype;
+        private AltitudeType _alttype = AltitudeType.Unknown;
         public AltitudeType AltitudeType {
             get => _alttype;
             set
             {
                 _alttype = value;
-                if (value == AltitudeType.Pressure)
-                    ;
             }
                  
         }
@@ -140,6 +138,8 @@ namespace DGScope
     }
     public enum AltitudeType
     {
-        Pressure, True
+        Pressure = 0, 
+        True = 1,
+        Unknown = 2
     }
 }
