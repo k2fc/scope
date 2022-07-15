@@ -14,6 +14,7 @@ namespace DGScope
         public double Latitude => Location.Latitude;
         public double Longitude => Location.Longitude;
         public string Callsign { get; set; }
+        public bool Deleted { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
         private double rateofturn;
@@ -268,6 +269,15 @@ namespace DGScope
             DataBlock.Text = "";
             DataBlock2.Text = "";
             DataBlock3.Text = "";
+            string altstring;
+            if (Altitude != null && Altitude.AltitudeType != AltitudeType.Unknown)
+            {
+                altstring = (dbAlt / 100).ToString("D3");
+            }
+            else
+            {
+                altstring = "RDR";
+            }
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
                 dbAlt = TrueAltitude;
@@ -304,7 +314,7 @@ namespace DGScope
 
             if (Destination == null)
             {
-                destination = (dbAlt / 100).ToString("D3");
+                destination = altstring;
             }
             else if (Destination.Trim() != "" && Destination != "unassigned")
             {
@@ -359,7 +369,7 @@ namespace DGScope
                 reqalt = type;
             }
 
-            string fdb1line2 = (dbAlt / 100).ToString("D3") + handoffchar + (dbSpeed / 10).ToString("D2") + vfrchar + catchar + " ";
+            string fdb1line2 = altstring + handoffchar + (dbSpeed / 10).ToString("D2") + vfrchar + catchar + " ";
             string fdb2line2 = yscratch + handoffchar + reqalt + " ";
             string fdb3line2;
             if (string.IsNullOrEmpty(yscratch2))
@@ -429,13 +439,13 @@ namespace DGScope
                 leaderDirection == RadarWindow.LeaderDirection.NW ||
                 leaderDirection == RadarWindow.LeaderDirection.SW)
                     {
-                        DataBlock.Text += ((dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar).PadLeft(9);
+                        DataBlock.Text += (altstring + handoffchar + vfrchar + catchar).PadLeft(9);
                         DataBlock2.Text += (yscratch.PadRight(3) + handoffchar + vfrchar + catchar).PadLeft(9);
                         DataBlock3.Text += (yscratch.PadRight(3) + handoffchar + vfrchar + catchar).PadLeft(9);
                     }
                     else
                     {
-                        DataBlock.Text += (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar;
+                        DataBlock.Text += altstring + handoffchar + vfrchar + catchar;
                         DataBlock2.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
                         DataBlock3.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
                     }
@@ -461,7 +471,7 @@ namespace DGScope
             else
             {
                 //This is an LDB
-                DataBlock.Text = (dbAlt / 100).ToString("D3") + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock.Text = altstring + handoffchar + vfrchar + catchar + "\r\n     ";
                 DataBlock2.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
                 DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
             }
