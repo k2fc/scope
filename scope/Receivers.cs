@@ -69,13 +69,15 @@ namespace DGScope.Receivers
             }
             return plane;
         }
-        public Aircraft GetPlane(int icaoID, bool createnew = true)
+        public Aircraft GetPlane(int icaoID, bool? createnew = null)
         {
+            if (createnew == null)
+                createnew = CreateNewAircraft;
             Aircraft plane;
             lock (aircraft)
             {
                 plane = (from x in aircraft where x.ModeSCode == icaoID select x).FirstOrDefault();
-                if (plane == null && createnew)
+                if (plane == null && createnew == true)
                 {
                     plane = new Aircraft(icaoID);
                     aircraft.Add(plane);
