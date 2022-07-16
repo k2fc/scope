@@ -125,7 +125,7 @@ namespace DGScope
 
         static void LoadReceiverPlugins()
         {
-            String path = Application.StartupPath;
+            string path = Application.StartupPath;
             string[] pluginFiles = Directory.GetFiles(path, "DGScope.*.dll");
             var ipi = (from file in pluginFiles let asm = Assembly.LoadFile(file)
                       from plugintype in asm.GetExportedTypes()
