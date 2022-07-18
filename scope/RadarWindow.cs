@@ -643,6 +643,7 @@ namespace DGScope
             window.Resize += Window_Resize;
             window.WindowStateChanged += Window_WindowStateChanged;
             window.KeyDown += Window_KeyDown;
+            window.KeyPress += Window_KeyPress;
             window.KeyUp += Window_KeyUp;
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
@@ -964,12 +965,12 @@ namespace DGScope
             RngRing = 201
         }
 
-        public List<KeyCode> Preview = new List<KeyCode>();
+        public List<object> Preview = new List<object>();
 
 
         bool waitingfortarget = false;
         RangeBearingLine tempLine;
-        private void ProcessCommand(List<KeyCode> KeyList, object clicked = null)
+        private void ProcessCommand(List<object> KeyList, object clicked = null)
         {
             bool clickedplane = false;
             bool enter = false;
@@ -981,7 +982,7 @@ namespace DGScope
                 enter = true;
             }
 
-            if (KeyList.Count < 1 && clicked.GetType() == typeof(Aircraft))
+            if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
                 if (!plane.Owned)
@@ -992,15 +993,23 @@ namespace DGScope
             }
             else if (KeyList.Count > 0)
             {
-                var commands = KeyList.Count(x => (int)x == (int)Key.Space) + 1;
+                var commands = KeyList.Count(x =>
+                {
+                    var type = x.GetType();
+                    if (type == typeof(KeyCode) || type == typeof(Key))
+                        if ((int)x == (int)Key.Space)
+                            return true;
+                    return false;
+                }) + 1;
                 var count = 0;
-                KeyCode[][] keys = new KeyCode[commands][];
+                object[][] keys = new object[commands][];
                 for (int i = 0; i < commands; i++)
                 {
-                    List<KeyCode> command = new List<KeyCode>();
+                    List<object> command = new List<object>();
                     for (; count < KeyList.Count; count++)
                     {
-                        if ((int)KeyList[count] != (int)Key.Space) 
+                        if (KeyList[count].GetType() != typeof(Key) || (Key)KeyList[count] != Key.Space)
+                        //if ((int)KeyList[count] != (int)Key.Space) 
                         {
                             command.Add(KeyList[count]);
                         }
@@ -1026,10 +1035,9 @@ namespace DGScope
                         clickedplane = true;
                     }
                 }
-                switch ((int)keys[0][0])
+                switch (keys[0][0])
                 {
-                    case (int)Key.Keypad1:
-                    case (int)Key.Number1:
+                    case '1':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
@@ -1037,8 +1045,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad2:
-                    case (int)Key.Number2:
+                    case '2':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
@@ -1046,8 +1053,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad3:
-                    case (int)Key.Number3:
+                    case '3':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
@@ -1055,8 +1061,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad4:
-                    case (int)Key.Number4:
+                    case '4':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
@@ -1064,8 +1069,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad6:
-                    case (int)Key.Number6:
+                    case '6':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.E;
@@ -1073,8 +1077,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad7:
-                    case (int)Key.Number7:
+                    case '7':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
@@ -1082,8 +1085,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad8:
-                    case (int)Key.Number8:
+                    case '8':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
@@ -1091,8 +1093,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)Key.Keypad9:
-                    case (int)Key.Number9:
+                    case '9':
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
@@ -1100,7 +1101,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)KeyCode.InitCntl:
+                    case Key.F3:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = true;
@@ -1109,7 +1110,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)KeyCode.TermCntl:
+                    case Key.F4:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = false;
@@ -1118,7 +1119,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case (int)KeyCode.SignOn:
+                    case Key.F12:
                         var newpos = KeysToString(keys[0]);
                         if (newpos == "*")
                             ThisPositionIndicator = "NONE";
@@ -1131,10 +1132,10 @@ namespace DGScope
                         }
                         Preview.Clear();
                         break;
-                    case (int)Key.KeypadMultiply: // splat commands
-                        switch ((int)keys[0][1])
+                    case '*': // splat commands
+                        switch (keys[0][1])
                         {
-                            case (int)Key.T:
+                            case 'T':
                                 if (clickedplane)
                                 {
                                     if (tempLine == null)
@@ -1185,7 +1186,7 @@ namespace DGScope
                                     if (keys[0].Length > 2)
                                     {
                                         int rblIndex = 0;
-                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        var entered = KeysToString(keys[0]).Substring(2);
                                         if (int.TryParse(entered, out rblIndex))
                                         {
                                             if (rblIndex <= rangeBearingLines.Count)
@@ -1218,13 +1219,13 @@ namespace DGScope
                                 }
 
                                 break;
-                            case (int)Key.J:
+                            case 'J':
                                 if (clickedplane)
                                 {
                                     if (keys[0].Length > 2)
                                     {
                                         decimal miles = 0;
-                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        var entered = KeysToString(keys[0]).Substring(2);
                                         if (decimal.TryParse(entered, out miles))
                                         {
                                             if (miles > 0 && (double)miles < radar.Range)
@@ -1245,7 +1246,7 @@ namespace DGScope
                                     }
                                 }
                                 break;
-                            case (int)Key.P:
+                            case 'P':
                                 if (clickedplane)
                                 {
                                     if (keys[0].Length > 2)
@@ -1272,17 +1273,17 @@ namespace DGScope
                                     }
                                 }
                                 break;
-                            case (int)Key.KeypadMultiply:
+                            case '*':
                                 if (keys[0].Length > 2)
                                 {
-                                    switch ((int)keys[0][2])
+                                    switch (keys[0][2])
                                     {
-                                        case (int)Key.J:
+                                        case 'J':
                                             lock (radar.Aircraft)
                                                 radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
                                             Preview.Clear();
                                             break;
-                                        case (int)Key.P:
+                                        case 'P':
                                             lock (radar.Aircraft)
                                                 radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
                                             Preview.Clear();
@@ -1293,11 +1294,13 @@ namespace DGScope
                         }
                         break;
 
-                    case (int)KeyCode.MultiFunc:
+                    case Key.F7:
                         //MultiFuntion
-                        switch ((int)keys[0][1])
+                        if (keys[0].Count() < 2)
+                            break;
+                        switch (keys[0][1])
                         {
-                            case (int)Key.B: //Mutlifunction B: Beacons
+                            case 'B': //Mutlifunction B: Beacons
                                 if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
                                 {
                                     var squawk = KeysToString(keys[0], 2);
@@ -1313,14 +1316,14 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
-                            case (int)Key.P:
+                            case 'P':
                                 if (!clickedplane)
                                 {
                                     PreviewArea.LocationF = (PointF)clicked;
                                     Preview.Clear();
                                 }
                                 break;
-                            case (int)Key.Q:
+                            case 'Q':
                                 if((keys[0].Length >= 4 || keys[0].Length <= 6) && enter)
                                 {
                                     var qlstring = KeysToString(keys[0]).Substring(1);
@@ -1349,19 +1352,19 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
-                            case (int)Key.S: 
+                            case 'S': 
                                 if (!clickedplane)
                                 {
                                     StatusArea.LocationF = (PointF)clicked;
                                     Preview.Clear();
                                 }
                                 break;
-                            case (int)Key.O: //Multifunction O: Auto Offset
+                            case 'O': //Multifunction O: Auto Offset
                                 if (keys[0].Length == 3 && enter)
                                 {
-                                    if ((int)keys[0][2] == (int)Key.I) //Inhibit
+                                    if ((char)keys[0][2] == 'I') //Inhibit
                                         AutoOffset = false;
-                                    else if ((int)keys[0][2] == (int)Key.E) //Enable
+                                    else if ((char)keys[0][2] == 'E') //Enable
                                         AutoOffset = true;
                                     else
                                         break;
@@ -1370,7 +1373,7 @@ namespace DGScope
                                 break;
                         }
                         break;
-                    case (int)KeyCode.RngRing:
+                    case KeyCode.RngRing:
                         //Range Rings
                         if (keys[0].Length == 1)
                         {
@@ -1395,142 +1398,150 @@ namespace DGScope
             }
         }
 
-        private string KeysToString (KeyCode[] keys, int start = 0)
+        private string KeysToString (object[] keys, int start = 0)
         {
             string output = "";
             for (int i = start; i < keys.Length; i++)
             {
                 var key = keys[i];
-                switch ((int)key)
+                var type = key.GetType();
+                if (type == typeof(KeyCode) || type == typeof(Key))
                 {
-                    case (int)Key.A:
-                        output += "A";
-                        break;
-                    case (int)Key.B:
-                        output += "B";
-                        break;
-                    case (int)Key.C:
-                        output += "C";
-                        break;
-                    case (int)Key.D:
-                        output += "D";
-                        break;
-                    case (int)Key.E:
-                        output += "E";
-                        break;
-                    case (int)Key.F:
-                        output += "F";
-                        break;
-                    case (int)Key.G:
-                        output += "G";
-                        break;
-                    case (int)Key.H:
-                        output += "H";
-                        break;
-                    case (int)Key.I:
-                        output += "I";
-                        break;
-                    case (int)Key.J:
-                        output += "J";
-                        break;
-                    case (int)Key.K:
-                        output += "K";
-                        break;
-                    case (int)Key.L:
-                        output += "L";
-                        break;
-                    case (int)Key.M:
-                        output += "M";
-                        break;
-                    case (int)Key.N:
-                        output += "N";
-                        break;
-                    case (int)Key.O:
-                        output += "O";
-                        break;
-                    case (int)Key.P:
-                        output += "P";
-                        break;
-                    case (int)Key.Q:
-                        output += "Q";
-                        break;
-                    case (int)Key.R:
-                        output += "R";
-                        break;
-                    case (int)Key.S:
-                        output += "S";
-                        break;
-                    case (int)Key.T:
-                        output += "T";
-                        break;
-                    case (int)Key.U:
-                        output += "U";
-                        break;
-                    case (int)Key.V:
-                        output += "V";
-                        break;
-                    case (int)Key.W:
-                        output += "W";
-                        break;
-                    case (int)Key.X:
-                        output += "X";
-                        break;
-                    case (int)Key.Y:
-                        output += "Y";
-                        break;
-                    case (int)Key.Z:
-                        output += "Z";
-                        break;
-                    case (int)Key.Keypad0:
-                    case (int)Key.Number0:
-                        output += "0";
-                        break;
-                    case (int)Key.Keypad1:
-                    case (int)Key.Number1:
-                        output += "1";
-                        break;
-                    case (int)Key.Keypad2:
-                    case (int)Key.Number2:
-                        output += "2";
-                        break;
-                    case (int)Key.Keypad3:
-                    case (int)Key.Number3:
-                        output += "3";
-                        break;
-                    case (int)Key.Keypad4:
-                    case (int)Key.Number4:
-                        output += "4";
-                        break;
-                    case (int)Key.Keypad5:
-                    case (int)Key.Number5:
-                        output += "5";
-                        break;
-                    case (int)Key.Keypad6:
-                    case (int)Key.Number6:
-                        output += "6";
-                        break;
-                    case (int)Key.Keypad7:
-                    case (int)Key.Number7:
-                        output += "7";
-                        break;
-                    case (int)Key.Keypad8:
-                    case (int)Key.Number8:
-                        output += "8";
-                        break;
-                    case (int)Key.Keypad9:
-                    case (int)Key.Number9:
-                        output += "9";
-                        break;
-                    case (int)Key.Period:
-                    case (int)Key.KeypadPeriod:
-                        output += ".";
-                        break;
-                    case (int)Key.Plus:
-                    case (int)Key.KeypadPlus:
-                        output += "+";
-                        break;
+                    switch ((int)key)
+                    {
+                        case (int)Key.A:
+                            output += "A";
+                            break;
+                        case (int)Key.B:
+                            output += "B";
+                            break;
+                        case (int)Key.C:
+                            output += "C";
+                            break;
+                        case (int)Key.D:
+                            output += "D";
+                            break;
+                        case (int)Key.E:
+                            output += "E";
+                            break;
+                        case (int)Key.F:
+                            output += "F";
+                            break;
+                        case (int)Key.G:
+                            output += "G";
+                            break;
+                        case (int)Key.H:
+                            output += "H";
+                            break;
+                        case (int)Key.I:
+                            output += "I";
+                            break;
+                        case (int)Key.J:
+                            output += "J";
+                            break;
+                        case (int)Key.K:
+                            output += "K";
+                            break;
+                        case (int)Key.L:
+                            output += "L";
+                            break;
+                        case (int)Key.M:
+                            output += "M";
+                            break;
+                        case (int)Key.N:
+                            output += "N";
+                            break;
+                        case (int)Key.O:
+                            output += "O";
+                            break;
+                        case (int)Key.P:
+                            output += "P";
+                            break;
+                        case (int)Key.Q:
+                            output += "Q";
+                            break;
+                        case (int)Key.R:
+                            output += "R";
+                            break;
+                        case (int)Key.S:
+                            output += "S";
+                            break;
+                        case (int)Key.T:
+                            output += "T";
+                            break;
+                        case (int)Key.U:
+                            output += "U";
+                            break;
+                        case (int)Key.V:
+                            output += "V";
+                            break;
+                        case (int)Key.W:
+                            output += "W";
+                            break;
+                        case (int)Key.X:
+                            output += "X";
+                            break;
+                        case (int)Key.Y:
+                            output += "Y";
+                            break;
+                        case (int)Key.Z:
+                            output += "Z";
+                            break;
+                        case (int)Key.Keypad0:
+                        case (int)Key.Number0:
+                            output += "0";
+                            break;
+                        case (int)Key.Keypad1:
+                        case (int)Key.Number1:
+                            output += "1";
+                            break;
+                        case (int)Key.Keypad2:
+                        case (int)Key.Number2:
+                            output += "2";
+                            break;
+                        case (int)Key.Keypad3:
+                        case (int)Key.Number3:
+                            output += "3";
+                            break;
+                        case (int)Key.Keypad4:
+                        case (int)Key.Number4:
+                            output += "4";
+                            break;
+                        case (int)Key.Keypad5:
+                        case (int)Key.Number5:
+                            output += "5";
+                            break;
+                        case (int)Key.Keypad6:
+                        case (int)Key.Number6:
+                            output += "6";
+                            break;
+                        case (int)Key.Keypad7:
+                        case (int)Key.Number7:
+                            output += "7";
+                            break;
+                        case (int)Key.Keypad8:
+                        case (int)Key.Number8:
+                            output += "8";
+                            break;
+                        case (int)Key.Keypad9:
+                        case (int)Key.Number9:
+                            output += "9";
+                            break;
+                        case (int)Key.Period:
+                        case (int)Key.KeypadPeriod:
+                            output += ".";
+                            break;
+                        case (int)Key.Plus:
+                        case (int)Key.KeypadPlus:
+                            output += "+";
+                            break;
+                    }
                 }
+                else if (key.GetType() == typeof(char))
+                {
+                    output += key;
                 }
+            }
                 return output;
         }
 
@@ -1583,12 +1594,16 @@ namespace DGScope
                 StatusArea.Redraw = true;
             DrawLabel(StatusArea);
         }
-        private string GeneratePreviewString(List<KeyCode> keys)
+        private string GeneratePreviewString(List<object> keys)
         {
             string output = "";
             foreach (var key in keys)
             {
-                switch ((int)key)
+                var type = key.GetType();
+                if (type == typeof(KeyCode) || type == typeof(Key))
+                {
+
+                    switch ((int)key)
                 {
                     case (int)Key.A:
                         output += "A";
@@ -1759,10 +1774,20 @@ namespace DGScope
                     default:
                         break;
                 }
-                
+                }
+                else if (type == typeof(char))
+                {
+                    output += key;
+                }
             }
             return output;
         }
+        private void Window_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            char key = char.ToUpper(e.KeyChar);
+            Preview.Add(key);
+        }
+
         private bool showAllCallsigns = false;
         private void Window_KeyDown(object sender, KeyboardKeyEventArgs e)
         {
@@ -1879,6 +1904,8 @@ namespace DGScope
                         break;
                     case Key.Enter:
                     case Key.KeypadEnter:
+                    case Key.PageDown:
+                        
                         ProcessCommand(Preview);
                         break;
                     case Key.BackSpace:
@@ -1888,9 +1915,12 @@ namespace DGScope
                     default:
                         if ((int)e.Key > 9 && (int)e.Key < 22)
                             Preview.Clear();
-                        if (((int)e.Key > 9 && (int)e.Key < 26) || (int)e.Key > 66)
-                            Preview.Add((KeyCode)e.Key);
+                        bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9)
+            || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus;
+                        if (!isText)
+                            Preview.Add(e.Key);
                         break;
+
                 }
             }
             
