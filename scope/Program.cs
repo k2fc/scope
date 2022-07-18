@@ -36,6 +36,13 @@ namespace DGScope
         [STAThread]
         static void Main(string[] args)
         {
+            string gitVersion = string.Empty;
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DGScope.version.txt"))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                gitVersion = reader.ReadToEnd();
+            }
+            Console.WriteLine(gitVersion);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             LoadReceiverPlugins();
