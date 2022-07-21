@@ -552,10 +552,12 @@ namespace DGScope
         public float HistoryWidth { get; set; } = 3;
         [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
         public float HistoryHeight { get; set; } = 15;
-        [DisplayName("PTL Length"), Description("Length of Predicted Track Lines for owned tracks, in minutes"), Category("Display Properties")]
+        [DisplayName("PTL Length"), Description("Length of Predicted Track Lines, in minutes"), Category("Predicted Track Lines")]
         public float PTLlength { get; set; } = 0;
-        [DisplayName("PTL Length"), Description("Length of Predicted Track Lines for unowned tracks, in minutes"), Category("Display Properties")]
-        public float PTLlengthAll { get; set; } = 0;
+        [DisplayName("PTL Own"), Description("Display Predicted Track Lines for Owned tracks"), Category("Predicted Track Lines")]
+        public bool PTLOwn { get; set; } = false;
+        [DisplayName("PTL All"), Description("Display Predicted Track Lines for all FDBs"), Category("Predicted Track Lines")]
+        public bool PTLAll { get; set; } = false;
         [DisplayName("Nexrad Weather Radars")]
         public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
         [DisplayName("Data Block Font")]
@@ -1368,6 +1370,14 @@ namespace DGScope
                                         AutoOffset = true;
                                     else
                                         break;
+                                    Preview.Clear();
+                                }
+                                break;
+                            case 'R':
+                                if (clickedplane)
+                                {
+                                    var plane = clicked as Aircraft;
+                                    plane.ShowPTL = !plane.ShowPTL;
                                     Preview.Clear();
                                 }
                                 break;
@@ -2414,7 +2424,7 @@ namespace DGScope
             {
                 aircraft.RedrawTarget(location);
                 aircraft.PTL.End1 = extrapolatedpos;
-                double ptldistance = aircraft.Owned ? (aircraft.GroundSpeed / 60) * PTLlength : (aircraft.GroundSpeed / 60) * PTLlengthAll;
+                double ptldistance = (aircraft.GroundSpeed / 60) * PTLlength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
                 if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) || 
@@ -2898,14 +2908,20 @@ namespace DGScope
             {
                 if (!HideDataTags)
                 {
-                    if (PTLlength > 0 && block.ParentAircraft.Owned)
+                    if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                     {
                         DrawLine(block.ParentAircraft.PTL, Color.White);
                     }
-                    else if (PTLlengthAll > 0 && !block.ParentAircraft.Owned && block.ParentAircraft.FDB)
+                        /*
+                    if (PTLlength > 0 && block.ParentAircraft.Owned && (PTLOwn || block.ParentAircraft.ShowPTL))
                     {
                         DrawLine(block.ParentAircraft.PTL, Color.White);
                     }
+                    else if (PTLlength > 0 && !block.ParentAircraft.Owned && block.ParentAircraft.FDB && (PTLAll || block.ParentAircraft.ShowPTL))
+                    {
+                        DrawLine(block.ParentAircraft.PTL, Color.White);
+                    }
+                        */
                     if (timeshare % 2 == 0)
                         DrawLabel(block);
                     else if (timeshare % 4 == 1)

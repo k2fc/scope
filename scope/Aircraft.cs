@@ -15,6 +15,7 @@ namespace DGScope
         public double Longitude => Location.Longitude;
         public string Callsign { get; set; }
         public bool Deleted { get; set; } = false;
+        public bool ShowPTL { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
         private double rateofturn;
