@@ -1312,6 +1312,7 @@ namespace DGScope
                                                 {
                                                     var plane = clicked as Aircraft;
                                                     plane.Pointout = true;
+                                                    GenerateDataBlock(plane);
                                                     Preview.Clear();
                                                 }
                                             }
