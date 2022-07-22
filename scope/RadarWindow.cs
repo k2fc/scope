@@ -80,6 +80,9 @@ namespace DGScope
         [DisplayName("FDB Color"), Description("Color of aircraft full data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
         [XmlIgnore]
+        [DisplayName("Pointout Color"), Description("Color of aircraft data blocks in pointout status"), Category("Colors")]
+        public Color PointoutColor { get; set; } = Color.Yellow;
+        [XmlIgnore]
         [DisplayName("Owned FDB Color"), Description("Color of aircraft owned full data blocks"), Category("Colors")]
         public Color OwnedColor { get; set; } = Color.White;
         [XmlIgnore]
@@ -132,6 +135,13 @@ namespace DGScope
         {
             get { return DataBlockColor.ToArgb(); }
             set { DataBlockColor = Color.FromArgb(value); }
+        }
+        [XmlElement("PointoutColor")]
+        [Browsable(false)]
+        public int PointoutColorAsArgb
+        {
+            get { return PointoutColor.ToArgb(); }
+            set { PointoutColor = Color.FromArgb(value); }
         }
         [XmlElement("LDBColor")]
         [Browsable(false)]
@@ -987,10 +997,14 @@ namespace DGScope
             if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
-                if (!plane.Owned)
+                if (plane.Pointout)
+                    plane.Pointout = false;
+                else if (!plane.Owned)
                     plane.FDB = plane.FDB ? false : true;
                 else if (plane.PositionInd != ThisPositionIndicator)
+                {
                     plane.Owned = false;
+                }
                 GenerateDataBlock(plane);
             }
             else if (KeyList.Count > 0)
@@ -1289,6 +1303,18 @@ namespace DGScope
                                             lock (radar.Aircraft)
                                                 radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
                                             Preview.Clear();
+                                            break;
+                                        default:
+                                            if (keys[0].Length == 4)
+                                            {
+                                                var pos = KeysToString(keys[0]).Substring(2);
+                                                if (clickedplane && pos == ThisPositionIndicator)
+                                                {
+                                                    var plane = clicked as Aircraft;
+                                                    plane.Pointout = true;
+                                                    Preview.Clear();
+                                                }
+                                            }
                                             break;
                                     }
                                 }
@@ -2326,6 +2352,12 @@ namespace DGScope
                     aircraft.DataBlock.ForeColor = SelectedColor;
                     aircraft.DataBlock2.ForeColor = SelectedColor;
                     aircraft.DataBlock3.ForeColor = SelectedColor;
+                }
+                else if (aircraft.Pointout)
+                {
+                    aircraft.DataBlock.ForeColor = PointoutColor;
+                    aircraft.DataBlock2.ForeColor = PointoutColor;
+                    aircraft.DataBlock3.ForeColor = PointoutColor;
                 }
                 else if (aircraft.Owned || aircraft.QuickLookPlus)
                 {

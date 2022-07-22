@@ -16,6 +16,7 @@ namespace DGScope
         public string Callsign { get; set; }
         public bool Deleted { get; set; } = false;
         public bool ShowPTL { get; set; } = false;
+        public bool Pointout { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
         private double rateofturn;
@@ -104,7 +105,9 @@ namespace DGScope
             get
             {
                 if (Owned && !QuickLook) _fdb = true;
-                else if (QuickLook) 
+                else if (QuickLook)
+                    return true;
+                else if (Pointout)
                     return true;
                 return _fdb;
             }
