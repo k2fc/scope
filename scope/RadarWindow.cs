@@ -2488,6 +2488,7 @@ namespace DGScope
                     {
                         if (aircraft.Deleted)
                             return;
+                        aircraft.PositionIndicator.ParentAircraft = aircraft;
                         lock (posIndicators)
                             posIndicators.Add(aircraft.PositionIndicator);
 
@@ -2937,7 +2938,9 @@ namespace DGScope
                 if (!(target.LocationF.X == 0 && target.LocationF.Y == 0))
                     DrawTarget(target);
             }
-            foreach (var block in dataBlocks.ToList().OrderBy(x=>x.ParentAircraft.ModeSCode))
+            lock (posIndicators)
+                posIndicators.Where(x => !x.ParentAircraft.FDB).ToList().ForEach(x => DrawLabel(x));
+            foreach (var block in dataBlocks.ToList().OrderBy(x => x.ParentAircraft.Owned).ThenBy(x => x.ParentAircraft.FDB))
             {
                 if (!HideDataTags)
                 {
@@ -2964,7 +2967,7 @@ namespace DGScope
                 }
             }
             lock (posIndicators)
-                posIndicators.ForEach(x => DrawLabel(x));
+                posIndicators.Where(x => x.ParentAircraft.FDB).ToList().ForEach(x => DrawLabel(x));
             
         }
 
