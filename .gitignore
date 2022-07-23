@@ -341,3 +341,4 @@ healthchecksdb
 /Visual Studio 2019/Visualizers
 /scope/version.txt
 /ScopeServer/version.txt
+/ScopeServer/receivers.json
