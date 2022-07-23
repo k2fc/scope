@@ -230,8 +230,6 @@ namespace DGScope
 
         [DisplayName("Screen Rotation"), Description("The number of degrees to rotate the image"), Category("Display Properties")]
         public double ScreenRotation { get; set; } = 0;
-        [DisplayName("Hide Data Tags"), Category("Display Properties")]
-        public bool HideDataTags { get; set; } = false;
         [DisplayName("Show Range Rings"), Category("Display Properties")]
         public bool ShowRangeRings { get; set; } = true;
         [DisplayName("Quick Look"), Description("Show FDB on these positions"), Category("Display Properties")]
@@ -2939,36 +2937,22 @@ namespace DGScope
                     DrawTarget(target);
             }
             lock (posIndicators)
-                posIndicators.Where(x => !x.ParentAircraft.FDB).ToList().ForEach(x => DrawLabel(x));
-            foreach (var block in dataBlocks.ToList().OrderBy(x => x.ParentAircraft.Owned).ThenBy(x => x.ParentAircraft.FDB))
+                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
+            foreach (var block in dataBlocks.ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
             {
-                if (!HideDataTags)
+                if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                 {
-                    if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
-                    {
-                        DrawLine(block.ParentAircraft.PTL, Color.White);
-                    }
-                        /*
-                    if (PTLlength > 0 && block.ParentAircraft.Owned && (PTLOwn || block.ParentAircraft.ShowPTL))
-                    {
-                        DrawLine(block.ParentAircraft.PTL, Color.White);
-                    }
-                    else if (PTLlength > 0 && !block.ParentAircraft.Owned && block.ParentAircraft.FDB && (PTLAll || block.ParentAircraft.ShowPTL))
-                    {
-                        DrawLine(block.ParentAircraft.PTL, Color.White);
-                    }
-                        */
-                    if (timeshare % 2 == 0)
-                        DrawLabel(block);
-                    else if (timeshare % 4 == 1)
-                        DrawLabel(block.ParentAircraft.DataBlock2);
-                    else
-                        DrawLabel(block.ParentAircraft.DataBlock3);
+                    DrawLine(block.ParentAircraft.PTL, Color.White);
                 }
+                if (timeshare % 2 == 0)
+                    DrawLabel(block);
+                else if (timeshare % 4 == 1)
+                    DrawLabel(block.ParentAircraft.DataBlock2);
+                else
+                    DrawLabel(block.ParentAircraft.DataBlock3);
             }
             lock (posIndicators)
-                posIndicators.Where(x => x.ParentAircraft.FDB).ToList().ForEach(x => DrawLabel(x));
-            
+                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
         }
 
         private void DrawLabel(TransparentLabel Label)
