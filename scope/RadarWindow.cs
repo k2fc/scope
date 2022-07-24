@@ -637,6 +637,7 @@ namespace DGScope
             Initialize();
         }
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
+        List<MinSep> minSeps = new List<MinSep>();
         Timer wxUpdateTimer;
         int timeshareinterval = 1000;
         Timer dataBlockTimeshareTimer;
@@ -735,6 +736,8 @@ namespace DGScope
                     posIndicators.Remove(plane.PositionIndicator);
                 lock (rangeBearingLines)
                     rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
+                lock (minSeps)
+                    minSeps.RemoveAll(minsep => minsep.Plane1 == plane || minsep.Plane2 == plane);
                 if (plane.DataBlock.TextureID != 0)
                 {
                     GL.DeleteTexture(plane.DataBlock.TextureID);
@@ -980,6 +983,7 @@ namespace DGScope
 
         bool waitingfortarget = false;
         RangeBearingLine tempLine;
+        MinSep tempMinSep;
         private void ProcessCommand(List<object> KeyList, object clicked = null)
         {
             bool clickedplane = false;
@@ -1041,7 +1045,7 @@ namespace DGScope
                 lock (radar.Aircraft)
                     typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
                         .Find(x => x.Callsign.Trim() == lastline.Trim());
-                if (typed != null)
+                if (!string.IsNullOrEmpty(lastline.Trim()) && !clickedplane && typed != null)
                 {
                     if (typed.Squawk != "1200" && typed.Squawk!= null )
                     {
@@ -1428,6 +1432,33 @@ namespace DGScope
                                 RangeRingInterval = interval;
                         }
                         Preview.Clear();
+                        break;
+                    case Key.End:
+                        //Min Sep
+                        tempLine = null;
+                        if (clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            if (tempMinSep == null)
+                            {
+                                tempMinSep = new MinSep(plane, null);
+                            }
+                            else
+                            {
+                                var minsep = new MinSep(tempMinSep.Plane1, plane);
+                                tempMinSep = null;
+                                lock (minSeps)
+                                    minSeps.Add(minsep);
+                                Preview.Clear();
+                            }
+                        }
+                        else if (enter)
+                        {
+                            lock (minSeps)
+                                minSeps.Clear();
+                            Preview.Clear();
+                            tempMinSep = null;
+                        }
                         break;
                 }
             }
@@ -1936,6 +1967,8 @@ namespace DGScope
                                 rangeBearingLines.Remove(tempLine);
                             tempLine = null;
                         }
+                        if (tempMinSep != null)
+                            tempMinSep = null;
                         break;
                     case Key.Enter:
                     case Key.KeypadEnter:
@@ -1948,7 +1981,7 @@ namespace DGScope
                             Preview.RemoveAt(Preview.Count - 1);
                         break;
                     default:
-                        if ((int)e.Key > 9 && (int)e.Key < 22)
+                        if (((int)e.Key > 9 && (int)e.Key < 22) || e.Key == Key.End)
                             Preview.Clear();
                         bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9)
             || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus;
@@ -2030,6 +2063,7 @@ namespace DGScope
             DrawVideoMapLines();
             GenerateTargets();
             DrawTargets();
+            DrawMinSeps();
             DrawRBLs();
             DrawStatic();
             GL.Flush();
@@ -2058,6 +2092,50 @@ namespace DGScope
         private GeoPoint ScreenToGeoPoint(Point Point)
         {
             return ScreenToGeoPoint(LocationFromScreenPoint(Point));
+        }
+        private void DrawMinSeps()
+        {
+            List<MinSep> seps;
+            lock (minSeps)
+                seps = minSeps.ToList();
+            foreach (var minsep in seps)
+            {
+                if (minsep.Line1.End1 != null && minsep.Line2.End1 != null && 
+                    minsep.Line1.End2 != null && minsep.Line2.End2 != null)
+                {
+                    DrawLine(minsep.Line1, RBLColor);
+                    DrawLine(minsep.Line2, RBLColor);
+                }
+                if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
+                {
+                    var color2 = Color.FromArgb(RBLColor.A, RBLColor.R / 2, RBLColor.G / 2, RBLColor.B / 2);
+                    DrawLine(minsep.SepLine, color2);
+                }
+                else
+                    continue;
+                if (minsep.MinSepDistance != null)
+                {
+                    if (minsep.SepLine.MidPoint == null)
+                        continue;
+                    var labelloc = GeoToScreenPoint(minsep.SepLine.MidPoint);
+                    minsep.Label.Text = ((double)(minsep.MinSepDistance)).ToString("0.00") + " NM";
+                    minsep.Label.ForeColor = RBLColor;
+                    minsep.Label.Font = this.Font;
+                    minsep.Label.CenterOnPoint(labelloc);
+                    DrawLabel(minsep.Label);
+                }
+                else
+                {
+                    if (minsep.SepLine.MidPoint == null)
+                        continue; 
+                    var labelloc = GeoToScreenPoint(minsep.SepLine.MidPoint);
+                    minsep.Label.Text = "NO XING";
+                    minsep.Label.ForeColor = RBLColor;
+                    minsep.Label.Font = this.Font;
+                    minsep.Label.CenterOnPoint(labelloc);
+                    DrawLabel(minsep.Label);
+                }
+            }
         }
         private void DrawRBLs()
         {
@@ -2492,6 +2570,10 @@ namespace DGScope
 
                     }
                 }
+                lock (minSeps)
+                {
+                    minSeps.Where(x => x.Plane1 == aircraft || x.Plane2 == aircraft).ToList().ForEach(x => x.CalculateMinSep());
+                }
                 aircraft.Drawn = true;
 
                 
@@ -2509,8 +2591,6 @@ namespace DGScope
         {
             foreach (Aircraft aircraft in radar.Scan())
             {
-                if (aircraft == debugPlane)
-                    ;
                 var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
                 var qlall = associated && QuickLookList.Contains("ALL");
                 var qlallplus = associated && QuickLookList.Contains("ALL+");
@@ -2940,6 +3020,8 @@ namespace DGScope
                 posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
             foreach (var block in dataBlocks.ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
             {
+                if (block.ParentAircraft == debugPlane)
+                    debugPlane = null; 
                 if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                 {
                     DrawLine(block.ParentAircraft.PTL, Color.White);

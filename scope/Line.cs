@@ -7,6 +7,16 @@
         public double Direction { get => End1.BearingTo(End2); }
         public double Length { get => End1.DistanceTo(End2); }
         public Line(GeoPoint End1, GeoPoint End2) { this.End1 = End1; this.End2 = End2; }
+        public GeoPoint MidPoint { 
+            get
+            {
+                if (End1 == null || End2 == null)
+                    return null;
+                double latitude = -((End1.Latitude - End2.Latitude) / 2) + End1.Latitude;
+                double longitude = ((End1.Longitude - End2.Longitude) / 2) + End2.Longitude;
+                return new GeoPoint(latitude, longitude);
+            } 
+        }
         public Line() { }
         public static bool TryParse(string linestring, out Line line)
         {
