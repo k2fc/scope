@@ -1983,7 +1983,7 @@ namespace DGScope
                     default:
                         if (((int)e.Key > 9 && (int)e.Key < 22) || e.Key == Key.End)
                             Preview.Clear();
-                        bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9)
+                        bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9) || e.Key == Key.Period || e.Key == Key.KeypadPeriod
             || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus;
                         if (!isText)
                             Preview.Add(e.Key);
@@ -2671,6 +2671,37 @@ namespace DGScope
                     yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2) / 2;
                     break;
             }
+
+            if (xoffset == 0)
+            {
+                blockLocation.X = thisAircraft.LocationF.X;
+            }
+            else if (xoffset < 0)
+            {
+                blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left + xoffset;
+                if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width)
+                    blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                else
+                    blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
+            }
+            else
+            {
+                blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + xoffset;
+            }
+
+            if (yoffset == 0)
+            {
+                blockLocation.Y = thisAircraft.LocationF.Y;
+            }
+            else if (yoffset < 0)
+            {
+                blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top + yoffset;
+            }
+            else
+            {
+                blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + yoffset;
+            }
+            /*
             blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
             blockLocation.X = thisAircraft.LocationF.X + xoffset;
             switch (direction)
@@ -2683,7 +2714,8 @@ namespace DGScope
                     else
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     break;
-            }
+            }*/
+
             /*switch (direction)
             {
                 case LeaderDirection.S:
@@ -2953,8 +2985,18 @@ namespace DGScope
                     GL.PopMatrix();
                     break;
                 case TargetShape.Circle:
-                    target.SizeF = new SizeF(target.ShapeWidth * 2 * xPixelScale, target.ShapeWidth * 2 * yPixelScale);
-                    DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * xPixelScale, aspect_ratio, 30, target.ForeColor, true);
+                    float mileageSize = 0.2f / scale;
+                    float pixelSize = TargetWidth * xPixelScale;
+                    if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
+                    {
+                        target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2 * aspect_ratio);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, aspect_ratio, 30, target.ForeColor, true);
+                    }
+                    else
+                    {
+                        target.SizeF = new SizeF(target.ShapeWidth * 2 * xPixelScale, target.ShapeWidth * 2 * yPixelScale);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * xPixelScale, aspect_ratio, 30, target.ForeColor, true);
+                    }
                     break;
             }
             
