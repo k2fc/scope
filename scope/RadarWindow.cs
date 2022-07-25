@@ -2105,11 +2105,14 @@ namespace DGScope
                 {
                     DrawLine(minsep.Line1, RBLColor);
                     DrawLine(minsep.Line2, RBLColor);
+                    var point1 = GeoToScreenPoint(minsep.Line1.End2);
+                    var point2 = GeoToScreenPoint(minsep.Line2.End2);
+                    DrawCircle(point1.X, point1.Y, 2 * xPixelScale, aspect_ratio, 10, RBLColor, true);
+                    DrawCircle(point2.X, point2.Y, 2 * xPixelScale, aspect_ratio, 10, RBLColor, true);
                 }
                 if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
                 {
-                    var color2 = Color.FromArgb(RBLColor.A, RBLColor.R / 2, RBLColor.G / 2, RBLColor.B / 2);
-                    DrawLine(minsep.SepLine, color2);
+                    DrawLine(minsep.SepLine, RBLColor);
                 }
                 else
                     continue;
