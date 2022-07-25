@@ -3052,7 +3052,7 @@ namespace DGScope
             }
             lock (posIndicators)
                 posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
-            foreach (var block in dataBlocks.ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
+            foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
             {
                 if (block.ParentAircraft == debugPlane)
                     debugPlane = null; 
