@@ -245,8 +245,7 @@ namespace DGScope
             Stopwatch.Restart();
             lock (Aircraft)
                 TargetsScanned.AddRange(from x in Aircraft
-                                        where ((x.Bearing(Location) >= lastazimuth &&
-                                        x.Bearing(Location) <= newazimuth) || !Rotating) && !x.IsOnGround 
+                                        where (BearingIsBetween(x.Bearing(Location), lastazimuth, newazimuth) || !Rotating) && !x.IsOnGround 
                                         && x.Location != null
                                         select x);
             //Console.WriteLine("Scanned method returned {0} aircraft", TargetsScanned.Count);
@@ -254,6 +253,22 @@ namespace DGScope
             if (lastazimuth == 360)
                 lastazimuth = 0;
             return TargetsScanned;
+        }
+
+        public bool BearingIsBetween(double bearing, double az1, double az2)
+        {
+            if (az2 == az1)
+            {
+                return bearing == az1;
+            }
+            if (az2 > az1)
+            {
+                return bearing >= az1 && bearing <= az2;
+            }
+            else
+            {
+                return (bearing >= az1 && bearing <= 360) || bearing <= az2;
+            }
         }
 
         public bool InRange(GeoPoint location, double altitude)
