@@ -3052,20 +3052,23 @@ namespace DGScope
             }
             lock (posIndicators)
                 posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
-            foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
+            lock (dataBlocks)
             {
-                if (block.ParentAircraft == debugPlane)
-                    debugPlane = null; 
-                if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
+                foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
                 {
-                    DrawLine(block.ParentAircraft.PTL, Color.White);
+                    if (block.ParentAircraft == debugPlane)
+                        debugPlane = null; 
+                    if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
+                    {
+                        DrawLine(block.ParentAircraft.PTL, Color.White);
+                    }
+                    if (timeshare % 2 == 0)
+                        DrawLabel(block);
+                    else if (timeshare % 4 == 1)
+                        DrawLabel(block.ParentAircraft.DataBlock2);
+                    else
+                        DrawLabel(block.ParentAircraft.DataBlock3);
                 }
-                if (timeshare % 2 == 0)
-                    DrawLabel(block);
-                else if (timeshare % 4 == 1)
-                    DrawLabel(block.ParentAircraft.DataBlock2);
-                else
-                    DrawLabel(block.ParentAircraft.DataBlock3);
             }
             lock (posIndicators)
                 posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
