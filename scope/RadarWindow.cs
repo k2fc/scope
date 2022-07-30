@@ -1140,8 +1140,18 @@ namespace DGScope
                     case Key.F4:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).Owned = false;
-                            ((Aircraft)clicked).PositionInd = null;
+                            var plane = (Aircraft)clicked;
+                            plane.Type = null;
+                            plane.FlightPlanCallsign = null;
+                            plane.Destination = null;
+                            plane.FlightRules = null;
+                            plane.Category = null;
+                            plane.PositionInd = null;
+                            plane.PendingHandoff = null;
+                            plane.RequestedAltitude = 0;
+                            plane.Scratchpad = null;
+                            plane.Scratchpad2 = null;
+                            plane.Owned = false;
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
