@@ -123,7 +123,7 @@ namespace DGScope
             get { return VideoMapLineColor.ToArgb(); }
             set { VideoMapLineColor = Color.FromArgb(value); }
         }
-        [XmlElement("VideoMapBLineColor")]
+        [XmlElement("VideoMapLineColorB")]
         [Browsable(false)]
         public int VideoMapBLineColorAsArgb
         {
