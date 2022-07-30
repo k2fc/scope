@@ -1625,13 +1625,19 @@ namespace DGScope
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             StatusArea.Text = DateTime.UtcNow.ToString("HHmm-ss") + " " + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            StatusArea.Text += (int)radar.Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
+            int metarnum = 0;
             foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
             {
+                metarnum++;
                 if (metar.IsParsed)
                 {
                     try
                     {
-                        StatusArea.Text += metar.Icao + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        string station = metar.Icao;
+                        if (station.Length == 4 && station[0] == 'K') //not really correct, but whatever
+                            station = station.Substring(1);
+                        StatusArea.Text += station + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
                         if (WindInStatusArea)
                             StatusArea.Text += " " + metar.Wind.Raw;
                     }
@@ -1639,7 +1645,10 @@ namespace DGScope
                     {
                         StatusArea.Text += metar.Icao + " METAR ERR";
                     }
-                    StatusArea.Text += "\r\n";
+                    if (WindInStatusArea || metarnum % 3 == 0)
+                        StatusArea.Text += "\r\n";
+                    else
+                        StatusArea.Text += " ";
                 }
             }
             if (FPSInStatusArea)
