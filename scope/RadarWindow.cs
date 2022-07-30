@@ -71,6 +71,7 @@ namespace DGScope
         [XmlIgnore]
         [DisplayName("Video Map Category A Color"), Category("Colors")]
         public Color VideoMapLineColor { get; set; } = Color.FromArgb(140, 140, 140);
+        [XmlIgnore]
         [DisplayName("Video Map Category B Color"), Category("Colors")]
         public Color VideoMapBLineColor { get; set; } = Color.FromArgb(140, 140, 140);
         [XmlIgnore]
@@ -121,6 +122,13 @@ namespace DGScope
         {
             get { return VideoMapLineColor.ToArgb(); }
             set { VideoMapLineColor = Color.FromArgb(value); }
+        }
+        [XmlElement("VideoMapBLineColor")]
+        [Browsable(false)]
+        public int VideoMapBLineColorAsArgb
+        {
+            get { return VideoMapBLineColor.ToArgb(); }
+            set { VideoMapBLineColor = Color.FromArgb(value); }
         }
         [XmlElement("ReturnColor")]
         [Browsable(false)]
