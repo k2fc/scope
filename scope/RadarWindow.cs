@@ -1953,6 +1953,12 @@ namespace DGScope
                         else
                             window.WindowState = window.WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
                         break;
+                    case Key.F4:
+                        Preview.Clear();
+                        radar.Stop();
+                        SaveSettings(settingsPath);
+                        Environment.Exit(0);
+                        break;
 
                 }
             }
