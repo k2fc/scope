@@ -373,7 +373,7 @@ namespace DGScope
         float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
-        public List<string> SelectedBeaconCodes { get; set; } = new List<string>() { "1200" };
+        public List<string> SelectedBeaconCodes { get; set; } = new List<string>();
         [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
         public char SelectedBeaconCodeChar { get; set; } = '□';
 
@@ -1345,7 +1345,7 @@ namespace DGScope
                                 {
                                     var squawk = KeysToString(keys[0], 2);
                                     if (SelectedBeaconCodes.Contains(squawk))
-                                        SelectedBeaconCodes.Remove(squawk);
+                                        SelectedBeaconCodes.RemoveAll(x => x == squawk);
                                     else
                                         SelectedBeaconCodes.Add(squawk);
                                     Preview.Clear();
@@ -1678,6 +1678,15 @@ namespace DGScope
                         StatusArea.Text += gentexts[i];
                     StatusArea.Text += "\r\n";
                 }
+            }
+            if (SelectedBeaconCodes.Count > 0)
+            {
+                
+                foreach (var squawk in SelectedBeaconCodes)
+                {
+                    StatusArea.Text += squawk + " ";
+                }
+                StatusArea.Text += "\r\n";
             }
             StatusArea.Text += (int)radar.Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
             int metarnum = 0;
