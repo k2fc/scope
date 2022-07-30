@@ -1873,6 +1873,8 @@ namespace DGScope
                             using (System.Windows.Forms.SaveFileDialog dialog = new System.Windows.Forms.SaveFileDialog())
                             {
                                 dialog.RestoreDirectory = true;
+                                dialog.Filter = "xml files (*.xml)|*.xml|All files (*.*)|*.*";
+                                dialog.FilterIndex = 1;
                                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                                 {
                                     settingsPath = dialog.FileName;
