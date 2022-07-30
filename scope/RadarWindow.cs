@@ -620,7 +620,8 @@ namespace DGScope
         [DisplayName("FPS in Status Area"), Description("Show FPS in Status Area"), Category("Display Properties")]
         public bool FPSInStatusArea { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
-
+        char?[] atises = new char?[10];
+        string?[] gentexts = new string?[10];
         private GameWindow window;
         private bool isScreenSaver = false;
 
@@ -1022,8 +1023,8 @@ namespace DGScope
                 var commands = KeyList.Count(x =>
                 {
                     var type = x.GetType();
-                    if (type == typeof(KeyCode) || type == typeof(Key))
-                        if ((int)x == (int)Key.Space)
+                    if (type == typeof(char))
+                        if ((char)x == ' ')
                             return true;
                     return false;
                 }) + 1;
@@ -1034,7 +1035,7 @@ namespace DGScope
                     List<object> command = new List<object>();
                     for (; count < KeyList.Count; count++)
                     {
-                        if (KeyList[count].GetType() != typeof(Key) || (Key)KeyList[count] != Key.Space)
+                        if ((KeyList[count].GetType() != typeof(char) || (char)KeyList[count] != ' '))
                         //if ((int)KeyList[count] != (int)Key.Space) 
                         {
                             command.Add(KeyList[count]);
@@ -1392,10 +1393,45 @@ namespace DGScope
                                 }
                                 break;
                             case 'S': 
-                                if (!clickedplane)
+                                if (!clickedplane && keys[0].Length == 2)
                                 {
                                     StatusArea.LocationF = (PointF)clicked;
                                     Preview.Clear();
+                                }
+                                else if (!clickedplane && keys[0].Length >= 3 && keys[0][2].GetType() == typeof(char))
+                                {
+                                    char textchar = (char)keys[0][2];
+                                    if (char.IsLetter(textchar))
+                                    {
+                                        atises[0] = textchar;
+                                        if (keys[0].Length > 3)
+                                        {
+                                            string text = "";
+                                            for (int i = 3; i < keys[0].Length; i++)
+                                            {
+                                                if (keys[0][i].GetType() == typeof(char))
+                                                {
+                                                    text += (char)keys[0][i];
+                                                }
+                                            }
+                                            if (keys.Length > 1)
+                                            {
+                                                for (int i = 1; i < keys.Length; i++)
+                                                {
+                                                    text += " ";
+                                                    for (int j = 0; j < keys[i].Length; j++)
+                                                    {
+                                                        if (keys[i][j].GetType() == typeof(char))
+                                                        {
+                                                            text += (char)keys[i][j];
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            gentexts[0] = text;
+                                        }
+                                        Preview.Clear();
+                                    }
                                 }
                                 break;
                             case 'O': //Multifunction O: Auto Offset
@@ -1633,6 +1669,16 @@ namespace DGScope
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             StatusArea.Text = DateTime.UtcNow.ToString("HHmm-ss") + " " + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            for (int i = 0; i < 10; i++)
+            {
+                if (atises[i] != null)
+                {
+                    StatusArea.Text += atises[i] + " ";
+                    if (gentexts[i] != null)
+                        StatusArea.Text += gentexts[i];
+                    StatusArea.Text += "\r\n";
+                }
+            }
             StatusArea.Text += (int)radar.Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
             int metarnum = 0;
             foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
@@ -1860,7 +1906,10 @@ namespace DGScope
                 }
                 else if (type == typeof(char))
                 {
-                    output += key;
+                    if ((char)key == ' ')
+                        output += "\r\n";
+                    else
+                        output += key;
                 }
             }
             return output;
@@ -2009,7 +2058,7 @@ namespace DGScope
                         if (((int)e.Key > 9 && (int)e.Key < 22) || e.Key == Key.End)
                             Preview.Clear();
                         bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9) || e.Key == Key.Period || e.Key == Key.KeypadPeriod
-            || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus;
+            || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus || e.Key == Key.Space;
                         if (!isText)
                             Preview.Add(e.Key);
                         break;
