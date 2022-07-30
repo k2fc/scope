@@ -2107,8 +2107,8 @@ namespace DGScope
                     DrawLine(minsep.Line2, RBLColor);
                     var point1 = GeoToScreenPoint(minsep.Line1.End2);
                     var point2 = GeoToScreenPoint(minsep.Line2.End2);
-                    DrawCircle(point1.X, point1.Y, 2 * xPixelScale, aspect_ratio, 10, RBLColor, true);
-                    DrawCircle(point2.X, point2.Y, 2 * xPixelScale, aspect_ratio, 10, RBLColor, true);
+                    DrawCircle(point1.X, point1.Y, 4 * xPixelScale, aspect_ratio, 3, RBLColor, true);
+                    DrawCircle(point2.X, point2.Y, 4 * xPixelScale, aspect_ratio, 3, RBLColor, true);
                 }
                 if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
                 {
