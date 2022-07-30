@@ -12,9 +12,25 @@ namespace DGScope
     {
         static void Start(bool screensaver = false, string settingsPath = null)
         {
-            if (settingsPath == null)
-                settingsPath = (screensaver || IsAdministrator()) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml") :
-               Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DGScope.xml");
+            if (screensaver)
+                settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+            else if (settingsPath == null)
+            {
+                using (OpenFileDialog open = new OpenFileDialog())
+                {
+                    open.Filter = "xml files (*.xml)|*.xml|All files (*.*)|*.*";
+                    open.FilterIndex = 1;
+                    open.CheckFileExists = false;
+                    if (open.ShowDialog() == DialogResult.OK)
+                    {
+                        settingsPath = open.FileName;
+                    }
+                    else
+                    {
+                        Environment.Exit(0);
+                    }
+                }
+            }
             RadarWindow radarWindow;
             if (File.Exists(settingsPath))
             {
