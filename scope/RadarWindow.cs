@@ -1624,7 +1624,7 @@ namespace DGScope
             StatusArea.ForeColor = DataBlockColor;
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
-            StatusArea.Text = "";
+            StatusArea.Text = DateTime.UtcNow.ToString("HHmm-ss") + " " + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
             foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
             {
                 if (metar.IsParsed)
