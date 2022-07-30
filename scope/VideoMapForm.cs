@@ -130,17 +130,19 @@ namespace DGScope
 
         private void SaveVideoMapsToFile(bool saveas = false)
         {
-            if (Filename == null || Filename == "" || saveas)
+            if (string.IsNullOrEmpty(Filename) || saveas)
             {
                 using (SaveFileDialog s = new SaveFileDialog())
                 {
                     s.Filter = "Video Maps (*.geojson;*.json)|*.geojson;*.json|All Files|*.*";
                     s.FilterIndex = 1;
                     s.RestoreDirectory = true;
-
+                    s.CheckFileExists = false;
+                    s.OverwritePrompt = true;
+                    s.CreatePrompt = false;
                     if(s.ShowDialog() == DialogResult.OK)
                     {
-                        Filename = s.FileName;
+                        _filename = s.FileName;
                     }
                     else
                     {
@@ -148,11 +150,12 @@ namespace DGScope
                     }
                 }
             }
-            if (Filename == null || Filename == "")
+            if (_filename == null || _filename == "")
                 return;
             try
             {
-                VideoMapList.SerializeToJsonFile(maps, Filename);
+                VideoMapList.SerializeToJsonFile(maps, _filename);
+                Filename = _filename;
                 changed = false;
             }
             catch (Exception ex)
