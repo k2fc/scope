@@ -36,12 +36,12 @@ namespace DGScope
             List<Feature> features = new List<Feature>();
             foreach (var line in map.Lines)
             {
-                List<Position> positions = new List<Position>();
-                positions.Add(new Position(line.End1.Longitude, line.End1.Latitude));
-                positions.Add(new Position(line.End2.Longitude, line.End2.Latitude));
-                LineString lineString = new LineString(positions);
-                Feature feature = new Feature(lineString);
-                features.Add(feature);
+                var lineString = LineToLineString(line);
+                if (lineString != null)
+                {
+                    Feature feature = new Feature(lineString);
+                    features.Add(feature);
+                }
             }
             return features;
         }
@@ -51,13 +51,22 @@ namespace DGScope
             List<Geometry> linestrings = new List<Geometry>();
             foreach (var line in map.Lines)
             {
-                List<Position> positions = new List<Position>();
-                positions.Add(new Position(line.End1.Longitude, line.End1.Latitude));
-                positions.Add(new Position(line.End2.Longitude, line.End2.Latitude));
-                LineString lineString = new LineString(positions);
-                linestrings.Add(lineString);
+                var lineString = LineToLineString(line);
+                if (lineString != null)
+                    linestrings.Add(lineString);
             }
             return new GeometryCollection(linestrings);
+        }
+
+        private static LineString LineToLineString(Line line)
+        {
+            List<Position> positions = new List<Position>();
+            if (Math.Abs(line.End1.Latitude) > 90 || Math.Abs(line.End2.Latitude) > 90 || Math.Abs(line.End1.Longitude) > 180 || Math.Abs(line.End2.Longitude) > 180)
+                return null;
+            positions.Add(new Position(line.End1.Longitude, line.End1.Latitude));
+            positions.Add(new Position(line.End2.Longitude, line.End2.Latitude));
+            LineString lineString = new LineString(positions);
+            return lineString;
         }
 
         public static void MapToGeoJSONFile(VideoMap map, string filename)
