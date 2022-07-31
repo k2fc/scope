@@ -1152,6 +1152,7 @@ namespace DGScope
                             plane.Scratchpad = null;
                             plane.Scratchpad2 = null;
                             plane.Owned = false;
+                            plane.LDRDirection = LDRDirection;
                             GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
