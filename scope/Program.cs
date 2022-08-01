@@ -12,7 +12,9 @@ namespace DGScope
     {
         static void Start(bool screensaver = false, string facilityConfig = null)
         {
-            if (screensaver)
+
+            //Only prompt the user for a facilityConfig file if they are not using screensaver mode, otherwise, open the default passed file
+            if (screensaver && facilityConfig==null)
                 facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
             else if (facilityConfig == null)
             {
@@ -27,7 +29,11 @@ namespace DGScope
                     }
                     else
                     {
-                        Environment.Exit(0);
+                        var mboxresult = MessageBox.Show("Would you like to create a new config file?","No Config File Selected", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                        if (mboxresult == DialogResult.Yes)
+                            Start(false, "");
+                        else
+                            Environment.Exit(0);
                     }
                 }
             }
@@ -41,7 +47,7 @@ namespace DGScope
                 radarWindow = new RadarWindow();
                 if (!screensaver)
                 {
-                    MessageBox.Show("No config file found. Starting a new config.");
+                    //MessageBox.Show("No config file found. Starting a new config.");
                     PropertyForm propertyForm = new PropertyForm(radarWindow);
                     propertyForm.ShowDialog();
                     radarWindow.SaveSettings(facilityConfig);
@@ -72,14 +78,34 @@ namespace DGScope
             string facilityConfig = null;
             if (args.Length > 0)
             {
-                foreach (var arg in args)
+                foreach (var argument in args)
                 {
-                    //Screensaver commands:
-                    
-                    //Start screensaver in foreground mode
-                    if (arg.Contains("--c") || arg.Contains("--screensaver_foreground") || arg.Contains("/C"))
+                    String arg = argument.ToLower();
+                    //Selecting which facility config file to use:
+                    //Either take a filepath as a parameter with the file argument, or accept it as a sole argument.  If neither is a valid file path, leave as null to be handled upon Start()
+
+                    //Argument format: "--f=PATH" or "--file=PATH" (quotes need not be included if running via the command line, but must be included if passed as arguments via Visual Studio's Debug Config)
+                    if (arg.Contains("--f") || arg.Contains("--file"))
                     {
-                        facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+                        string paramFileName = arg.Split('=')[1].Trim();
+                        if (File.Exists(paramFileName))
+                            facilityConfig = paramFileName;
+                    }
+                    //Allow for drag 'n drop or "open with" functionality
+                    else if (File.Exists(arg))
+                    {
+                        facilityConfig = arg;
+                    }
+
+                    //Screensaver commands:
+
+                    //Start screensaver in foreground mode
+                    if (arg.Contains("--c") || arg.Contains("--screensaver_foreground") || arg.Contains("/c"))
+                    {
+                        if(facilityConfig == null)
+                        {
+                            facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+                        }
                         RadarWindow radarWindow;
                         if (File.Exists(facilityConfig))
                         {
@@ -95,26 +121,14 @@ namespace DGScope
                         inhibit = true;
                     }
                     //Start screensaver in normal mode
-                    else if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/S"))
+                    else if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/c"))
                     {
                         screensaver = true;
                     }
                     //Start screensaver in child mode
-                    else if (arg.Contains("--p") || arg.Contains("--screensaver_child") || arg.Contains("/P"))
+                    else if (arg.Contains("--p") || arg.Contains("--screensaver_child") || arg.Contains("/c"))
                     {
                         inhibit = true;
-                    }
-                    
-                    //Selecting which facility config file to use:
-                    
-                    //Argument format: "--f=PATH" or "--file=PATH" (quotes need not be included if running via the command line, but must be included if passed as arguments via Visual Studio's Debug Config)
-                    if (arg.Contains("--f") || arg.Contains("--file"))
-                    {
-                        facilityConfig = arg.Split('=')[1].Trim();
-                    }
-                    else
-                    {
-                        facilityConfig = arg;
                     }
                     
                 }
@@ -126,7 +140,7 @@ namespace DGScope
             }
             else
             {
-                Start(false);
+                Start(screensaver,facilityConfig);
             }
         }
 
