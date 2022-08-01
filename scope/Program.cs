@@ -10,20 +10,20 @@ namespace DGScope
 {
     static class Program
     {
-        static void Start(bool screensaver = false, string settingsPath = null)
+        static void Start(bool screensaver = false, string facilityConfig = null)
         {
             if (screensaver)
-                settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
-            else if (settingsPath == null)
+                facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+            else if (facilityConfig == null)
             {
                 using (OpenFileDialog open = new OpenFileDialog())
                 {
-                    open.Filter = "xml files (*.xml)|*.xml|All files (*.*)|*.*";
+                    open.Filter = "Facility Config File (*.xml)|*.xml|All files (*.*)|*.*";
                     open.FilterIndex = 1;
                     open.CheckFileExists = false;
                     if (open.ShowDialog() == DialogResult.OK)
                     {
-                        settingsPath = open.FileName;
+                        facilityConfig = open.FileName;
                     }
                     else
                     {
@@ -32,9 +32,9 @@ namespace DGScope
                 }
             }
             RadarWindow radarWindow;
-            if (File.Exists(settingsPath))
+            if (File.Exists(facilityConfig))
             {
-                radarWindow = TryLoad(settingsPath);
+                radarWindow = TryLoad(facilityConfig);
             }
             else
             {
@@ -44,38 +44,43 @@ namespace DGScope
                     MessageBox.Show("No config file found. Starting a new config.");
                     PropertyForm propertyForm = new PropertyForm(radarWindow);
                     propertyForm.ShowDialog();
-                    radarWindow.SaveSettings(settingsPath);
+                    radarWindow.SaveSettings(facilityConfig);
                 }
             }
-            radarWindow.Run(screensaver, settingsPath);
+            radarWindow.Run(screensaver, facilityConfig);
         }
         [STAThread]
         static void Main(string[] args)
         {
             string gitVersion = string.Empty;
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DGScope.version.txt"))
+            //Don't get mad at me... This is the only way I could get it to stop throwing a "not found" error on the version file... Even though the version file exists
+            gitVersion = stream == null ? "1.0.0" : new StreamReader(stream).ReadToEnd();
+            /*
+            //Here's your old code in case you decide to delete mine above
             using (StreamReader reader = new StreamReader(stream))
             {
                 gitVersion = reader.ReadToEnd();
             }
             Console.WriteLine(gitVersion);
+            */
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             LoadReceiverPlugins();
             bool screensaver = false;
             bool inhibit = false;
-            string settingsPath = null;
+            string facilityConfig = null;
             if (args.Length > 0)
             {
                 foreach (var arg in args)
                 {
-                    if (arg.Contains("/C"))
+                    if (arg.Contains("--c") || arg.Contains("--clean"))
                     {
-                        settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
+                        facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
                         RadarWindow radarWindow;
-                        if (File.Exists(settingsPath))
+                        if (File.Exists(facilityConfig))
                         {
-                            radarWindow = TryLoad(settingsPath);
+                            radarWindow = TryLoad(facilityConfig);
                         }
                         else
                         {
@@ -83,26 +88,36 @@ namespace DGScope
                         }
                         PropertyForm propertyForm = new PropertyForm(radarWindow);
                         propertyForm.ShowDialog();
-                        radarWindow.SaveSettings(settingsPath);
+                        radarWindow.SaveSettings(facilityConfig);
                         inhibit = true;
                     }
-                    if (arg.Contains("/S"))
+                    if (arg.Contains("--s") || arg.Contains("--screensaver"))
                     {
                         screensaver = true;
                     }
-                    else if (arg.Contains("/P"))
+                    //I honestly don't know what this command does
+                    else if (arg.Contains("--p") || arg.Contains("--p_command_name"))
                     {
                         inhibit = true;
-                    }
+                    }/*
+                     //This is what I mean by "f u, eat my file", but I'll leave it here in case you want to keep it
                     else
                     {
-                        settingsPath = arg;
+                        facilityConfig = arg;
+                    }*/
+
+                    //Passing a file as an argument a slightly more official way than "f u, eat my file"
+                    //Argument format: "--f=PATH" or "--file=PATH" (quotes need not be included if running via the command line, but must be included if passed as arguments via Visual Studio's Debug Config)
+                    if (arg.Contains("--f") || arg.Contains("--file"))
+                    {
+                        facilityConfig = arg.Split('=')[1].Trim();
                     }
+                    
                 }
                 
                 if (!inhibit)
                 {
-                    Start(screensaver, settingsPath);
+                    Start(screensaver, facilityConfig);
                 }
             }
             else
@@ -117,24 +132,24 @@ namespace DGScope
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
-        static RadarWindow TryLoad(string settingsPath)
+        static RadarWindow TryLoad(string facilityConfig)
         {
             try
             {
-                return XmlSerializer<RadarWindow>.DeserializeFromFile(settingsPath);
+                return XmlSerializer<RadarWindow>.DeserializeFromFile(facilityConfig);
             }
             catch (Exception ex)
             {
                 RadarWindow radarWindow = new RadarWindow();
                 Console.WriteLine(ex.StackTrace);
-                var mboxresult = MessageBox.Show("Error reading settings file "+ settingsPath + "\n" + 
+                var mboxresult = MessageBox.Show("Error reading settings file "+ facilityConfig + "\n" + 
                     ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy " +
                     "the file and start a new config.", "Error reading settings file", 
                     MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
                 if (mboxresult == DialogResult.Abort)
                     Environment.Exit(1);
                 else if (mboxresult == DialogResult.Retry)
-                    return TryLoad(settingsPath);
+                    return TryLoad(facilityConfig);
                 else
                 {
                     radarWindow = new RadarWindow();
