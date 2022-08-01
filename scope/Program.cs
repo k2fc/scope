@@ -91,7 +91,7 @@ namespace DGScope
                         radarWindow.SaveSettings(facilityConfig);
                         inhibit = true;
                     }
-                    if (arg.Contains("--s") || arg.Contains("--screensaver"))
+                    if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/S"))
                     {
                         screensaver = true;
                     }
