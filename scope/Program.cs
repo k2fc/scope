@@ -74,7 +74,10 @@ namespace DGScope
             {
                 foreach (var arg in args)
                 {
-                    if (arg.Contains("--c") || arg.Contains("--clean"))
+                    //Screensaver commands:
+                    
+                    //Start screensaver in foreground mode
+                    if (arg.Contains("--c") || arg.Contains("--screensaver_foreground") || arg.Contains("/C"))
                     {
                         facilityConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DGScope.xml");
                         RadarWindow radarWindow;
@@ -91,26 +94,27 @@ namespace DGScope
                         radarWindow.SaveSettings(facilityConfig);
                         inhibit = true;
                     }
-                    if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/S"))
+                    //Start screensaver in normal mode
+                    else if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/S"))
                     {
                         screensaver = true;
                     }
-                    //I honestly don't know what this command does
-                    else if (arg.Contains("--p") || arg.Contains("--p_command_name"))
+                    //Start screensaver in child mode
+                    else if (arg.Contains("--p") || arg.Contains("--screensaver_child") || arg.Contains("/P"))
                     {
                         inhibit = true;
-                    }/*
-                     //This is what I mean by "f u, eat my file", but I'll leave it here in case you want to keep it
-                    else
-                    {
-                        facilityConfig = arg;
-                    }*/
-
-                    //Passing a file as an argument a slightly more official way than "f u, eat my file"
+                    }
+                    
+                    //Selecting which facility config file to use:
+                    
                     //Argument format: "--f=PATH" or "--file=PATH" (quotes need not be included if running via the command line, but must be included if passed as arguments via Visual Studio's Debug Config)
                     if (arg.Contains("--f") || arg.Contains("--file"))
                     {
                         facilityConfig = arg.Split('=')[1].Trim();
+                    }
+                    else
+                    {
+                        facilityConfig = arg;
                     }
                     
                 }
