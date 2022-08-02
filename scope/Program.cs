@@ -22,7 +22,7 @@ namespace DGScope
                 {
                     open.Filter = "Facility Config File (*.xml)|*.xml|All files (*.*)|*.*";
                     open.FilterIndex = 1;
-                    open.CheckFileExists = false;
+                    open.CheckFileExists = true;
                     if (open.ShowDialog() == DialogResult.OK)
                     {
                         facilityConfig = open.FileName;
@@ -31,7 +31,30 @@ namespace DGScope
                     {
                         var mboxresult = MessageBox.Show("Would you like to create a new config file?","No Config File Selected", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
                         if (mboxresult == DialogResult.Yes)
-                            Start(false, "");
+                        {
+                            using (SaveFileDialog save = new SaveFileDialog())
+                            {
+                                save.Filter = "Facility Config File (*.xml)|*.xml|All files (*.*)|*.*";
+                                save.FilterIndex = 1;
+                                save.CheckFileExists = false;
+                                if (save.ShowDialog() == DialogResult.OK)
+                                {
+                                    var newfile = save.FileName;
+                                    try
+                                    {
+                                        using (_ = File.Create(newfile))
+                                        facilityConfig = newfile;
+                                        File.Delete(newfile);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        MessageBox.Show(ex.Message);
+                                    }
+                                    if (facilityConfig != null)
+                                        Start(false, facilityConfig);
+                                }
+                            }
+                        }
                         else
                             Environment.Exit(0);
                     }
