@@ -84,7 +84,7 @@ namespace DGScope
             string gitVersion = string.Empty;
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DGScope.version.txt"))
             //Don't get mad at me... This is the only way I could get it to stop throwing a "not found" error on the version file... Even though the version file exists
-            gitVersion = stream == null ? "1.0.0" : new StreamReader(stream).ReadToEnd();
+            gitVersion = stream == null ? "No git version description" : new StreamReader(stream).ReadToEnd();
             /*
             //Here's your old code in case you decide to delete mine above
             using (StreamReader reader = new StreamReader(stream))
