@@ -91,8 +91,8 @@ namespace DGScope
             {
                 gitVersion = reader.ReadToEnd();
             }
-            Console.WriteLine(gitVersion);
             */
+            Console.WriteLine(gitVersion);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             LoadReceiverPlugins();
