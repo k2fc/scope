@@ -85,7 +85,7 @@ namespace DGScope
                     //Either take a filepath as a parameter with the file argument, or accept it as a sole argument.  If neither is a valid file path, leave as null to be handled upon Start()
 
                     //Argument format: "--f=PATH" or "--file=PATH" (quotes need not be included if running via the command line, but must be included if passed as arguments via Visual Studio's Debug Config)
-                    if (arg.Contains("--f") || arg.Contains("--file"))
+                    if (arg.StartsWith("--f") || arg.StartsWith("--file"))
                     {
                         string paramFileName = arg.Split('=')[1].Trim();
                         if (File.Exists(paramFileName))
@@ -99,8 +99,8 @@ namespace DGScope
 
                     //Screensaver commands:
 
-                    //Start screensaver in foreground mode
-                    if (arg.Contains("--c") || arg.Contains("--screensaver_foreground") || arg.Contains("/c"))
+                    //Start in config mode
+                    if (arg.StartsWith("--c") || arg.StartsWith("--config") || arg.StartsWith("/c"))
                     {
                         if(facilityConfig == null)
                         {
@@ -121,12 +121,12 @@ namespace DGScope
                         inhibit = true;
                     }
                     //Start screensaver in normal mode
-                    else if (arg.Contains("--s") || arg.Contains("--screensaver") || arg.Contains("/c"))
+                    else if (arg.StartsWith("--s") || arg.StartsWith("--screensaver") || arg.StartsWith("/c"))
                     {
                         screensaver = true;
                     }
                     //Start screensaver in child mode
-                    else if (arg.Contains("--p") || arg.Contains("--screensaver_child") || arg.Contains("/c"))
+                    else if (arg.StartsWith("--p") || arg.StartsWith("--screensaver_child") || arg.StartsWith("/p"))
                     {
                         inhibit = true;
                     }
