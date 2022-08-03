@@ -183,23 +183,10 @@ namespace DGScope
             {
                 RadarWindow radarWindow = new RadarWindow();
                 Console.WriteLine(ex.StackTrace);
-                var mboxresult = MessageBox.Show("Error reading settings file "+ facilityConfig + "\n" + 
-                    ex.Message + "\nPress Abort to exit, Retry to try again, or Ignore to destroy " +
-                    "the file and start a new config.", "Error reading settings file", 
-                    MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Error);
-                if (mboxresult == DialogResult.Abort)
-                    Environment.Exit(1);
-                else if (mboxresult == DialogResult.Retry)
-                    return TryLoad(facilityConfig);
-                else
-                {
-                    radarWindow = new RadarWindow();
-                    PropertyForm propertyForm = new PropertyForm(radarWindow);
-                    propertyForm.ShowDialog();
-                    return radarWindow;
-                }
+                var mboxresult = MessageBox.Show(facilityConfig + "\n" + ex.Message, "Error reading facility config", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1);
+                return null;
             }
-            return new RadarWindow();
         }
 
         static void LoadReceiverPlugins()
