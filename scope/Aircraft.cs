@@ -631,6 +631,7 @@ namespace DGScope
                 RedrawDataBlock(true);
                 TargetReturn.Intensity = 1;
                 SweptLocation = ExtrapolatePosition();
+                SweptTrack = (int)ExtrapolateTrack();
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             }
@@ -654,7 +655,7 @@ namespace DGScope
         }
 
         public GeoPoint SweptLocation;
-
+        public int SweptTrack;
         public override string ToString()
         {
             return Callsign;

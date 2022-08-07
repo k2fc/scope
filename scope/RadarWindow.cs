@@ -1293,12 +1293,12 @@ namespace DGScope
                                     if (keys[0].Length > 2)
                                     {
                                         decimal miles = 0;
-                                        var entered = KeysToString(keys[0]).Substring(1);
+                                        var entered = KeysToString(keys[0]).Substring(2);
                                         if (decimal.TryParse(entered, out miles))
                                         {
                                             if (miles > 0 && (double)miles < radar.Range)
                                             {
-                                                ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, ReturnColor, Font);
+                                                ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, TPAColor, Font);
                                             }
                                             else
                                             {
@@ -2411,7 +2411,20 @@ namespace DGScope
         }
         private void DrawPCone(Aircraft plane)
         {
-            DrawLine(new PointF(0, 0), new PointF(0, 0), Color.Wheat);
+            var endwidth = pixelScale * TPAConeWidth;
+            var y = (float)plane.TPA.Miles / scale;
+            var x1 = endwidth / 2;
+            var x2 = -x1;
+            PointF location = GeoToScreenPoint(plane.SweptLocation);
+            
+            GL.Translate(location.X, location.Y, 0.0);
+            GL.PushMatrix();
+            GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
+            DrawLine(0, 0, x1, y, TPAColor);
+            DrawLine(0, 0, x2, y, TPAColor);
+            DrawLine(x1, y, x2, y, TPAColor);
+            GL.PopMatrix();
+            GL.Translate(-location.X, -location.Y, 0.0);
         }
         private void DrawVideoMapLines()
         {
