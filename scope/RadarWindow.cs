@@ -368,9 +368,10 @@ namespace DGScope
             }
         }
         float scale => (float)(radar.Range / Math.Sqrt(2));
-        float xPixelScale => 2f / window.ClientSize.Width;
-        float yPixelScale => 2f / window.ClientSize.Height;
-        float aspect_ratio => (float)window.ClientSize.Width / (float)window.ClientSize.Height;
+        float pixelScale; 
+        //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
+        //float yPixelScale;// => pixelScale; // 2f / window.ClientSize.Height;
+        float aspect_ratio;// => 1.0f;//(float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
         public List<string> SelectedBeaconCodes { get; set; } = new List<string>();
@@ -560,6 +561,8 @@ namespace DGScope
         public float TargetWidth { get; set; } = 5;
         [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
         public float TargetHeight { get; set; } = 15;
+        [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
+        public float TPAConeWidth { get; set; } = 10; 
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
         public TargetShape TargetShape { get; set; } = TargetShape.Circle;
         [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
@@ -885,8 +888,8 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
-                double xMove = e.XDelta * xPixelScale;
-                double yMove = e.YDelta * xPixelScale;
+                double xMove = e.XDelta * pixelScale;
+                double yMove = e.YDelta * pixelScale;
                 radar.Location = radar.Location.FromPoint(xMove * scale, 270 + ScreenRotation);
                 radar.Location = radar.Location.FromPoint(yMove * scale, 0 + ScreenRotation);
                 MoveTargets((float)xMove, (float)yMove);
@@ -956,8 +959,8 @@ namespace DGScope
 
         private PointF LocationFromScreenPoint(Point point)
         {
-            float x = (point.X * xPixelScale) -1;
-            float y = 1 - (point.Y * yPixelScale);
+            float x = (2 * (point.X / (float)window.ClientSize.Width) - 1) * aspect_ratio;
+            float y = (1 - 2 * (point.Y / (float)window.ClientSize.Height));
             return new PointF(x, y);
         }
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -967,7 +970,7 @@ namespace DGScope
                 radar.Range -= 5;
             else if (e.Delta < 0)
                 radar.Range += 5;
-            RescaleTargets((oldscale / scale), (oldar / aspect_ratio));
+            RescaleTargets(oldscale / scale);
             
         }
 
@@ -2126,7 +2129,7 @@ namespace DGScope
             
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
-            RescaleTargets((oldscale / scale), (oldar/aspect_ratio));
+            RescaleTargets(oldscale / scale);
             lock (dataBlocks)
             {
                 dataBlocks.ForEach(x => x.Redraw = true);
@@ -2135,7 +2138,6 @@ namespace DGScope
             }
             lock (posIndicators)
                 posIndicators.ForEach(x => x.Redraw = true);
-            oldar = aspect_ratio;
         }
 
         private void Window_UpdateFrame(object sender, FrameEventArgs e)
@@ -2146,11 +2148,22 @@ namespace DGScope
         {
             if (window.WindowState == WindowState.Minimized)
                 return;
-
+            aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
+            pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
             GL.ClearColor(BackColor);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.LoadIdentity();
+            GL.PushMatrix();
+            if (window.ClientSize.Width < window.ClientSize.Height)
+            {
+                GL.Scale(1.0f, aspect_ratio, 1.0f);
+            }
+            else if (window.ClientSize.Width > window.ClientSize.Height)
+            {
+                GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
+            }
             DrawRangeRings();
             if(!hidewx)
                 DrawNexrad();
@@ -2160,6 +2173,7 @@ namespace DGScope
             DrawMinSeps();
             DrawRBLs();
             DrawStatic();
+            GL.PopMatrix();
             GL.Flush();
             window.SwapBuffers();
             fps = (int)(1f / e.Time);
@@ -2169,14 +2183,14 @@ namespace DGScope
             double bearing = radar.Location.BearingTo(geoPoint) - ScreenRotation;
             double distance = radar.Location.DistanceTo(geoPoint);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             return new PointF(x, y);
         }
 
         private GeoPoint ScreenToGeoPoint(PointF Point)
         {
-            double r = Math.Sqrt(Math.Pow(Point.X, 2) + Math.Pow(Point.Y / aspect_ratio, 2));
-            double angle = Math.Atan((Point.Y / aspect_ratio) / Point.X);
+            double r = Math.Sqrt(Math.Pow(Point.X, 2) + Math.Pow(Point.Y, 2));
+            double angle = Math.Atan(Point.Y / Point.X);
             if (Point.X < 0)
                 angle += Math.PI;
             double bearing = 90 - (angle * 180 / Math.PI) + ScreenRotation;
@@ -2201,8 +2215,8 @@ namespace DGScope
                     DrawLine(minsep.Line2, RBLColor);
                     var point1 = GeoToScreenPoint(minsep.Line1.End2);
                     var point2 = GeoToScreenPoint(minsep.Line2.End2);
-                    DrawCircle(point1.X, point1.Y, 4 * xPixelScale, aspect_ratio, 3, RBLColor, true);
-                    DrawCircle(point2.X, point2.Y, 4 * xPixelScale, aspect_ratio, 3, RBLColor, true);
+                    DrawCircle(point1.X, point1.Y, 4 * pixelScale, 1, 3, RBLColor, true);
+                    DrawCircle(point2.X, point2.Y, 4 * pixelScale, 1, 3, RBLColor, true);
                 }
                 if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
                 {
@@ -2298,7 +2312,6 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             radar.Start();
-            oldar = aspect_ratio;
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
@@ -2337,10 +2350,10 @@ namespace DGScope
             double bearing = radar.Location.BearingTo(RangeRingCenter) - ScreenRotation;
             double distance = radar.Location.DistanceTo(RangeRingCenter);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             for (double i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(x,y, (float)(i / scale), aspect_ratio, 1000, RangeRingColor);
+                DrawCircle(x,y, (float)(i / scale), 1, 1000, RangeRingColor);
             }
         }
 
@@ -2351,8 +2364,8 @@ namespace DGScope
                 double bearing = radar.Location.BearingTo(receiver.Location) - ScreenRotation;
                 double distance = radar.Location.DistanceTo(receiver.Location);
                 float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
-                DrawCircle(x, y, .0025f, aspect_ratio, 100, VideoMapLineColor, true);
+                float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+                DrawCircle(x, y, .0025f, 1, 100, VideoMapLineColor, true);
             }
         }
 
@@ -2376,7 +2389,7 @@ namespace DGScope
             var x = LocationF.X;
             var y = LocationF.Y;
             var r = radius / scale;
-            DrawCircle(x, y, r, aspect_ratio, 100, color, fill);
+            DrawCircle(x, y, r, 1, 100, color, fill);
         }
         private void DrawTPA(Aircraft plane)
         {
@@ -2392,9 +2405,13 @@ namespace DGScope
             }
             else if (plane.TPA.Type == TPAType.PCone)
             {
-
+                DrawPCone(plane);
             }
             return;
+        }
+        private void DrawPCone(Aircraft plane)
+        {
+            DrawLine(new PointF(0, 0), new PointF(0, 0), Color.Wheat);
         }
         private void DrawVideoMapLines()
         {
@@ -2429,7 +2446,7 @@ namespace DGScope
         private void DrawLine(Line line, Color color)
         {
             double scale = radar.Range / Math.Sqrt(2);
-            double yscale = (double)window.Width / (double)window.Height;
+            double yscale = 1;
             double bearing1 = radar.Location.BearingTo(line.End1) - ScreenRotation;
             double distance1 = radar.Location.DistanceTo(line.End1);
             float x1 = (float)(Math.Sin(bearing1 * (Math.PI / 180)) * (distance1 / scale));
@@ -2484,10 +2501,10 @@ namespace DGScope
         }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
         {
-            x1 = RoundUpToNearest(x1, xPixelScale);
-            x2 = RoundUpToNearest(x2, xPixelScale);
-            y1 = RoundUpToNearest(y1, yPixelScale);
-            y2 = RoundUpToNearest(y2, yPixelScale);
+            x1 = RoundUpToNearest(x1, pixelScale);
+            x2 = RoundUpToNearest(x2, pixelScale);
+            y1 = RoundUpToNearest(y1, pixelScale);
+            y2 = RoundUpToNearest(y2, pixelScale);
             GL.Begin(PrimitiveType.Lines);
             GL.LineWidth(width);
             GL.Color4(color);
@@ -2543,8 +2560,8 @@ namespace DGScope
                     aircraft.DataBlock.Redraw = true;
                 aircraft.RedrawDataBlock();
                 Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
-                var realWidth = text_bmp.Width * xPixelScale;
-                var realHeight = text_bmp.Height * yPixelScale;
+                var realWidth = text_bmp.Width * pixelScale;
+                var realHeight = text_bmp.Height * pixelScale;
                 aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                 aircraft.DataBlock.ParentAircraft = aircraft;
                 aircraft.DataBlock2.ParentAircraft = aircraft;
@@ -2568,7 +2585,7 @@ namespace DGScope
             double bearing = radar.Location.BearingTo(extrapolatedpos) - ScreenRotation;
             double distance = radar.Location.DistanceTo(extrapolatedpos);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale) * aspect_ratio);
+            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             var location = new PointF(x, y);
             if (x == 0 || y == 0)
                 return;
@@ -2631,8 +2648,8 @@ namespace DGScope
                 
 
                 Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
-                var realWidth = text_bmp.Width * xPixelScale;
-                var realHeight = text_bmp.Height * yPixelScale;
+                var realWidth = text_bmp.Width * pixelScale;
+                var realHeight = text_bmp.Height * pixelScale;
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
                 aircraft.PositionIndicator.CenterOnPoint(location);
                 if (aircraft.PositionInd != null)
@@ -2737,32 +2754,32 @@ namespace DGScope
             switch (direction)
             {
                 case LeaderDirection.N:
-                    yoffset += LeaderLength * yPixelScale;
+                    yoffset += LeaderLength * pixelScale;
                     break;
                 case LeaderDirection.S:
-                    yoffset -= LeaderLength * yPixelScale;
+                    yoffset -= LeaderLength * pixelScale;
                     break;
                 case LeaderDirection.E:
-                    xoffset += LeaderLength * xPixelScale;
+                    xoffset += LeaderLength * pixelScale;
                     break;
                 case LeaderDirection.W:
-                    xoffset -= LeaderLength * xPixelScale;
+                    xoffset -= LeaderLength * pixelScale;
                     break;
                 case LeaderDirection.NE:
-                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2) / 2;
-                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2) / 2;
+                    yoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    xoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.SE:
-                    xoffset += LeaderLength * xPixelScale * (float)Math.Sqrt(2) / 2;
-                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2) / 2;
+                    xoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    yoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.NW:
-                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2) / 2;
-                    yoffset += LeaderLength * yPixelScale * (float)Math.Sqrt(2) / 2;
+                    xoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    yoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     break;
                 case LeaderDirection.SW:
-                    xoffset -= LeaderLength * xPixelScale * (float)Math.Sqrt(2) / 2;
-                    yoffset -= LeaderLength * yPixelScale * (float)Math.Sqrt(2) / 2;
+                    xoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    yoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     break;
             }
 
@@ -2973,20 +2990,20 @@ namespace DGScope
 
         Timer aircraftGCTimer;
 
-        private void RescaleTargets(float scalechange, float ar_change)
+        private void RescaleTargets(float scalechange)
         {
             
             lock(PrimaryReturns)
                 foreach (PrimaryReturn target in PrimaryReturns.ToList())
                 {
-                    PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange) / ar_change);
+                    PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
                     target.LocationF = newLocation;
                 }
             lock (radar.Aircraft)
             {
                 foreach (Aircraft plane in radar.Aircraft)
                 {
-                    PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange) / ar_change);
+                    PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange));
                     plane.LocationF = newLocation;
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
                     plane.DataBlock2.LocationF = plane.DataBlock.LocationF;
@@ -2999,7 +3016,7 @@ namespace DGScope
 
         private void MoveTargets(float xChange, float yChange)
         {
-            yChange = yChange * aspect_ratio;
+            yChange = yChange;
             lock(PrimaryReturns)
                 foreach (PrimaryReturn target in PrimaryReturns.ToList())
                 {
@@ -3045,24 +3062,24 @@ namespace DGScope
             switch (target.Shape)
             {
                 case TargetShape.Rectangle:
-                    float targetHeight = target.ShapeHeight * xPixelScale;// (window.ClientRectangle.Height/2);
-                    float targetWidth = target.ShapeWidth * yPixelScale;// (window.ClientRectangle.Width/2);
+                    float targetHeight = target.ShapeHeight * pixelScale;// (window.ClientRectangle.Height/2);
+                    float targetWidth = target.ShapeWidth * pixelScale;// (window.ClientRectangle.Width/2);
                     float atan = (float)Math.Atan(targetHeight / targetWidth);
                     float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
                     float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
                     float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
-                    float circleradius = 4f * xPixelScale;
+                    float circleradius = 4f * pixelScale;
 
-                    target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 * aspect_ratio);
+                    target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
                     GL.LoadIdentity();
                     GL.PushMatrix();
 
                     float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
                     GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                    GL.Scale(1.0f, aspect_ratio, 1.0f);
+                    GL.Scale(1.0f, pixelScale, 1.0f);
                     GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
-                    GL.Ortho(-1.0f, 1.0f, -aspect_ratio, aspect_ratio, 0.1f, 0.0f);
+                    GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                     GL.Begin(PrimitiveType.Polygon);
 
                     GL.Color4(target.ForeColor);
@@ -3080,16 +3097,16 @@ namespace DGScope
                     break;
                 case TargetShape.Circle:
                     float mileageSize = 0.2f / scale;
-                    float pixelSize = TargetWidth * xPixelScale;
+                    float pixelSize = TargetWidth * pixelScale;
                     if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
                     {
-                        target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2 * aspect_ratio);
-                        DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, aspect_ratio, 30, target.ForeColor, true);
+                        target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, 1, 30, target.ForeColor, true);
                     }
                     else
                     {
-                        target.SizeF = new SizeF(target.ShapeWidth * 2 * xPixelScale, target.ShapeWidth * 2 * yPixelScale);
-                        DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * xPixelScale, aspect_ratio, 30, target.ForeColor, true);
+                        target.SizeF = new SizeF(target.ShapeWidth * 2 * pixelScale, target.ShapeWidth * 2 * pixelScale);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * pixelScale, 1, 30, target.ForeColor, true);
                     }
                     break;
             }
@@ -3180,8 +3197,8 @@ namespace DGScope
             {
                 Label.Font = Font;
                 Bitmap text_bmp = Label.TextBitmap();
-                var realWidth = (float)text_bmp.Width * xPixelScale;
-                var realHeight = (float)text_bmp.Height * yPixelScale;
+                var realWidth = (float)text_bmp.Width * pixelScale;
+                var realHeight = (float)text_bmp.Height * pixelScale;
                 Label.SizeF = new SizeF(realWidth, realHeight);
                 GL.BindTexture(TextureTarget.Texture2D, text_texture);
                 BitmapData data = text_bmp.LockBits(new Rectangle(0, 0, text_bmp.Width, text_bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -3227,8 +3244,8 @@ namespace DGScope
             GL.Color4(Label.DrawColor);
             
             var Location = Label.LocationF;
-            var x = RoundUpToNearest(Location.X, xPixelScale);
-            var y = RoundUpToNearest(Location.Y, yPixelScale);
+            var x = RoundUpToNearest(Location.X, pixelScale);
+            var y = RoundUpToNearest(Location.Y, pixelScale);
             var width = Label.SizeF.Width;
             var height = Label.SizeF.Height;
             GL.TexCoord2(0,0);
