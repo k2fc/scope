@@ -2411,29 +2411,58 @@ namespace DGScope
         }
         private void DrawPCone(Aircraft plane)
         {
-            var endwidth = pixelScale * TPAConeWidth;
-            var y = (float)plane.TPA.Miles / scale;
-            var x1 = endwidth / 2;
-            var x2 = -x1;
             PointF location = GeoToScreenPoint(plane.SweptLocation);
-            
-            GL.Translate(location.X, location.Y, 0.0);
-            GL.PushMatrix();
-            GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
-            DrawLine(0, 0, x1, y, plane.TPA.Color);
-            DrawLine(0, 0, x2, y, plane.TPA.Color);
-            DrawLine(x1, y, x2, y, plane.TPA.Color);
-            GL.PopMatrix();
-            GL.Translate(-location.X, -location.Y, 0.0);
             var textline = new Line(plane.SweptLocation, plane.SweptLocation.FromPoint((double)plane.TPA.Miles, plane.SweptTrack));
+            
             if (plane.TPA.Miles < 10)
             {
-                plane.TPA.Label.Text = plane.TPA.Miles.ToString("0.0");
+                plane.TPA.Label.Text = plane.TPA.Miles.ToString();
             }
             else
             {
                 plane.TPA.Label.Text = ((int)plane.TPA.Miles).ToString();
             }
+            var endwidth = pixelScale * TPAConeWidth;
+            var y = (float)plane.TPA.Miles / scale;
+            var x1 = endwidth / 2;
+            var x2 = -x1;
+            GL.Translate(location.X, location.Y, 0.0);
+            GL.PushMatrix();
+            GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
+            if (y <  plane.TPA.Label.Width * pixelScale * 2 || y < plane.TPA.Label.Height * pixelScale * 2)
+            {
+                DrawLine(0, 0, x1, y, plane.TPA.Color);
+                DrawLine(0, 0, x2, y, plane.TPA.Color);
+            }
+            else if (plane.TPA.Label.Height * pixelScale > plane.TPA.Label.Width * pixelScale)
+            {
+                var y1 = y / 2 - plane.TPA.Label.Height * pixelScale;
+                var y2 = y1 + plane.TPA.Label.Height * 2 * pixelScale;
+                var x3 = x1 * (y1 / y);
+                var x4 = -x1;
+                var x5 = (y2 / y1) * x3;
+                var x6 = -x5;
+                DrawLine(0, 0, x3, y1, plane.TPA.Color);
+                DrawLine(0, 0, x4, y1, plane.TPA.Color);
+                DrawLine(x5, y2, x1, y, plane.TPA.Color);
+                DrawLine(x6, y2, x2, y, plane.TPA.Color);
+            }
+            else
+            {
+                var y1 = y / 2 - plane.TPA.Label.Width * pixelScale;
+                var y2 = y1 + plane.TPA.Label.Width * 2 * pixelScale;
+                var x3 = x1 * (y1 / y);
+                var x4 = -x1;
+                var x5 = (y2 / y1) * x3;
+                var x6 = -x5;
+                DrawLine(0, 0, x3, y1, plane.TPA.Color);
+                DrawLine(0, 0, x4, y1, plane.TPA.Color);
+                DrawLine(x5, y2, x1, y, plane.TPA.Color);
+                DrawLine(x6, y2, x2, y, plane.TPA.Color);
+            }
+            DrawLine(x1, y, x2, y, plane.TPA.Color);
+            GL.PopMatrix();
+            GL.Translate(-location.X, -location.Y, 0.0);
             plane.TPA.Label.ForeColor = plane.TPA.Color;
             plane.TPA.Label.CenterOnPoint(GeoToScreenPoint(textline.MidPoint));
             DrawLabel(plane.TPA.Label);
