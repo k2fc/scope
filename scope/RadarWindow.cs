@@ -1174,177 +1174,180 @@ namespace DGScope
                         Preview.Clear();
                         break;
                     case '*': // splat commands
-                        switch (keys[0][1])
+                        if (keys[0].Length >= 2)
                         {
-                            case 'T':
-                                if (clickedplane)
-                                {
-                                    if (tempLine == null)
+                            switch (keys[0][1])
+                            {
+                                case 'T':
+                                    if (clickedplane)
                                     {
-                                        tempLine = new RangeBearingLine() { StartPlane = (Aircraft)clicked, End = LocationFromScreenPoint(MouseLocation) };
-                                        lock(rangeBearingLines)
-                                            rangeBearingLines.Add(tempLine);
-                                    }
-                                    if (keys[0].Length > 2)
-                                    {
-                                        int rblIndex = 0;
-                                        var entered = KeysToString(keys[0]).Substring(1);
-                                        if (int.TryParse(entered, out rblIndex))
+                                        if (tempLine == null)
                                         {
-                                            if (rblIndex <= rangeBearingLines.Count)
-                                            {
-                                                lock (rangeBearingLines)
-                                                    rangeBearingLines.RemoveAt(rblIndex - 1);
-                                                Preview.Clear();
-                                            }
+                                            tempLine = new RangeBearingLine() { StartPlane = (Aircraft)clicked, End = LocationFromScreenPoint(MouseLocation) };
+                                            lock(rangeBearingLines)
+                                                rangeBearingLines.Add(tempLine);
                                         }
-                                        else
+                                        if (keys[0].Length > 2)
                                         {
-                                            var waypoint = Waypoints.Find(x => x.ID == entered);
-                                            if (waypoint != null)
+                                            int rblIndex = 0;
+                                            var entered = KeysToString(keys[0]).Substring(1);
+                                            if (int.TryParse(entered, out rblIndex))
                                             {
-                                                tempLine.StartGeo = waypoint.Location;
-                                                Preview.Clear();
-                                            }
-
-                                        }
-                                        if (clickedplane)
-                                        {
-                                            tempLine.EndPlane = (Aircraft)clicked;
-                                            tempLine = null;
-                                        }
-                                    }
-                                    Preview.Clear();
-                                }
-                                else if (enter)
-                                {
-                                    if (keys[0].Length == 2)
-                                    {
-                                        lock (rangeBearingLines)
-                                            rangeBearingLines.Clear();
-                                        Preview.Clear();
-                                    }
-                                    if (keys[0].Length > 2)
-                                    {
-                                        int rblIndex = 0;
-                                        var entered = KeysToString(keys[0]).Substring(2);
-                                        if (int.TryParse(entered, out rblIndex))
-                                        {
-                                            if (rblIndex <= rangeBearingLines.Count)
-                                            {
-                                                lock (rangeBearingLines)
-                                                    rangeBearingLines.RemoveAt(rblIndex - 1);
-                                                Preview.Clear();
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var waypoint = Waypoints.Find(x => x.ID == entered);
-                                            if (waypoint != null)
-                                            {
-                                                tempLine = new RangeBearingLine() { StartGeo = waypoint.Location, End = LocationFromScreenPoint(MouseLocation) };
-                                                lock (rangeBearingLines)
-                                                    rangeBearingLines.Add(tempLine);
-                                                Preview.Clear();
-                                            }
-                                            
-                                        }
-                                    }
-                                }
-                                else if (tempLine == null)
-                                {
-                                    tempLine = new RangeBearingLine() { StartGeo = ScreenToGeoPoint((PointF)clicked) };
-                                    lock (rangeBearingLines)
-                                        rangeBearingLines.Add(tempLine);
-                                    Preview.Clear();
-                                }
-
-                                break;
-                            case 'J':
-                                if (clickedplane)
-                                {
-                                    if (keys[0].Length > 2)
-                                    {
-                                        decimal miles = 0;
-                                        var entered = KeysToString(keys[0]).Substring(2);
-                                        if (decimal.TryParse(entered, out miles))
-                                        {
-                                            if (miles > 0 && (double)miles < radar.Range)
-                                            {
-                                                ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font);
-                                            }
-                                            else
-                                            {
-                                                ((Aircraft)clicked).TPA = null;
-                                            }
-                                            Preview.Clear();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ((Aircraft)clicked).TPA = null;
-                                        Preview.Clear();
-                                    }
-                                }
-                                break;
-                            case 'P':
-                                if (clickedplane)
-                                {
-                                    if (keys[0].Length > 2)
-                                    {
-                                        decimal miles = 0;
-                                        var entered = KeysToString(keys[0]).Substring(2);
-                                        if (decimal.TryParse(entered, out miles))
-                                        {
-                                            if (miles > 0 && (double)miles < radar.Range)
-                                            {
-                                                ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, TPAColor, Font);
-                                            }
-                                            else
-                                            {
-                                                ((Aircraft)clicked).TPA = null;
-                                            }
-                                            Preview.Clear();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ((Aircraft)clicked).TPA = null;
-                                        Preview.Clear();
-                                    }
-                                }
-                                break;
-                            case '*':
-                                if (keys[0].Length > 2)
-                                {
-                                    switch (keys[0][2])
-                                    {
-                                        case 'J':
-                                            lock (radar.Aircraft)
-                                                radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
-                                            Preview.Clear();
-                                            break;
-                                        case 'P':
-                                            lock (radar.Aircraft)
-                                                radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
-                                            Preview.Clear();
-                                            break;
-                                        default:
-                                            if (keys[0].Length == 4)
-                                            {
-                                                var pos = KeysToString(keys[0]).Substring(2);
-                                                if (clickedplane && pos == ThisPositionIndicator)
+                                                if (rblIndex <= rangeBearingLines.Count)
                                                 {
-                                                    var plane = clicked as Aircraft;
-                                                    plane.Pointout = true;
-                                                    GenerateDataBlock(plane);
+                                                    lock (rangeBearingLines)
+                                                        rangeBearingLines.RemoveAt(rblIndex - 1);
                                                     Preview.Clear();
                                                 }
                                             }
-                                            break;
+                                            else
+                                            {
+                                                var waypoint = Waypoints.Find(x => x.ID == entered);
+                                                if (waypoint != null)
+                                                {
+                                                    tempLine.StartGeo = waypoint.Location;
+                                                    Preview.Clear();
+                                                }
+
+                                            }
+                                            if (clickedplane)
+                                            {
+                                                tempLine.EndPlane = (Aircraft)clicked;
+                                                tempLine = null;
+                                            }
+                                        }
+                                        Preview.Clear();
                                     }
-                                }
-                                break;
+                                    else if (enter)
+                                    {
+                                        if (keys[0].Length == 2)
+                                        {
+                                            lock (rangeBearingLines)
+                                                rangeBearingLines.Clear();
+                                            Preview.Clear();
+                                        }
+                                        if (keys[0].Length > 2)
+                                        {
+                                            int rblIndex = 0;
+                                            var entered = KeysToString(keys[0]).Substring(2);
+                                            if (int.TryParse(entered, out rblIndex))
+                                            {
+                                                if (rblIndex <= rangeBearingLines.Count)
+                                                {
+                                                    lock (rangeBearingLines)
+                                                        rangeBearingLines.RemoveAt(rblIndex - 1);
+                                                    Preview.Clear();
+                                                }
+                                            }
+                                            else
+                                            {
+                                                var waypoint = Waypoints.Find(x => x.ID == entered);
+                                                if (waypoint != null)
+                                                {
+                                                    tempLine = new RangeBearingLine() { StartGeo = waypoint.Location, End = LocationFromScreenPoint(MouseLocation) };
+                                                    lock (rangeBearingLines)
+                                                        rangeBearingLines.Add(tempLine);
+                                                    Preview.Clear();
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                    else if (tempLine == null)
+                                    {
+                                        tempLine = new RangeBearingLine() { StartGeo = ScreenToGeoPoint((PointF)clicked) };
+                                        lock (rangeBearingLines)
+                                            rangeBearingLines.Add(tempLine);
+                                        Preview.Clear();
+                                    }
+
+                                    break;
+                                case 'J':
+                                    if (clickedplane)
+                                    {
+                                        if (keys[0].Length >= 3 && keys[0].Length <= 5)
+                                        {
+                                            decimal miles = 0;
+                                            var entered = KeysToString(keys[0]).Substring(2);
+                                            if (decimal.TryParse(entered, out miles))
+                                            {
+                                                if (miles > 0 && (double)miles <= 30)
+                                                {
+                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font);
+                                                }
+                                                else
+                                                {
+                                                    ((Aircraft)clicked).TPA = null;
+                                                }
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            ((Aircraft)clicked).TPA = null;
+                                            Preview.Clear();
+                                        }
+                                    }
+                                    break;
+                                case 'P':
+                                    if (clickedplane)
+                                    {
+                                        if (keys[0].Length >= 3 && keys[0].Length <= 5)
+                                        {
+                                            decimal miles = 0;
+                                            var entered = KeysToString(keys[0]).Substring(2);
+                                            if (decimal.TryParse(entered, out miles))
+                                            {
+                                                if (miles > 0 && (double)miles <= 30)
+                                                {
+                                                    ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, TPAColor, Font);
+                                                }
+                                                else
+                                                {
+                                                    ((Aircraft)clicked).TPA = null;
+                                                }
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            ((Aircraft)clicked).TPA = null;
+                                            Preview.Clear();
+                                        }
+                                    }
+                                    break;
+                                case '*':
+                                    if (keys[0].Length > 2)
+                                    {
+                                        switch (keys[0][2])
+                                        {
+                                            case 'J':
+                                                lock (radar.Aircraft)
+                                                    radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
+                                                Preview.Clear();
+                                                break;
+                                            case 'P':
+                                                lock (radar.Aircraft)
+                                                    radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
+                                                Preview.Clear();
+                                                break;
+                                            default:
+                                                if (keys[0].Length == 4)
+                                                {
+                                                    var pos = KeysToString(keys[0]).Substring(2);
+                                                    if (clickedplane && pos == ThisPositionIndicator)
+                                                    {
+                                                        var plane = clicked as Aircraft;
+                                                        plane.Pointout = true;
+                                                        GenerateDataBlock(plane);
+                                                        Preview.Clear();
+                                                    }
+                                                }
+                                                break;
+                                        }
+                                    }
+                                    break;
+                            }
                         }
                         break;
 
