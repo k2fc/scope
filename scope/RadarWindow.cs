@@ -2090,6 +2090,7 @@ namespace DGScope
                 {
                     case Key.Escape:
                         Preview.Clear();
+                        previewmessage = null;
                         PreviewArea.Redraw = true;
                         if (tempLine != null)
                         {
