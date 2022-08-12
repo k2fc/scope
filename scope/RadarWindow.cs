@@ -1144,20 +1144,31 @@ namespace DGScope
                         if (clickedplane)
                         {
                             var plane = (Aircraft)clicked;
-                            plane.Type = null;
-                            plane.FlightPlanCallsign = null;
-                            plane.Destination = null;
-                            plane.FlightRules = null;
-                            plane.Category = null;
-                            plane.PositionInd = null;
-                            plane.PendingHandoff = null;
-                            plane.RequestedAltitude = 0;
-                            plane.Scratchpad = null;
-                            plane.Scratchpad2 = null;
-                            plane.Owned = false;
-                            plane.LDRDirection = LDRDirection;
-                            GenerateDataBlock((Aircraft)clicked);
-                            Preview.Clear();
+                            if (plane.PendingHandoff != null || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Type = null;
+                                plane.FlightPlanCallsign = null;
+                                plane.Destination = null;
+                                plane.FlightRules = null;
+                                plane.Category = null;
+                                plane.PositionInd = null;
+                                plane.PendingHandoff = null;
+                                plane.RequestedAltitude = 0;
+                                plane.Scratchpad = null;
+                                plane.Scratchpad2 = null;
+                                plane.Owned = false;
+                                plane.LDRDirection = LDRDirection;
+                                GenerateDataBlock((Aircraft)clicked);
+                                Preview.Clear();
+                            }
+                        }
+                        else
+                        {
+                            DisplayPreviewMessage("NO FLIGHT");
                         }
                         break;
                     case Key.F12:
@@ -1305,6 +1316,7 @@ namespace DGScope
                                                 else
                                                 {
                                                     ((Aircraft)clicked).TPA = null;
+                                                    DisplayPreviewMessage("FORMAT");
                                                 }
                                                 Preview.Clear();
                                             }
@@ -1314,6 +1326,10 @@ namespace DGScope
                                             ((Aircraft)clicked).TPA = null;
                                             Preview.Clear();
                                         }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("NO TRK");
                                     }
                                     break;
                                 case '*':
@@ -1675,10 +1691,24 @@ namespace DGScope
         private void RenderPreview()
         {
             var oldtext = PreviewArea.Text;
-            PreviewArea.Text = GeneratePreviewString(Preview);
+            if (previewmessage != null && previewmessageexpiry <= DateTime.UtcNow)
+                previewmessage = null;
+            else if (previewmessage != null && Preview.Count == 0)
+                PreviewArea.Text = previewmessage;
+            else
+                PreviewArea.Text = GeneratePreviewString(Preview);
             PreviewArea.Redraw = oldtext != PreviewArea.Text;
             PreviewArea.ForeColor = DataBlockColor;
             DrawLabel(PreviewArea);
+        }
+        string previewmessage = null;
+        DateTime previewmessageexpiry;
+
+        private void DisplayPreviewMessage(string message, double seconds = 5)
+        {
+            Preview.Clear();
+            previewmessage = message;
+            previewmessageexpiry = DateTime.UtcNow.AddSeconds(seconds);
         }
         private void RenderStatus()
         {
