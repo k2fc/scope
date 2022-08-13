@@ -2382,9 +2382,10 @@ namespace DGScope
                 return;
             double bearing = radar.Location.BearingTo(RangeRingCenter) - ScreenRotation;
             double distance = radar.Location.DistanceTo(RangeRingCenter);
+            var rrr = (aspect_ratio > 1 ? radar.Range * aspect_ratio : radar.Range / aspect_ratio) + distance;
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
-            for (double i = RangeRingInterval; i <= radar.Range && RangeRingInterval > 0; i += RangeRingInterval)
+            for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
                 DrawCircle(x,y, (float)(i / scale), 1, 1000, RangeRingColor);
             }
