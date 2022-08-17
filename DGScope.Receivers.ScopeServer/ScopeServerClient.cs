@@ -264,6 +264,7 @@ namespace DGScope.Receivers.ScopeServer
                 plane.RequestedAltitude = flightPlan.RequestedAltitude;
                 plane.Scratchpad = flightPlan.Scratchpad1;
                 plane.Scratchpad2 = flightPlan.Scratchpad2;
+                plane.AssignedSquawk = flightPlan.AssignedSquawk;
                 plane.LDRDirection = RadarWindow.ParseLDR(flightPlan.LDRDirection.ToString());
             }
             if (track != null)
