@@ -2603,13 +2603,44 @@ namespace DGScope
             }
             else if (plane.TPA.Type == TPAType.JRing)
             {
-                DrawCircle(plane.SweptLocation, (float)plane.TPA.Miles, plane.TPA.Color, false);
+                //DrawCircle(plane.SweptLocation, (float)plane.TPA.Miles, plane.TPA.Color, false);
+                DrawJRing(plane);
             }
             else if (plane.TPA.Type == TPAType.PCone)
             {
                 DrawPCone(plane);
             }
             return;
+        }
+
+        private void DrawJRing(Aircraft plane)
+        {
+            PointF location = GeoToScreenPoint(plane.SweptLocation);
+
+            if (plane.TPA.Miles < 10)
+            {
+                plane.TPA.Label.Text = plane.TPA.Miles.ToString();
+            }
+            else
+            {
+                plane.TPA.Label.Text = ((int)plane.TPA.Miles).ToString();
+            }
+            PointF labellocation;
+            var circlesize = (float)plane.TPA.Miles / scale;
+            var angle = (270 - (int)plane.LDRDirection) * (Math.PI / 180);
+            var labelsize = Math.Sqrt(Math.Pow(plane.TPA.Label.Width, 2) + Math.Pow(plane.TPA.Label.Height, 2));
+            labelsize *= pixelScale;
+            labellocation = new PointF((float)((Math.Sin(angle)) * (circlesize - labelsize)), (float)(Math.Cos(angle) * (circlesize - labelsize)));
+            plane.TPA.Label.CenterOnPoint(labellocation);
+            GL.Translate(location.X, location.Y, 0.0);
+            GL.PushMatrix();
+            //GL.Rotate(-ScreenRotation, 0, 0, 1);
+            DrawCircle(0, 0, circlesize, 1, 500, plane.TPA.Color, false);
+            plane.TPA.Label.ForeColor = plane.TPA.Color;
+            if (plane.TPA.ShowSize)
+                DrawLabel(plane.TPA.Label);
+            GL.PopMatrix();
+            GL.Translate(-location.X, -location.Y, 0.0);
         }
         private void DrawPCone(Aircraft plane)
         {
@@ -2631,9 +2662,9 @@ namespace DGScope
             var clearanceWidth = plane.TPA.ShowSize ? (float)(Math.Sqrt(Math.Pow(plane.TPA.Label.Height, 2) + Math.Pow(plane.TPA.Label.Width, 2)) * pixelScale) : 0;
             if (y >  clearanceWidth)
             {
-            GL.Translate(location.X, location.Y, 0.0);
-            GL.PushMatrix();
-            GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
+                GL.Translate(location.X, location.Y, 0.0);
+                GL.PushMatrix();
+                GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
                 var y1 = y / 2 - clearanceWidth / 2;
                 var y2 = y1 + clearanceWidth;
                 var x3 = x1 * (y1 / y);
