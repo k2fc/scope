@@ -240,6 +240,26 @@ namespace DGScope
         public double ScreenRotation { get; set; } = 0;
         [DisplayName("Show Range Rings"), Category("Display Properties")]
         public bool ShowRangeRings { get; set; } = true;
+        [DisplayName("TPA Size"), Description("Show TPA Mileage Values"), Category("Display Properties")]
+        public bool TPASize
+        {
+            get
+            {
+                return tpasize;
+            }
+            set
+            {
+                lock (radar.Aircraft)
+                {
+                    radar.Aircraft.ToList().ForEach(x =>
+                    {
+                        if (x.TPA != null)
+                            x.TPA.ShowSize = value;
+                    });
+                }
+                tpasize = value;
+            }
+        }
         [DisplayName("Quick Look"), Description("Show FDB on these positions"), Category("Display Properties")]
         public List<string> QuickLookList { get; set; } = new List<string>();
         [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
@@ -627,6 +647,7 @@ namespace DGScope
         string?[] gentexts = new string?[10];
         private GameWindow window;
         private bool isScreenSaver = false;
+        private bool tpasize = true;
 
         private TransparentLabel PreviewArea = new TransparentLabel()
         {
@@ -1000,7 +1021,11 @@ namespace DGScope
         {
             bool clickedplane = false;
             bool enter = false;
-            
+            if (KeyList.Count == 0) // no keys, implied command
+            {
+                ProcessImpliedCommand(clicked);
+                return;
+            }
             if (clicked != null)
                 clickedplane = clicked.GetType() == typeof(Aircraft);
             else
@@ -1189,6 +1214,72 @@ namespace DGScope
                         {
                             switch (keys[0][1])
                             {
+                                case 'D':
+                                    if ((keys[0].Length == 3 || keys[0].Length == 4) && keys[0][2].GetType() == typeof(char) && (char)keys[0][2] == '+')
+                                    {
+                                        if (enter)
+                                        {
+                                            if (keys[0].Length == 3)
+                                            {
+                                                TPASize = !TPASize;
+                                                Preview.Clear();
+                                            }
+                                            else if (keys[0][3].GetType() != typeof(char))
+                                            {
+                                                DisplayPreviewMessage("FORMAT");
+                                            }
+                                            else if ((char)keys[0][3] == 'E')
+                                            {
+                                                TPASize = true;
+                                                Preview.Clear();
+                                            }
+                                            else if ((char)keys[0][3] == 'I')
+                                            {
+                                                TPASize = false;
+                                                Preview.Clear();
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("FORMAT");
+                                            }
+                                        }
+                                        else if (clickedplane)
+                                        {
+                                            var plane = clicked as Aircraft;
+                                            if (plane.TPA == null)
+                                            {
+                                                DisplayPreviewMessage("ILL FNCT");
+                                            }
+                                            else if (keys[0].Length == 3)
+                                            {
+                                                plane.TPA.ShowSize = !plane.TPA.ShowSize;
+                                                Preview.Clear();
+                                            }
+                                            else if (keys[0][3].GetType() != typeof(char))
+                                            {
+                                                DisplayPreviewMessage("FORMAT");
+                                            }
+                                            else if ((char)keys[0][3] == 'E')
+                                            {
+                                                plane.TPA.ShowSize = true;
+                                                Preview.Clear();
+                                            }
+                                            else if ((char)keys[0][3] == 'I')
+                                            {
+                                                plane.TPA.ShowSize = false;
+                                                Preview.Clear();
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("FORMAT");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("NO TRK");
+                                        }
+                                    }
+                                    break;
                                 case 'T':
                                     if (clickedplane)
                                     {
@@ -1284,11 +1375,11 @@ namespace DGScope
                                             {
                                                 if (miles > 0 && (double)miles <= 30)
                                                 {
-                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font);
+                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font, TPASize);
                                                 }
                                                 else
                                                 {
-                                                    ((Aircraft)clicked).TPA = null;
+                                                    DisplayPreviewMessage("FORMAT");
                                                 }
                                                 Preview.Clear();
                                             }
@@ -1311,11 +1402,10 @@ namespace DGScope
                                             {
                                                 if (miles > 0 && (double)miles <= 30)
                                                 {
-                                                    ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, TPAColor, Font);
+                                                    ((Aircraft)clicked).TPA = new TPACone((Aircraft)clicked, miles, TPAColor, Font, TPASize);
                                                 }
                                                 else
                                                 {
-                                                    ((Aircraft)clicked).TPA = null;
                                                     DisplayPreviewMessage("FORMAT");
                                                 }
                                                 Preview.Clear();
@@ -1541,6 +1631,83 @@ namespace DGScope
             }
         }
 
+        private void ProcessImpliedCommand(object clicked = null)
+        {
+            /*
+                Aircraft plane = (Aircraft)clicked;
+                if (plane.Pointout)
+                    plane.Pointout = false;
+                else if (!plane.Owned)
+                    plane.FDB = plane.FDB ? false : true;
+                else if (plane.PositionInd != ThisPositionIndicator)
+                {
+                    plane.Owned = false;
+                }
+                GenerateDataBlock(plane);
+             */
+            bool clickedplane = false;
+            bool enter = false;
+            if (clicked != null)
+                clickedplane = clicked.GetType() == typeof(Aircraft);
+            else
+                enter = true;
+            if (clickedplane)
+            {
+                var plane = clicked as Aircraft;
+                // Accept Handoff, Recall handoff
+                if (plane.PendingHandoff == ThisPositionIndicator)
+                {
+                    plane.PositionInd = ThisPositionIndicator;
+                    plane.PendingHandoff = null;
+                }
+                else if (plane.PositionInd == ThisPositionIndicator && !string.IsNullOrEmpty(plane.PendingHandoff))
+                {
+                    plane.PendingHandoff = null;
+                }
+                // Accept pointout, Recall pointout, Clear pointout color, Clear/reject / cancel pointout indication
+                else if (plane.Pointout)
+                {
+                    plane.Pointout = false;
+                }
+                // acknowledge CA / MSAW / SPC / FMA track
+                // stop blinking Cancelled flight plan indicator
+                // Change ABC to RBC for track in mismatch
+                // Display suspended track's flight plan in Preview area
+                // Inhibit Duplicate beacon code indicator
+                // Remove ADS-B duplicate target address indicator
+                // Remove blinking Resume flight progress indicator
+                // Remove blinking indicators and/or inhibit blinking Full data block
+                // Inhibit blinking data block at former local owner's TCW/TDW
+                // Remove ACID/Target ID mismatch indicator
+                // Remove ADS-B data loss indicator
+                // Return data block to unowned color
+                else if (plane.Owned && plane.PositionInd != ThisPositionIndicator)
+                {
+                    plane.Owned = false;
+                }
+                // Take control of interfacility track
+                // Remove frozen flight from display
+                // Acknowledge Time Based Flow Management (TBFM) runway mismatch
+                // Beacon readout - owned and associated track
+                else if (plane.Owned && !string.IsNullOrEmpty(plane.FlightPlanCallsign))
+                {
+                    DisplayPreviewMessage(string.Format("{0} {1} {2}", plane.FlightPlanCallsign, plane.Squawk, plane.AssignedSquawk));
+                }
+                // Toggle quick look for a single track
+                else if (!plane.Owned && !string.IsNullOrEmpty(plane.FlightPlanCallsign))
+                {
+                    plane.FDB = !plane.FDB;
+                }
+                // Create FP and associate to LDB with blinking ACID or frozen SPC
+                // Inibit No flight plan alert for unassociated track
+                // Beacon Readout - unassociated track
+                else if (string.IsNullOrEmpty(plane.FlightPlanCallsign))
+                {
+                    plane.FDB = !plane.FDB;
+                }
+                GenerateDataBlock(plane);
+            }
+        }
         private string KeysToString (object[] keys, int start = 0)
         {
             string output = "";
@@ -2460,7 +2627,7 @@ namespace DGScope
             var y = (float)plane.TPA.Miles / scale;
             var x1 = endwidth / 2;
             var x2 = -x1;
-            var clearanceWidth = (float)(Math.Sqrt(Math.Pow(plane.TPA.Label.Height, 2) + Math.Pow(plane.TPA.Label.Width, 2)) * pixelScale);
+            var clearanceWidth = plane.TPA.ShowSize ? (float)(Math.Sqrt(Math.Pow(plane.TPA.Label.Height, 2) + Math.Pow(plane.TPA.Label.Width, 2)) * pixelScale) : 0;
             if (y >  clearanceWidth)
             {
             GL.Translate(location.X, location.Y, 0.0);
@@ -2481,7 +2648,8 @@ namespace DGScope
                 GL.Translate(-location.X, -location.Y, 0.0);
                 plane.TPA.Label.ForeColor = plane.TPA.Color;
                 plane.TPA.Label.CenterOnPoint(GeoToScreenPoint(textline.MidPoint));
-                DrawLabel(plane.TPA.Label);
+                if (plane.TPA.ShowSize)
+                    DrawLabel(plane.TPA.Label);
             }
         }
         private void DrawVideoMapLines()
