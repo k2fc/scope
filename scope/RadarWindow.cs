@@ -2616,6 +2616,8 @@ namespace DGScope
         private void DrawJRing(Aircraft plane)
         {
             PointF location = GeoToScreenPoint(plane.SweptLocation);
+            var x = RoundUpToNearest(location.X, pixelScale);
+            var y = RoundUpToNearest(location.Y, pixelScale);
 
             if (plane.TPA.Miles < 10)
             {
@@ -2630,9 +2632,10 @@ namespace DGScope
             var angle = (270 - (int)plane.LDRDirection) * (Math.PI / 180);
             var labelsize = Math.Sqrt(Math.Pow(plane.TPA.Label.Width, 2) + Math.Pow(plane.TPA.Label.Height, 2));
             labelsize *= pixelScale;
+            labelsize /= 2;
             labellocation = new PointF((float)((Math.Sin(angle)) * (circlesize - labelsize)), (float)(Math.Cos(angle) * (circlesize - labelsize)));
             plane.TPA.Label.CenterOnPoint(labellocation);
-            GL.Translate(location.X, location.Y, 0.0);
+            GL.Translate(x, y, 0.0);
             GL.PushMatrix();
             //GL.Rotate(-ScreenRotation, 0, 0, 1);
             DrawCircle(0, 0, circlesize, 1, 500, plane.TPA.Color, false);
@@ -2640,7 +2643,7 @@ namespace DGScope
             if (plane.TPA.ShowSize)
                 DrawLabel(plane.TPA.Label);
             GL.PopMatrix();
-            GL.Translate(-location.X, -location.Y, 0.0);
+            GL.Translate(-x, -y, 0.0);
         }
         private void DrawPCone(Aircraft plane)
         {
