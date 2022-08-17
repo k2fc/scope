@@ -11,6 +11,7 @@ namespace DGScope
         public Guid FlightPlanGuid { get; set; }
         public int ModeSCode { get; set; }
         public string Squawk { get; set; }
+        public string AssignedSquawk { get; set; }
         public double Latitude => Location.Latitude;
         public double Longitude => Location.Longitude;
         public string Callsign { get; set; }
@@ -119,6 +120,13 @@ namespace DGScope
                     RedrawDataBlock(false);
                 if (QuickLook)
                     QuickLook = false;
+            }
+        }
+        public bool Associated
+        {
+            get
+            {
+                return FlightPlanGuid != null;
             }
         }
 
