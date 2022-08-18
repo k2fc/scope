@@ -2736,13 +2736,11 @@ namespace DGScope
 
         private void DrawPolygon (Polygon polygon)
         {
-            double scale = radar.Range / Math.Sqrt(2);
-            double yscale = (double)window.Width / (double)window.Height;
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(polygon.Color);
             for (int i = 0; i < polygon.vertices.Length; i++)
             {
-                GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y * yscale);
+                GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
             }
             GL.End();
             if (polygon.StippleColor != null && polygon.StipplePattern.Length == 128)
@@ -2753,7 +2751,7 @@ namespace DGScope
                 GL.Color4(polygon.StippleColor);
                 for (int i = 0; i < polygon.vertices.Length; i++)
                 {
-                    GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y * yscale);
+                    GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
                 }
                 GL.End();
                 GL.Disable(EnableCap.PolygonStipple);
