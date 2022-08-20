@@ -23,7 +23,7 @@ namespace DGScope
         public DateTime CurrentTime()
         {
             if (stopwatch.Elapsed >= TimeSyncInterval)
-                Resync();
+                Task.Run(Resync);
             return DateTime.UtcNow + offset;
         }
         private async Task Resync()
