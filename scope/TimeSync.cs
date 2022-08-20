@@ -13,21 +13,21 @@ namespace DGScope
     {
         private static TimeSpan offset = TimeSpan.Zero;
         private static Stopwatch stopwatch = new Stopwatch();
-        private bool initialsync = false;
         public bool Synchronized { get; private set; } = false;
         public string Server { get; set; } = "pool.ntp.org";
         public TimeSpan TimeSyncInterval { get; set; } = TimeSpan.FromMinutes(10);
+        public TimeSync()
+        {
+            Resync();
+        }
         public DateTime CurrentTime()
         {
-            if (initialsync && stopwatch.Elapsed < TimeSyncInterval)
-                return DateTime.UtcNow + offset;
-            Task.Run(Resync);
+            if (stopwatch.Elapsed >= TimeSyncInterval)
+                Resync();
             return DateTime.UtcNow + offset;
         }
-        public async Task Resync()
+        private async Task Resync()
         {
-            Synchronized = false;
-            initialsync = true;
             stopwatch.Restart();
             var client = new NtpClient(Server);
             var delay = TimeSpan.FromSeconds(1);
@@ -42,6 +42,7 @@ namespace DGScope
                 }
                 catch
                 {
+                    Synchronized = false;
                     Thread.Sleep(delay);
                     delay += delay;
                 }
