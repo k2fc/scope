@@ -62,6 +62,7 @@ namespace DGScope
                     return LeaderDirection.N;
             }
         }
+        private static TimeSync timesync = new TimeSync();
         [XmlIgnore]
         [DisplayName("Background Color"), Description("Radar Background Color"), Category("Colors")]
         public Color BackColor { get; set; } = Color.Black;
@@ -614,6 +615,35 @@ namespace DGScope
         public float LeaderLength { get; set; } = 10;
         [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Server Address"), Category("NTP")]
+        public string NTPServerAddress
+        {
+            get => timesync.Server;
+            set
+            {
+                timesync.Server = value;
+            }
+        }
+        [DisplayName("Time Sync Inverval"), Category("NTP")]
+        [XmlIgnore]
+        public TimeSpan NTPInterval
+        {
+            get => timesync.TimeSyncInterval;
+            set
+            {
+                timesync.TimeSyncInterval = value;
+            }
+        }
+        [Browsable(false)]
+        [XmlElement("NTPInverval")]
+        public int NTPIntervalMs
+        {
+            get => (int)NTPInterval.TotalMilliseconds;
+            set
+            {
+                NTPInterval = TimeSpan.FromMilliseconds(value);
+            }
+        }
         [Browsable(false)]
         public PointF PreviewLocation
         {
@@ -648,7 +678,7 @@ namespace DGScope
         private GameWindow window;
         private bool isScreenSaver = false;
         private bool tpasize = true;
-
+        public static DateTime CurrentTime => timesync.CurrentTime();
         private TransparentLabel PreviewArea = new TransparentLabel()
         {
             TextAlign = ContentAlignment.MiddleLeft,
@@ -795,7 +825,7 @@ namespace DGScope
                 e.Aircraft.DataBlock2.Flashing = true;
                 e.Aircraft.DataBlock3.Flashing = true;
             }
-            /*if (e.Aircraft.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+            /*if (e.Aircraft.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                 GenerateDataBlock(e.Aircraft);*/
         }
 
@@ -846,7 +876,7 @@ namespace DGScope
         {
             List<Aircraft> delplane;
             lock(radar.Aircraft)
-                delplane = radar.Aircraft.Where(x => x.LastMessageTime < DateTime.UtcNow.AddSeconds(-AircraftGCInterval)).ToList();
+                delplane = radar.Aircraft.Where(x => x.LastMessageTime < CurrentTime.AddSeconds(-AircraftGCInterval)).ToList();
             foreach (var plane in delplane)
             {
                 lock(radar.Aircraft)
@@ -925,7 +955,7 @@ namespace DGScope
             lock (radar.Aircraft)
             {
                 clicked = radar.Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
-                && x.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds) 
+                && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
                 {
@@ -1858,7 +1888,7 @@ namespace DGScope
         private void RenderPreview()
         {
             var oldtext = PreviewArea.Text;
-            if (previewmessage != null && previewmessageexpiry <= DateTime.UtcNow)
+            if (previewmessage != null && previewmessageexpiry <= CurrentTime)
                 previewmessage = null;
             else if (previewmessage != null && Preview.Count == 0)
                 PreviewArea.Text = previewmessage;
@@ -1875,14 +1905,15 @@ namespace DGScope
         {
             Preview.Clear();
             previewmessage = message;
-            previewmessageexpiry = DateTime.UtcNow.AddSeconds(seconds);
+            previewmessageexpiry = CurrentTime.AddSeconds(seconds);
         }
         private void RenderStatus()
         {
             StatusArea.ForeColor = DataBlockColor;
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
-            StatusArea.Text = DateTime.UtcNow.ToString("HHmm-ss") + " " + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            var timesyncind = timesync.Synchronized ? " " : "*";
+            StatusArea.Text = CurrentTime.ToString("HHmm-ss") + timesyncind + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
             for (int i = 0; i < 10; i++)
             {
                 if (atises[i] != null)
@@ -2861,7 +2892,7 @@ namespace DGScope
             var location = new PointF(x, y);
             if (x == 0 || y == 0)
                 return;
-            if (aircraft.LastHistoryDrawn < DateTime.UtcNow.AddSeconds(-HistoryInterval))
+            if (aircraft.LastHistoryDrawn < CurrentTime.AddSeconds(-HistoryInterval))
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
                 aircraft.TargetReturn.Colors = HistoryColors;
@@ -2901,10 +2932,10 @@ namespace DGScope
                 newreturn.Shape = TargetShape;
                 lock (PrimaryReturns)
                     PrimaryReturns.Add(newreturn);
-                aircraft.LastHistoryDrawn = DateTime.UtcNow;
+                aircraft.LastHistoryDrawn = CurrentTime;
             }
 
-            if (aircraft.LastMessageTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+            if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
             {
                 aircraft.RedrawTarget(location);
                 aircraft.PTL.End1 = extrapolatedpos;
@@ -3400,7 +3431,7 @@ namespace DGScope
                     handoffPlane.Owned = true;
                     handoffPlane.DataBlock.Flashing = true;
                     handoffPlane.DataBlock2.Flashing = true;
-                    if (handoffPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+                    if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                         GenerateDataBlock(handoffPlane);
                 }
                 foreach (var handedoffPlane in radar.Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
@@ -3412,7 +3443,7 @@ namespace DGScope
                         handedoffPlane.DataBlock.Flashing = false;
                         handedoffPlane.DataBlock2.Flashing = false;
                         handedoffPlane.DataBlock3.Flashing = false;
-                        if (handedoffPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+                        if (handedoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                             GenerateDataBlock(handedoffPlane);
                     }
                 }
@@ -3423,7 +3454,7 @@ namespace DGScope
                         flashingPlane.DataBlock.Flashing = false;
                         flashingPlane.DataBlock2.Flashing = false;
                         flashingPlane.DataBlock3.Flashing = false;
-                        if (flashingPlane.LastPositionTime > DateTime.UtcNow.AddSeconds(-LostTargetSeconds))
+                        if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                             GenerateDataBlock(flashingPlane);
                     }
                 }

@@ -218,6 +218,9 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Yort.Ntp, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Yort.Ntp.Portable.2.0.0\lib\net45\Yort.Ntp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aircraft.cs" />
@@ -228,6 +231,7 @@
     <Compile Include="InputBox.cs" />
     <Compile Include="MapGeoJSON.cs" />
     <Compile Include="MinSep.cs" />
+    <Compile Include="TimeSync.cs" />
     <Compile Include="TPARing.cs" />
     <Compile Include="LeaderLine.cs" />
     <Compile Include="Line.cs" />

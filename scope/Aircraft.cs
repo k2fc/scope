@@ -651,12 +651,12 @@ namespace DGScope
             {
                 return Track;
             }
-            return ((Track + ((rateofturn / 2) * (DateTime.UtcNow - lastTrackUpdate).TotalSeconds)) + 360) % 360;
+            return ((Track + ((rateofturn / 2) * (RadarWindow.CurrentTime - lastTrackUpdate).TotalSeconds)) + 360) % 360;
         }
 
         public GeoPoint ExtrapolatePosition()
         {
-            var miles = GroundSpeed * (DateTime.UtcNow - lastLocationSetTime).TotalHours;
+            var miles = GroundSpeed * (RadarWindow.CurrentTime - lastLocationSetTime).TotalHours;
             var track = ExtrapolateTrack();
             var location = Location.FromPoint(miles, track);
             return location;
