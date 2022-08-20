@@ -801,16 +801,9 @@ namespace DGScope
                     rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
                 lock (minSeps)
                     minSeps.RemoveAll(minsep => minsep.Plane1 == plane || minsep.Plane2 == plane);
-                if (plane.DataBlock.TextureID != 0)
-                {
-                    GL.DeleteTexture(plane.DataBlock.TextureID);
-                    GL.DeleteTexture(plane.DataBlock2.TextureID);
-                    GL.DeleteTexture(plane.DataBlock3.TextureID);
-                    plane.DataBlock.TextureID = 0;
-                    plane.DataBlock2.TextureID = 0;
-                    plane.DataBlock3.TextureID = 0;
-                }
                 plane.Deleted = true;
+                lock (deletedPlanes)
+                    deletedPlanes.Add(plane);
             }
         }
         
@@ -885,7 +878,26 @@ namespace DGScope
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
         }
-
+        private List<Aircraft> deletedPlanes = new List<Aircraft>();
+        private void DeleteTextures()
+        {
+            lock (deletedPlanes)
+            {
+                deletedPlanes.ToList().ForEach(plane =>
+                {
+                    if (plane.DataBlock.TextureID != 0)
+                    {
+                        GL.DeleteTexture(plane.DataBlock.TextureID);
+                        GL.DeleteTexture(plane.DataBlock2.TextureID);
+                        GL.DeleteTexture(plane.DataBlock3.TextureID);
+                        plane.DataBlock.TextureID = 0;
+                        plane.DataBlock2.TextureID = 0;
+                        plane.DataBlock3.TextureID = 0;
+                    }
+                    deletedPlanes.Remove(plane);
+                });
+            }
+        }
         private void OrderWaypoints()
         {
             try
@@ -1120,6 +1132,8 @@ namespace DGScope
                         clickedplane = true;
                     }
                 }
+                if (keys[0].Length < 1)
+                    return;
                 switch (keys[0][0])
                 {
                     case '1':
@@ -2378,6 +2392,7 @@ namespace DGScope
         private int fps = 0;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
+            DeleteTextures();
             if (window.WindowState == WindowState.Minimized)
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
@@ -3492,80 +3507,84 @@ namespace DGScope
         {
             /*if (!radar.Aircraft.Contains(Label.ParentAircraft))
                 return;*/
-            GL.Enable(EnableCap.Texture2D);
-            if (Label.TextureID == 0)
-                Label.TextureID = GL.GenTexture();
-            var text_texture = Label.TextureID;
-            if (Label.Redraw)
+            lock (Label)
             {
-                Label.Font = Font;
-                Bitmap text_bmp = Label.TextBitmap();
-                var realWidth = (float)text_bmp.Width * pixelScale;
-                var realHeight = (float)text_bmp.Height * pixelScale;
-                Label.SizeF = new SizeF(realWidth, realHeight);
-                GL.BindTexture(TextureTarget.Texture2D, text_texture);
-                BitmapData data = text_bmp.LockBits(new Rectangle(0, 0, text_bmp.Width, text_bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
-                    OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-                text_bmp.UnlockBits(data);
-                Label.Redraw = false;
+
+                GL.Enable(EnableCap.Texture2D);
+                if (Label.TextureID == 0)
+                    Label.TextureID = GL.GenTexture();
+                var text_texture = Label.TextureID;
+                if (Label.Redraw)
+                {
+                    Label.Font = Font;
+                    Bitmap text_bmp = Label.TextBitmap();
+                    var realWidth = (float)text_bmp.Width * pixelScale;
+                    var realHeight = (float)text_bmp.Height * pixelScale;
+                    Label.SizeF = new SizeF(realWidth, realHeight);
+                    GL.BindTexture(TextureTarget.Texture2D, text_texture);
+                    BitmapData data = text_bmp.LockBits(new Rectangle(0, 0, text_bmp.Width, text_bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
+                        OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
+                    text_bmp.UnlockBits(data);
+                    Label.Redraw = false;
                 
                     
 
-                //text_bmp.Save($"{text_texture}.bmp");
-            }
-            if (Label.ParentAircraft != null)
-            {
-                if (Label.ParentAircraft.LocationF.X != 0 || Label.ParentAircraft.LocationF.Y != 0)
-                {
-                    if (Label == Label.ParentAircraft.DataBlock)
-                    {
-                        Label.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
-                        Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
-                        Label.ParentAircraft.DataBlock3.LocationF = Label.LocationF;
-                    }
-                    else if (Label == Label.ParentAircraft.DataBlock2)
-                    {
-                        Label.ParentAircraft.DataBlock.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
-                        Label.LocationF = Label.ParentAircraft.DataBlock.LocationF;
-                        Label.ParentAircraft.DataBlock3.LocationF = Label.LocationF;
-                    }
-                    else if (Label == Label.ParentAircraft.DataBlock3)
-                    {
-                        Label.ParentAircraft.DataBlock.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
-                        Label.LocationF = Label.ParentAircraft.DataBlock.LocationF;
-                        Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
-                    }
+                    //text_bmp.Save($"{text_texture}.bmp");
                 }
+                if (Label.ParentAircraft != null)
+                {
+                    if (Label.ParentAircraft.LocationF.X != 0 || Label.ParentAircraft.LocationF.Y != 0)
+                    {
+                        if (Label == Label.ParentAircraft.DataBlock)
+                        {
+                            Label.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
+                            Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
+                            Label.ParentAircraft.DataBlock3.LocationF = Label.LocationF;
+                        }
+                        else if (Label == Label.ParentAircraft.DataBlock2)
+                        {
+                            Label.ParentAircraft.DataBlock.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
+                            Label.LocationF = Label.ParentAircraft.DataBlock.LocationF;
+                            Label.ParentAircraft.DataBlock3.LocationF = Label.LocationF;
+                        }
+                        else if (Label == Label.ParentAircraft.DataBlock3)
+                        {
+                            Label.ParentAircraft.DataBlock.LocationF = OffsetDatablockLocation(Label.ParentAircraft);
+                            Label.LocationF = Label.ParentAircraft.DataBlock.LocationF;
+                            Label.ParentAircraft.DataBlock2.LocationF = Label.LocationF;
+                        }
+                    }
                     
-            }
+                }
             
-            GL.BindTexture(TextureTarget.Texture2D, text_texture);
-            GL.Begin(PrimitiveType.Quads);
-            GL.Color4(Label.DrawColor);
+                GL.BindTexture(TextureTarget.Texture2D, text_texture);
+                GL.Begin(PrimitiveType.Quads);
+                GL.Color4(Label.DrawColor);
             
-            var Location = Label.LocationF;
-            var x = RoundUpToNearest(Location.X, pixelScale);
-            var y = RoundUpToNearest(Location.Y, pixelScale);
-            var width = Label.SizeF.Width;
-            var height = Label.SizeF.Height;
-            GL.TexCoord2(0,0);
-            GL.Vertex2(x, height + y);
-            GL.TexCoord2(1, 0); 
-            GL.Vertex2(width + x, height + y);
-            GL.TexCoord2(1, 1); 
-            GL.Vertex2(width + x, y);
-            GL.TexCoord2(0, 1); 
-            GL.Vertex2(x, y);
-            GL.End();
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            GL.Disable(EnableCap.Texture2D);
+                var Location = Label.LocationF;
+                var x = RoundUpToNearest(Location.X, pixelScale);
+                var y = RoundUpToNearest(Location.Y, pixelScale);
+                var width = Label.SizeF.Width;
+                var height = Label.SizeF.Height;
+                GL.TexCoord2(0,0);
+                GL.Vertex2(x, height + y);
+                GL.TexCoord2(1, 0); 
+                GL.Vertex2(width + x, height + y);
+                GL.TexCoord2(1, 1); 
+                GL.Vertex2(width + x, y);
+                GL.TexCoord2(0, 1); 
+                GL.Vertex2(x, y);
+                GL.End();
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+                GL.Disable(EnableCap.Texture2D);
 
             
-            GL.Begin(PrimitiveType.Lines);
-            GL.Color4(Label.ForeColor);
+                GL.Begin(PrimitiveType.Lines);
+                GL.Color4(Label.ForeColor);
+            }
             if (Label.ParentAircraft != null)
             {
                 if (Label == Label.ParentAircraft.DataBlock || Label == Label.ParentAircraft.DataBlock2 || Label == Label.ParentAircraft.DataBlock3)
