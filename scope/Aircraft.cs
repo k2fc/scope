@@ -710,7 +710,7 @@ namespace DGScope
         public AircraftEventArgs(Aircraft Aircraft)
         {
             this.Aircraft = Aircraft;
-            Time = DateTime.Now;
+            Time = RadarWindow.CurrentTime;
         }
     }
 }
