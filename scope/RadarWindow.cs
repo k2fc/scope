@@ -3436,10 +3436,11 @@ namespace DGScope
                             GenerateDataBlock(flashingPlane);
                     }
                 }
-                foreach (var beaconatorplane in radar.Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns))
+                foreach (var beaconatorplane in radar.Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
                 {
                     beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
                     GenerateDataBlock(beaconatorplane);
+                    beaconatorplane.RedrawDataBlock();
                 }
             }
             foreach (var target in PrimaryReturns.ToList().OrderBy(x => x.Intensity))

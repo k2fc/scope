@@ -464,19 +464,20 @@ namespace DGScope
                 }
                 if (ShowCallsignWithNoSquawk && Callsign != null)
                 {
+                    var cs = Callsign;
                     if (leaderDirection == RadarWindow.LeaderDirection.W ||
                 leaderDirection == RadarWindow.LeaderDirection.NW ||
                 leaderDirection == RadarWindow.LeaderDirection.SW)
                     {
-                        DataBlock.Text += "\r\n" + Callsign.PadLeft(9);
-                        DataBlock2.Text += "\r\n" + Callsign.PadLeft(9);
-                        DataBlock3.Text += "\r\n" + Callsign.PadLeft(9);
+                        DataBlock.Text += "\r\n" + cs.PadLeft(9);
+                        DataBlock2.Text += "\r\n" + cs.PadLeft(9);
+                        DataBlock3.Text += "\r\n" + cs.PadLeft(9);
                     }
                     else
                     {
-                        DataBlock.Text = "\r\n" + Callsign.PadRight(9);
-                        DataBlock2.Text = "\r\n" + Callsign.PadRight(9);
-                        DataBlock3.Text = "\r\n" + Callsign.PadRight(9);
+                        DataBlock.Text = "\r\n" + cs.PadRight(9);
+                        DataBlock2.Text = "\r\n" + cs.PadRight(9);
+                        DataBlock3.Text = "\r\n" + cs.PadRight(9);
                     }
                 }
             }
