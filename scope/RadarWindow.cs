@@ -3069,67 +3069,73 @@ namespace DGScope
             PointF blockLocation = new PointF();
             float xoffset = 0;
             float yoffset = 0;
+            blockLocation.X = thisAircraft.LocationF.X;
+            blockLocation.Y = thisAircraft.LocationF.Y;
             switch (direction)
             {
                 case LeaderDirection.N:
                     yoffset += LeaderLength * pixelScale;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + yoffset;
                     break;
                 case LeaderDirection.S:
                     yoffset -= LeaderLength * pixelScale;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top + yoffset;
                     break;
                 case LeaderDirection.E:
                     xoffset += LeaderLength * pixelScale;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + xoffset;
                     break;
                 case LeaderDirection.W:
                     xoffset -= LeaderLength * pixelScale;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left + xoffset;
+                    if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
+                        thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                    else if (thisAircraft.DataBlock2.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
+                    else
+                        blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
                     break;
                 case LeaderDirection.NE:
                     yoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     xoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + xoffset;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + yoffset;
                     break;
                 case LeaderDirection.SE:
                     xoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     yoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + xoffset;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top + yoffset;
                     break;
                 case LeaderDirection.NW:
                     xoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     yoffset += LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left + xoffset;
+                    if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
+                        thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                    else if (thisAircraft.DataBlock2.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
+                    else
+                        blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + yoffset;
                     break;
                 case LeaderDirection.SW:
                     xoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
                     yoffset -= LeaderLength * pixelScale * (float)Math.Sqrt(2) / 2;
+                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left + xoffset;
+                    if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
+                        thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
+                    else if (thisAircraft.DataBlock2.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
+                        blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
+                    else
+                        blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
+                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top + yoffset;
                     break;
             }
 
-            if (xoffset == 0)
-            {
-                blockLocation.X = thisAircraft.LocationF.X;
-            }
-            else if (xoffset < 0)
-            {
-                blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left + xoffset;
-                if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width)
-                    blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
-                else
-                    blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
-            }
-            else
-            {
-                blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + xoffset;
-            }
-
-            if (yoffset == 0)
-            {
-                blockLocation.Y = thisAircraft.LocationF.Y;
-            }
-            else if (yoffset < 0)
-            {
-                blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top + yoffset;
-            }
-            else
-            {
-                blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + yoffset;
-            }
             /*
             blockLocation.Y = thisAircraft.LocationF.Y + yoffset;
             blockLocation.X = thisAircraft.LocationF.X + xoffset;
