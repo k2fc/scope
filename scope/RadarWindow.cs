@@ -2243,28 +2243,7 @@ namespace DGScope
                     case Key.T:
                         if (!showAllCallsigns)
                         {
-                            lock (dataBlocks)
-                            {
-                                foreach (var block in dataBlocks.Where(x => !x.ParentAircraft.ShowCallsignWithNoSquawk).ToList())
-                                {
-                                    block.ParentAircraft.ShowCallsignWithNoSquawk = true;
-                                    block.Redraw = true;
-                                    //block.ParentAircraft.RedrawTarget(block.ParentAircraft.LocationF);
-                                    GenerateDataBlock(block.ParentAircraft);
-                                    DrawLabel(block);
-                                }
-                            }
                             showAllCallsigns = true;
-                        }
-                        else
-                        {
-                            List<Aircraft> planesWithoutShowAll;
-                            lock (radar.Aircraft)
-                                planesWithoutShowAll = radar.Aircraft.Where(x => !x.ShowCallsignWithNoSquawk).ToList();
-                            foreach (var plane in planesWithoutShowAll)
-                            {
-                                showAllCallsigns = true;
-                            }
                         }
                         break;
                     case Key.F9:
@@ -2343,28 +2322,7 @@ namespace DGScope
                 case Key.T:
                     if (showAllCallsigns)
                     {
-                        lock (dataBlocks)
-                        {
-                            foreach (var block in dataBlocks.Where(x=>x.ParentAircraft.ShowCallsignWithNoSquawk).ToList())
-                            {
-                                block.ParentAircraft.ShowCallsignWithNoSquawk = false;
-                                block.Redraw = true;
-                                block.ParentAircraft.RedrawTarget(block.ParentAircraft.LocationF);
-                                GenerateDataBlock(block.ParentAircraft);
-                                DrawLabel(block);
-                            }
-                        }
                         showAllCallsigns = false;
-                    }
-                    else
-                    {
-                        List<Aircraft> planesWithShowAll;
-                        lock (radar.Aircraft)
-                            planesWithShowAll = radar.Aircraft.Where(x => x.ShowCallsignWithNoSquawk).ToList();
-                        foreach (var plane in planesWithShowAll)
-                        {
-                            showAllCallsigns = false;
-                        }
                     }
                     break;
             }
@@ -2958,7 +2916,7 @@ namespace DGScope
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
                 if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) || 
-                    aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator)
+                    aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
@@ -3477,6 +3435,11 @@ namespace DGScope
                         if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                             GenerateDataBlock(flashingPlane);
                     }
+                }
+                foreach (var beaconatorplane in radar.Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns))
+                {
+                    beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
+                    GenerateDataBlock(beaconatorplane);
                 }
             }
             foreach (var target in PrimaryReturns.ToList().OrderBy(x => x.Intensity))
