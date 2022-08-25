@@ -1078,8 +1078,8 @@ namespace DGScope
             if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
-                if (plane.Pointout)
-                    plane.Pointout = false;
+                if (plane.ForceQuickLook)
+                    plane.ForceQuickLook = false;
                 else if (!plane.Owned)
                     plane.FDB = plane.FDB ? false : true;
                 else if (plane.PositionInd != ThisPositionIndicator)
@@ -1488,7 +1488,7 @@ namespace DGScope
                                                     if (clickedplane && pos == ThisPositionIndicator)
                                                     {
                                                         var plane = clicked as Aircraft;
-                                                        plane.Pointout = true;
+                                                        plane.ForceQuickLook = true;
                                                         GenerateDataBlock(plane);
                                                         Preview.Clear();
                                                     }
@@ -1712,6 +1712,10 @@ namespace DGScope
                 else if (plane.Pointout)
                 {
                     plane.Pointout = false;
+                }
+                else if (plane.ForceQuickLook)
+                {
+                    plane.ForceQuickLook = false;
                 }
                 // acknowledge CA / MSAW / SPC / FMA track
                 // stop blinking Cancelled flight plan indicator
@@ -2809,7 +2813,7 @@ namespace DGScope
                     aircraft.DataBlock2.ForeColor = SelectedColor;
                     aircraft.DataBlock3.ForeColor = SelectedColor;
                 }
-                else if (aircraft.Pointout)
+                else if (aircraft.ForceQuickLook)
                 {
                     aircraft.DataBlock.ForeColor = PointoutColor;
                     aircraft.DataBlock2.ForeColor = PointoutColor;
