@@ -2885,7 +2885,6 @@ namespace DGScope
                 else
                 {
                     aircraft.TargetReturn.Fading = true;
-                    aircraft.TargetReturn.Intensity = 1;
                 }
                 if (HistoryDirectionAngle)
                 {
@@ -3297,7 +3296,6 @@ namespace DGScope
 
         private void MoveTargets(float xChange, float yChange)
         {
-            yChange = yChange;
             lock(PrimaryReturns)
                 foreach (PrimaryReturn target in PrimaryReturns.ToList())
                 {
@@ -3353,12 +3351,10 @@ namespace DGScope
 
                     target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
-                    GL.LoadIdentity();
                     GL.PushMatrix();
 
                     float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
                     GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                    GL.Scale(1.0f, pixelScale, 1.0f);
                     GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                     GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                     GL.Begin(PrimitiveType.Polygon);
@@ -3458,7 +3454,7 @@ namespace DGScope
                         debugPlane = null; 
                     if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                     {
-                        DrawLine(block.ParentAircraft.PTL, Color.White);
+                        DrawLine(block.ParentAircraft.PTL, RBLColor);
                     }
                     if (timeshare % 2 == 0)
                         DrawLabel(block);
