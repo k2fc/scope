@@ -25,14 +25,14 @@ namespace DGScope
     {
         public enum LeaderDirection
         {
-            NW = 135,
-            N = 90,
-            NE = 45,
-            W = 180,
-            E = 0,
-            SW = 225,
-            S = 270,
-            SE = 315
+            NW = 1,
+            N = 2,
+            NE = 3,
+            W = 4,
+            E = 6,
+            SW = 7,
+            S = 8,
+            SE = 9
         }
 
         public static LeaderDirection ParseLDR(string direction)
