@@ -25,14 +25,14 @@ namespace DGScope
     {
         public enum LeaderDirection
         {
-            NW = 135,
-            N = 90,
-            NE = 45,
-            W = 180,
-            E = 0,
-            SW = 225,
-            S = 270,
-            SE = 315
+            NW = 1,
+            N = 2,
+            NE = 3,
+            W = 4,
+            E = 6,
+            SW = 7,
+            S = 8,
+            SE = 9
         }
 
         public static LeaderDirection ParseLDR(string direction)
@@ -102,6 +102,12 @@ namespace DGScope
         [XmlIgnore]
         [DisplayName("TPA Color"), Description("Color of Terminal Proximity Alert Cones/Rings"), Category("Colors")]
         public Color TPAColor { get; set; } = Color.FromArgb(90, 180, 255);
+        [XmlIgnore]
+        [DisplayName("ATPA Caution Color"), Description("Color of Automated Terminal Proximity Caution"), Category("Colors")]
+        public Color ATPACautionColor { get; set; } = Color.FromArgb(255,255,0);
+        [XmlIgnore]
+        [DisplayName("ATPA Alert Color"), Description("Color of Automated Terminal Proximity Alert"), Category("Colors")]
+        public Color ATPAAlertColor { get; set; } = Color.FromArgb(255, 55, 0);
 
         [XmlElement("BackColor")]
         [Browsable(false)]
@@ -388,6 +394,56 @@ namespace DGScope
                 }
             }
         }
+        [XmlIgnore]
+        public ATPA ATPA = new ATPA();
+        [DisplayName("Separation Table"), Category("ATPA")]
+        public SeparationTable ATPASeparationTable
+        {
+            get => ATPA.RequiredSeparation;
+            set => ATPA.RequiredSeparation = value;
+        }
+        private string atpaVolumeFile = "";
+        [DisplayName("Volume File"), Category("ATPA")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public string ATPAVolumeFile 
+        {
+            get => atpaVolumeFile;
+            set
+            {
+                try
+                {
+                    ATPA.DeserializeVolumesFromJsonFile(value);
+                    atpaVolumeFile = value;
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Unable to read ATPA Volume File \n" + ex.Message);
+                }
+            }
+        }
+        [DisplayName("Display ATPA Monitor Cones"), Category("ATPA")]
+        public bool DrawATPAMonitorCones { get; set; } = false;
+        private string[] activeatpa = new string[0];
+        [Browsable(false)]
+        public string[] ActiveATPA
+        {
+            get
+            {
+                if (ATPA.Volumes.Count > 0)
+                    return (ATPA.Volumes.Where(x => x.Active).Select(y => y.Name).ToArray());
+                else
+                    return activeatpa;
+            }
+            set
+            {
+                activeatpa = value;
+                if (VideoMaps.Count > 0)
+                    ATPA.Volumes.ForEach(x => x.Active = activeatpa.Contains(x.Name));
+            }
+        }
+        [Editor(typeof(ATPAVolumeSelectorEditor), typeof(UITypeEditor))]
+        [DisplayName("Active Volumes"), Category("ATPA")]
+        public List<ATPAVolume> ActiveVolumes { get; set; } = new List<ATPAVolume>();
         float scale => (float)(radar.Range / Math.Sqrt(2));
         float pixelScale; 
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
@@ -1258,6 +1314,17 @@ namespace DGScope
                         {
                             switch (keys[0][1])
                             {
+                                case 'B':
+                                    if (keys[0].Length == 3)
+                                        if (enter)
+                                        {
+                                            if ((char)keys[0][2] == 'E')
+                                                DrawATPAMonitorCones = true;
+                                            else if ((char)keys[0][2] == 'I')
+                                                DrawATPAMonitorCones = false;
+                                            Preview.Clear();
+                                        }
+                                    break;
                                 case 'D':
                                     if ((keys[0].Length == 3 || keys[0].Length == 4) && keys[0][2].GetType() == typeof(char) && (char)keys[0][2] == '+')
                                     {
@@ -2374,6 +2441,7 @@ namespace DGScope
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
             DrawRangeRings();
+            ATPA.Calculate(radar.Aircraft.ToList());
             if(!hidewx)
                 DrawNexrad();
             DrawVideoMapLines();
@@ -2599,8 +2667,48 @@ namespace DGScope
         {
             if (plane.Location == null)
                 return;
+            if (plane.PositionInd == ThisPositionIndicator && (plane.ATPAStatus == ATPAStatus.Caution || plane.ATPAStatus == ATPAStatus.Alert))
+            {
+                switch (plane.ATPAStatus)
+                {
+                    case ATPAStatus.Caution:
+                        if(plane.ATPACone == null)
+                            plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPACautionColor, Font, true, plane.ATPATrackToLeader);
+                        else
+                        {
+                            plane.ATPACone.Miles = (decimal)plane.ATPARequiredMileage;
+                            plane.ATPACone.Color = ATPACautionColor;
+                            plane.ATPACone.Track = plane.ATPATrackToLeader;
+                        }
+                        break;
+                    case ATPAStatus.Alert:
+                        if (plane.ATPACone == null)
+                            plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPAAlertColor, Font, true, plane.ATPATrackToLeader);
+                        else
+                        {
+                            plane.ATPACone.Miles = (decimal)plane.ATPARequiredMileage;
+                            plane.ATPACone.Color = ATPAAlertColor;
+                            plane.ATPACone.Track = plane.ATPATrackToLeader;
+                        }
+                        break;
+                }
+                DrawATPACone(plane);
+            }
             if (plane.TPA == null)
             {
+                if (plane.PositionInd == ThisPositionIndicator && plane.ATPAStatus == ATPAStatus.Monitor && DrawATPAMonitorCones)
+                {
+                    if (plane.ATPACone == null)
+                        plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, TPAColor, Font, true, plane.ATPATrackToLeader);
+                    else
+                    {
+                        plane.ATPACone.Miles = (decimal)plane.ATPARequiredMileage;
+                        plane.ATPACone.Color = TPAColor;
+                        plane.ATPACone.Track = plane.ATPATrackToLeader;
+                    }
+                    DrawATPACone(plane);
+                }
+                
                 return;
             }
             else if (plane.TPA.Type == TPAType.JRing)
@@ -2647,46 +2755,59 @@ namespace DGScope
             GL.PopMatrix();
             GL.Translate(-x, -y, 0.0);
         }
+
         private void DrawPCone(Aircraft plane)
         {
+            DrawPCone(plane.TPA as TPACone);
+        }
+        private void DrawATPACone(Aircraft plane)
+        {
+            DrawPCone(plane.ATPACone);
+        }
+        private void DrawPCone(TPACone cone)
+        {
+            Aircraft plane = cone.ParentAircraft;
+            if (cone.Track == null)
+                cone.Track = plane.SweptTrack;
             PointF location = GeoToScreenPoint(plane.SweptLocation);
-            var textline = new Line(plane.SweptLocation, plane.SweptLocation.FromPoint((double)plane.TPA.Miles, plane.SweptTrack));
+            var textline = new Line(plane.SweptLocation, plane.SweptLocation.FromPoint((double)cone.Miles, (double)cone.Track));
             
-            if (plane.TPA.Miles < 10)
+            if (cone.Miles < 10)
             {
-                plane.TPA.Label.Text = plane.TPA.Miles.ToString();
+                cone.Label.Text = cone.Miles.ToString();
             }
             else
             {
-                plane.TPA.Label.Text = ((int)plane.TPA.Miles).ToString();
+                cone.Label.Text = ((int)cone.Miles).ToString();
             }
+            
             var endwidth = pixelScale * TPAConeWidth;
-            var y = (float)plane.TPA.Miles / scale;
+            var y = (float)cone.Miles / scale;
             var x1 = endwidth / 2;
             var x2 = -x1;
-            var clearanceWidth = plane.TPA.ShowSize ? (float)(Math.Sqrt(Math.Pow(plane.TPA.Label.Height, 2) + Math.Pow(plane.TPA.Label.Width, 2)) * pixelScale) : 0;
+            var clearanceWidth = cone.ShowSize ? (float)(Math.Sqrt(Math.Pow(cone.Label.Height, 2) + Math.Pow(cone.Label.Width, 2)) * pixelScale) : 0;
             if (y >  clearanceWidth)
             {
                 GL.Translate(location.X, location.Y, 0.0);
                 GL.PushMatrix();
-                GL.Rotate(-plane.SweptTrack + ScreenRotation, 0, 0, 1);
+                GL.Rotate(-((double)cone.Track) + ScreenRotation, 0, 0, 1);
                 var y1 = y / 2 - clearanceWidth / 2;
                 var y2 = y1 + clearanceWidth;
                 var x3 = x1 * (y1 / y);
                 var x4 = -x3;
                 var x5 = (y2 / y1) * x3;
                 var x6 = -x5;
-                DrawLine(0, 0, x3, y1, plane.TPA.Color);
-                DrawLine(0, 0, x4, y1, plane.TPA.Color);
-                DrawLine(x5, y2, x1, y, plane.TPA.Color);
-                DrawLine(x6, y2, x2, y, plane.TPA.Color);
-                DrawLine(x1, y, x2, y, plane.TPA.Color);
+                DrawLine(0, 0, x3, y1, cone.Color);
+                DrawLine(0, 0, x4, y1, cone.Color);
+                DrawLine(x5, y2, x1, y, cone.Color);
+                DrawLine(x6, y2, x2, y, cone.Color);
+                DrawLine(x1, y, x2, y, cone.Color);
                 GL.PopMatrix();
                 GL.Translate(-location.X, -location.Y, 0.0);
-                plane.TPA.Label.ForeColor = plane.TPA.Color;
-                plane.TPA.Label.CenterOnPoint(GeoToScreenPoint(textline.MidPoint));
-                if (plane.TPA.ShowSize)
-                    DrawLabel(plane.TPA.Label);
+                cone.Label.ForeColor = cone.Color;
+                cone.Label.CenterOnPoint(GeoToScreenPoint(textline.MidPoint));
+                if (cone.ShowSize)
+                    DrawLabel(cone.Label);
             }
         }
         private void DrawVideoMapLines()
@@ -2892,7 +3013,6 @@ namespace DGScope
                 else
                 {
                     aircraft.TargetReturn.Fading = true;
-                    aircraft.TargetReturn.Intensity = 1;
                 }
                 if (HistoryDirectionAngle)
                 {
@@ -3304,7 +3424,6 @@ namespace DGScope
 
         private void MoveTargets(float xChange, float yChange)
         {
-            yChange = yChange;
             lock(PrimaryReturns)
                 foreach (PrimaryReturn target in PrimaryReturns.ToList())
                 {
@@ -3360,12 +3479,10 @@ namespace DGScope
 
                     target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
-                    GL.LoadIdentity();
                     GL.PushMatrix();
 
                     float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
                     GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                    GL.Scale(1.0f, pixelScale, 1.0f);
                     GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                     GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                     GL.Begin(PrimitiveType.Polygon);
@@ -3408,7 +3525,7 @@ namespace DGScope
             lock (radar.Aircraft)
             {
                 radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                radar.Aircraft.Where(x => x.TPA != null).ToList().ForEach(x => DrawTPA(x));
+                radar.Aircraft.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
                 foreach (var handoffPlane in radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
                 {
                     if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
@@ -3465,7 +3582,7 @@ namespace DGScope
                         debugPlane = null; 
                     if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                     {
-                        DrawLine(block.ParentAircraft.PTL, Color.White);
+                        DrawLine(block.ParentAircraft.PTL, RBLColor);
                     }
                     if (timeshare % 2 == 0)
                         DrawLabel(block);

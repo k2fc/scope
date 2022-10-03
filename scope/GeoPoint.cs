@@ -30,6 +30,21 @@ namespace DGScope
             return (θ * (180 / Math.PI)) % 360; // in degrees
 
         }
+
+        public bool IsInsidePolygon(Polygon polygon)
+        {
+            if (polygon.Points.Count < 3)
+                return false;
+            Line testline = new Line(this, new GeoPoint(Latitude, 720));
+            int crosses = 0;
+            for (int i = 0; i < polygon.Points.Count - 1; i++)
+            {
+                Line polyline = new Line(polygon.Points[i], polygon.Points[i + 1]);
+                if (LineIntersectsLine(testline, polyline))
+                    crosses++;
+            }
+            return crosses % 2 != 0;
+        }
         public GeoPoint(double Latitude, double Longitude)
         {
             this.Latitude = Latitude;
@@ -64,6 +79,32 @@ namespace DGScope
             return FromPoint(this, Distance, Bearing);
         }
 
+        private static bool LineIntersectsLine(Line l1, Line l2)
+        {
+            return LineIntersectsLine(l1.End1, l1.End2, l2.End1, l2.End2);
+        }
+        private static bool LineIntersectsLine(GeoPoint l1p1, GeoPoint l1p2, GeoPoint l2p1, GeoPoint l2p2)
+        {
+            double q = (l1p1.Latitude - l2p1.Latitude) * (l2p2.Longitude - l2p1.Longitude) - (l1p1.Longitude - l2p1.Longitude) * (l2p2.Latitude - l2p1.Latitude);
+            double d = (l1p2.Longitude - l1p1.Longitude) * (l2p2.Latitude - l2p1.Latitude) - (l1p2.Latitude - l1p1.Latitude) * (l2p2.Longitude - l2p1.Longitude);
+
+            if (d == 0)
+            {
+                return false;
+            }
+
+            double r = q / d;
+
+            q = (l1p1.Latitude - l2p1.Latitude) * (l1p2.Longitude - l1p1.Longitude) - (l1p1.Longitude - l2p1.Longitude) * (l1p2.Latitude - l1p1.Latitude);
+            double s = q / d;
+
+            if (r < 0 || r > 1 || s < 0 || s > 1)
+            {
+                return false;
+            }
+
+            return true;
+        }
         public static GeoPoint FromPoint(GeoPoint Origin, double Distance, double Bearing)
         {
             double R = 3443.92; // nautical miles

@@ -21,6 +21,14 @@ namespace DGScope
         public bool ForceQuickLook { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
+        public Aircraft? ATPAFollowing { get; set; } = null;
+        public double? ATPAMileageNow { get; set; } = null;
+        public double? ATPAMileage24 { get; set; } = null;
+        public double? ATPAMileage45 { get; set; } = null;
+        public double? ATPARequiredMileage { get; set; } = null;
+        public double? ATPATrackToLeader { get; set; } = null;
+        public ATPAStatus? ATPAStatus { get; set; } = null;
+        public TPACone? ATPACone { get; set; } = null;
         private double rateofturn;
         private string positionind;
         public string PositionInd 
@@ -392,6 +400,7 @@ namespace DGScope
             else
                 fdb3line2 = yscratch2 + handoffchar + type + " ";
 
+            
 
             if (FDB || ShowCallsignWithNoSquawk)
             {
@@ -445,6 +454,13 @@ namespace DGScope
                     DataBlock.Text += fdb1line2;
                     DataBlock2.Text += fdb2line2;
                     DataBlock3.Text += fdb3line2;
+                    if (ATPAMileageNow != null)
+                    {
+                        var miles = (double)ATPAMileageNow;
+                        DataBlock.Text += "\r\n" + miles.ToString("0.00");
+                        DataBlock2.Text += "\r\n" + miles.ToString("0.00");
+                        DataBlock3.Text += "\r\n" + miles.ToString("0.00");
+                    }
                 }
                 else
                 {

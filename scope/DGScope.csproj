@@ -226,11 +226,14 @@
     <Compile Include="Aircraft.cs" />
     <Compile Include="AirportsXml.cs" />
     <Compile Include="Altitude.cs" />
+    <Compile Include="ATPA.cs" />
+    <Compile Include="ATPAVolume.cs" />
     <Compile Include="FAAMapDATFileParser.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
     <Compile Include="MapGeoJSON.cs" />
     <Compile Include="MinSep.cs" />
+    <Compile Include="SerializableDictionary.cs" />
     <Compile Include="TimeSync.cs" />
     <Compile Include="TPARing.cs" />
     <Compile Include="LeaderLine.cs" />
@@ -264,6 +267,12 @@
     </Compile>
     <Compile Include="VideoMapForm.Designer.cs" />
     <Compile Include="VideoMapList.cs" />
+    <Compile Include="ATPAVolumeSelector.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ATPAVolumeSelector.Designer.cs">
+      <DependentUpon>ATPAVolumeSelector.cs</DependentUpon>
+    </Compile>
     <Compile Include="VideoMapSelector.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -285,6 +294,9 @@
     </Compile>
     <EmbeddedResource Include="PropertyForm.resx">
       <DependentUpon>PropertyForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ATPAVolumeSelector.resx">
+      <DependentUpon>ATPAVolumeSelector.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="VideoMapSelector.resx">
       <DependentUpon>VideoMapSelector.cs</DependentUpon>
