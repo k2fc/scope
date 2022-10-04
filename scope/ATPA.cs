@@ -159,7 +159,7 @@ namespace DGScope
                                     if (dest != "NULL" && dest != null)
                                         volume.Destination = dest;
                                 if (feature.Properties.TryGetValue("lld", out var lld))
-                                    volume.LDRDirection = (int)lld;
+                                    volume.LDRDirection = (int?)lld;
                                 if (feature.Properties.TryGetValue("minsep", out var minsep))
                                     volume.MinimumSeparation = minsep;
                                 var geometry = feature.Geometry as BAMCIS.GeoJSON.Polygon;
