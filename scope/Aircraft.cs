@@ -18,6 +18,7 @@ namespace DGScope
         public bool Deleted { get; set; } = false;
         public bool ShowPTL { get; set; } = false;
         public bool Pointout { get; set; } = false;
+        public bool ForceQuickLook { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
         public Aircraft? ATPAFollowing { get; set; } = null;
@@ -116,7 +117,7 @@ namespace DGScope
                 if (Owned && !QuickLook) _fdb = true;
                 else if (QuickLook)
                     return true;
-                else if (Pointout)
+                else if (ForceQuickLook)
                     return true;
                 return _fdb;
             }

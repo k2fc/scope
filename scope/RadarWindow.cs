@@ -1134,8 +1134,8 @@ namespace DGScope
             if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
-                if (plane.Pointout)
-                    plane.Pointout = false;
+                if (plane.ForceQuickLook)
+                    plane.ForceQuickLook = false;
                 else if (!plane.Owned)
                     plane.FDB = plane.FDB ? false : true;
                 else if (plane.PositionInd != ThisPositionIndicator)
@@ -1555,7 +1555,7 @@ namespace DGScope
                                                     if (clickedplane && pos == ThisPositionIndicator)
                                                     {
                                                         var plane = clicked as Aircraft;
-                                                        plane.Pointout = true;
+                                                        plane.ForceQuickLook = true;
                                                         GenerateDataBlock(plane);
                                                         Preview.Clear();
                                                     }
@@ -1779,6 +1779,10 @@ namespace DGScope
                 else if (plane.Pointout)
                 {
                     plane.Pointout = false;
+                }
+                else if (plane.ForceQuickLook)
+                {
+                    plane.ForceQuickLook = false;
                 }
                 // acknowledge CA / MSAW / SPC / FMA track
                 // stop blinking Cancelled flight plan indicator
@@ -2620,28 +2624,22 @@ namespace DGScope
         {
             if (!ShowRangeRings)
                 return;
+            /*
             double bearing = radar.Location.BearingTo(RangeRingCenter) - ScreenRotation;
-            double distance = radar.Location.DistanceTo(RangeRingCenter);
-            var rrr = (aspect_ratio > 1 ? radar.Range * aspect_ratio : radar.Range / aspect_ratio) + distance;
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+            */
+            double distance = radar.Location.DistanceTo(RangeRingCenter);
+            var rrr = (aspect_ratio > 1 ? radar.Range * aspect_ratio : radar.Range / aspect_ratio) + distance;
+            var center = GeoToScreenPoint(RangeRingCenter);
+            var x = center.X;
+            var y = center.Y;
             for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
                 DrawCircle(x,y, (float)(i / scale), 1, 1000, RangeRingColor);
             }
         }
 
-        private void DrawReceiverLocations()
-        {
-            foreach (Receiver receiver in radar.Receivers)
-            {
-                double bearing = radar.Location.BearingTo(receiver.Location) - ScreenRotation;
-                double distance = radar.Location.DistanceTo(receiver.Location);
-                float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
-                DrawCircle(x, y, .0025f, 1, 100, VideoMapLineColor, true);
-            }
-        }
 
         private void DrawCircle (float cx, float cy, float r, double aspect_ratio, int num_segments, Color color, bool fill = false)
         {
@@ -2844,7 +2842,7 @@ namespace DGScope
         }
         private void DrawLine(Line line, Color color)
         {
-            double scale = radar.Range / Math.Sqrt(2);
+            /*double scale = radar.Range / Math.Sqrt(2);
             double yscale = 1;
             double bearing1 = radar.Location.BearingTo(line.End1) - ScreenRotation;
             double distance1 = radar.Location.DistanceTo(line.End1);
@@ -2855,7 +2853,13 @@ namespace DGScope
             double distance2 = radar.Location.DistanceTo(line.End2);
             float x2 = (float)(Math.Sin(bearing2 * (Math.PI / 180)) * (distance2 / scale));
             float y2 = (float)(Math.Cos(bearing2 * (Math.PI / 180)) * (distance2 / scale) * yscale);
-
+            */
+            var end1 = GeoToScreenPoint(line.End1);
+            var end2 = GeoToScreenPoint(line.End2);
+            float x1 = end1.X;
+            float x2 = end2.X;
+            float y1 = end1.Y;
+            float y2 = end2.Y;
             DrawLine(x1, y1, x2, y2, color);
         }
 
@@ -2930,7 +2934,7 @@ namespace DGScope
                     aircraft.DataBlock2.ForeColor = SelectedColor;
                     aircraft.DataBlock3.ForeColor = SelectedColor;
                 }
-                else if (aircraft.Pointout)
+                else if (aircraft.ForceQuickLook)
                 {
                     aircraft.DataBlock.ForeColor = PointoutColor;
                     aircraft.DataBlock2.ForeColor = PointoutColor;
@@ -2979,12 +2983,15 @@ namespace DGScope
             if (aircraft == debugPlane)
                 Console.Write("");
             var extrapolatedpos = aircraft.ExtrapolatePosition();
+            /*
             double bearing = radar.Location.BearingTo(extrapolatedpos) - ScreenRotation;
             double distance = radar.Location.DistanceTo(extrapolatedpos);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             var location = new PointF(x, y);
-            if (x == 0 || y == 0)
+            */
+            var location = GeoToScreenPoint(extrapolatedpos);
+            if (location.X == 0 || location.Y == 0)
                 return;
             if (aircraft.LastHistoryDrawn < CurrentTime.AddSeconds(-HistoryInterval))
             {
