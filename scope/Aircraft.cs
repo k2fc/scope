@@ -21,6 +21,7 @@ namespace DGScope
         public bool ForceQuickLook { get; set; } = false;
         public int PressureAltitude => Altitude.PressureAltitude;
         public int TrueAltitude => Altitude.TrueAltitude;
+        public ATPAVolume? ATPAVolume { get; set; } = null;
         public Aircraft? ATPAFollowing { get; set; } = null;
         public double? ATPAMileageNow { get; set; } = null;
         public double? ATPAMileage24 { get; set; } = null;

@@ -30,8 +30,8 @@ namespace DGScope
                 return false;
             if (aircraft.TrueAltitude > MaxAltitude || aircraft.TrueAltitude < MinAltitude)
                 return false;
-            //if (Runway != null && Runway != aircraft.Runway)
-            //    return false;
+            if (Runway != null && Runway != aircraft.Runway)
+                return false;
             if (Destination != null && Destination != aircraft.Destination)
                 return false;
             if (LDRDirection != null && LDRDirection != (int?)aircraft.LDRDirection)
@@ -48,8 +48,20 @@ namespace DGScope
             lock (orderlock) 
             {
                 order = (aircraft.ToList().Where(x => IsInside(x)).OrderBy(x => x.SweptLocation.DistanceTo(MergePoint))).ToList();
+                aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
+                {
+                    x.ATPAVolume = null;
+                    x.ATPAFollowing = null;
+                    x.ATPAMileageNow = null;
+                    x.ATPAMileage24 = null;
+                    x.ATPAMileage45 = null;
+                    x.ATPARequiredMileage = null;
+                    x.ATPAStatus = null;
+                    x.ATPACone = null;
+                });
                 if (order.Count > 1)
                 {
+                    order[0].ATPAVolume = this;
                     order[0].ATPAFollowing = null;
                     order[0].ATPAMileageNow = null;
                     order[0].ATPAMileage24 = null;
@@ -61,6 +73,7 @@ namespace DGScope
                     {
                         var leader = order[i - 1];
                         var follower = order[i];
+                        follower.ATPAVolume = this;
                         follower.ATPAFollowing = leader;
                         follower.ATPAMileageNow = follower.SweptLocation.DistanceTo(leader.SweptLocation);
                         follower.ATPAMileage24 = follower.SweptLocation.FromPoint(follower.GroundSpeed * 24 / 3600d, follower.ExtrapolateTrack())
@@ -89,6 +102,7 @@ namespace DGScope
                 }
                 else if (order.Count == 1)
                 {
+                    order[0].ATPAVolume = this;
                     order[0].ATPAFollowing = null;
                     order[0].ATPAMileageNow = null;
                     order[0].ATPAMileage24 = null;
