@@ -67,12 +67,6 @@ namespace DGScope
                             .DistanceTo(leader.SweptLocation.FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
                         follower.ATPAMileage45 = follower.SweptLocation.FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
                             .DistanceTo(leader.SweptLocation.FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
-                        if (follower.ATPAMileageNow < MinimumSeparation || follower.ATPAMileage24 < MinimumSeparation)
-                            follower.ATPAStatus = ATPAStatus.Alert;
-                        else if (follower.ATPAMileage45 < MinimumSeparation)
-                            follower.ATPAStatus = ATPAStatus.Caution;
-                        else
-                            follower.ATPAStatus = ATPAStatus.Monitor;
                         if (separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                         {
                             if (leaderTable.TryGetValue(leader.Category, out double miles))
@@ -84,6 +78,12 @@ namespace DGScope
                         {
                             follower.ATPARequiredMileage = MinimumSeparation;
                         }
+                        if (follower.ATPAMileageNow < follower.ATPARequiredMileage || follower.ATPAMileage24 < follower.ATPARequiredMileage)
+                            follower.ATPAStatus = ATPAStatus.Alert;
+                        else if (follower.ATPAMileage45 < follower.ATPARequiredMileage)
+                            follower.ATPAStatus = ATPAStatus.Caution;
+                        else
+                            follower.ATPAStatus = ATPAStatus.Monitor;
                         follower.ATPATrackToLeader = follower.SweptLocation.BearingTo(leader.SweptLocation);
                     }
                 }
