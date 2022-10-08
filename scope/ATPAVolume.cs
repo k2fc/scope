@@ -43,32 +43,37 @@ namespace DGScope
             return true;
         }
 
+        public void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
+        {
+            if (resetAcATPARef)
+                aircraft.ATPAVolume = null;
+            aircraft.ATPAFollowing = null;
+            aircraft.ATPAMileageNow = null;
+            aircraft.ATPAMileage24 = null;
+            aircraft.ATPAMileage45 = null;
+            aircraft.ATPARequiredMileage = null;
+            aircraft.ATPAStatus = null;
+            aircraft.ATPACone = null;
+        }
+
         public void CalculateATPA(List<Aircraft> aircraft, SeparationTable separationtable)
         {
             lock (orderlock) 
             {
+                if (!Active)
+                {
+                    aircraft.Where(x => x.ATPAVolume == this).ToList().ForEach(x => ResetAircraftATPAValues(x));
+                    return;
+                }
                 order = (aircraft.ToList().Where(x => IsInside(x)).OrderBy(x => x.SweptLocation.DistanceTo(MergePoint))).ToList();
                 aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
                 {
-                    x.ATPAVolume = null;
-                    x.ATPAFollowing = null;
-                    x.ATPAMileageNow = null;
-                    x.ATPAMileage24 = null;
-                    x.ATPAMileage45 = null;
-                    x.ATPARequiredMileage = null;
-                    x.ATPAStatus = null;
-                    x.ATPACone = null;
+                    ResetAircraftATPAValues(x);
                 });
                 if (order.Count > 1)
                 {
                     order[0].ATPAVolume = this;
-                    order[0].ATPAFollowing = null;
-                    order[0].ATPAMileageNow = null;
-                    order[0].ATPAMileage24 = null;
-                    order[0].ATPAMileage45 = null;
-                    order[0].ATPARequiredMileage = null;
-                    order[0].ATPAStatus = null;
-                    order[0].ATPACone = null;
+                    ResetAircraftATPAValues(order[0], false);
                     for (int i = 1; i < order.Count; i++)
                     {
                         var leader = order[i - 1];
@@ -103,12 +108,7 @@ namespace DGScope
                 else if (order.Count == 1)
                 {
                     order[0].ATPAVolume = this;
-                    order[0].ATPAFollowing = null;
-                    order[0].ATPAMileageNow = null;
-                    order[0].ATPAMileage24 = null;
-                    order[0].ATPAMileage45 = null;
-                    order[0].ATPARequiredMileage = null;
-                    order[0].ATPAStatus = null;
+                    ResetAircraftATPAValues(order[0], false);
                 }
             }
         }

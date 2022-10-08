@@ -79,7 +79,6 @@ namespace DGScope
             ibehind.Add("E", 4);
             RequiredSeparation.Add("I", ibehind);
         }
-        public List<ATPAVolume> ActiveVolumes => Volumes.Where(x => x.Active).ToList();
         private bool calculating = false;
         public async Task Calculate(List<Aircraft> aircraft)
         {
@@ -90,7 +89,7 @@ namespace DGScope
                 lock (Volumes)
                 {
                     List<Task> tasklist = new List<Task>();
-                    foreach (var volume in ActiveVolumes)
+                    foreach (var volume in Volumes)
                     {
                         tasklist.Add(CalculateATPA(volume, aircraft, RequiredSeparation));
                     }
