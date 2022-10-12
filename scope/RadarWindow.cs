@@ -2767,10 +2767,13 @@ namespace DGScope
         private void DrawPCone(TPACone cone)
         {
             Aircraft plane = cone.ParentAircraft;
+            double track = 0;
             if (cone.Track == null)
-                cone.Track = plane.SweptTrack;
+                track = plane.SweptTrack;
+            else
+                track = (double)cone.Track;
             PointF location = GeoToScreenPoint(plane.SweptLocation);
-            var textline = new Line(plane.SweptLocation, plane.SweptLocation.FromPoint((double)cone.Miles, (double)cone.Track));
+            var textline = new Line(plane.SweptLocation, plane.SweptLocation.FromPoint((double)cone.Miles, track));
             
             if (cone.Miles < 10)
             {
@@ -2790,7 +2793,7 @@ namespace DGScope
             {
                 GL.Translate(location.X, location.Y, 0.0);
                 GL.PushMatrix();
-                GL.Rotate(-((double)cone.Track) + ScreenRotation, 0, 0, 1);
+                GL.Rotate(-track + ScreenRotation, 0, 0, 1);
                 var y1 = y / 2 - clearanceWidth / 2;
                 var y2 = y1 + clearanceWidth;
                 var x3 = x1 * (y1 / y);
