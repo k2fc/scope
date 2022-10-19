@@ -88,7 +88,10 @@ namespace DGScope
                         {
                             try
                             {
-                                totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
+                                if (metar.Pressure != null)
+                                    totalaltimeter += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value;
+                                else
+                                    metarscount--;
                             }
                             catch
                             {

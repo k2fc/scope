@@ -2030,7 +2030,10 @@ namespace DGScope
                         string station = metar.Icao;
                         if (station.Length == 4 && station[0] == 'K') //not really correct, but whatever
                             station = station.Substring(1);
-                        StatusArea.Text += station + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        if (metar.Pressure != null)
+                            StatusArea.Text += station + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        else
+                            StatusArea.Text += station + " 00.00";
                         if (WindInStatusArea)
                             StatusArea.Text += " " + metar.Wind.Raw;
                     }
