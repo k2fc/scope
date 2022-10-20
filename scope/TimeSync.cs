@@ -11,8 +11,9 @@ namespace DGScope
 {
     public class TimeSync
     {
-        private static TimeSpan offset = TimeSpan.Zero;
         private static Stopwatch stopwatch = new Stopwatch();
+        private static DateTime syncTime = DateTime.UtcNow;
+        private static Stopwatch lastSync = new Stopwatch();
         public bool Synchronized { get; private set; } = false;
         public string Server { get; set; } = "pool.ntp.org";
         public TimeSpan TimeSyncInterval { get; set; } = TimeSpan.FromMinutes(10);
@@ -24,7 +25,9 @@ namespace DGScope
         {
             if (stopwatch.Elapsed >= TimeSyncInterval)
                 Task.Run(Resync);
-            return DateTime.UtcNow + offset;
+            if (lastSync.IsRunning)
+                return syncTime + lastSync.Elapsed;
+            return DateTime.UtcNow;
         }
         private async Task Resync()
         {
@@ -36,7 +39,8 @@ namespace DGScope
                 try
                 {
                     var currentTime = await client.RequestTimeAsync();
-                    offset = currentTime.NtpTime - DateTime.UtcNow;
+                    syncTime = currentTime.NtpTime;
+                    lastSync.Restart();
                     Synchronized = true;
                     break;
                 }
