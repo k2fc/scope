@@ -493,9 +493,9 @@ namespace DGScope
                     }
                     else
                     {
-                        DataBlock.Text = "\r\n" + cs.PadRight(9);
-                        DataBlock2.Text = "\r\n" + cs.PadRight(9);
-                        DataBlock3.Text = "\r\n" + cs.PadRight(9);
+                        DataBlock.Text += "\r\n" + cs.PadRight(9);
+                        DataBlock2.Text += "\r\n" + cs.PadRight(9);
+                        DataBlock3.Text += "\r\n" + cs.PadRight(9);
                     }
                 }
             }
