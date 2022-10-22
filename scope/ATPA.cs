@@ -80,8 +80,11 @@ namespace DGScope
             RequiredSeparation.Add("I", ibehind);
         }
         private bool calculating = false;
-        public async Task Calculate(List<Aircraft> aircraft)
+        public async Task Calculate(ICollection<Aircraft> aircraftList)
         {
+            List<Aircraft> aircraft;
+            lock (aircraftList)
+                aircraft = aircraftList.ToList();
             if (!calculating)
             {
                 calculating = true;

@@ -2457,7 +2457,7 @@ namespace DGScope
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
             DrawRangeRings();
-            ATPA.Calculate(radar.Aircraft.ToList());
+            ATPA.Calculate(radar.Aircraft);
             if(!hidewx)
                 DrawNexrad();
             DrawVideoMapLines();
