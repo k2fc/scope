@@ -87,7 +87,7 @@ namespace DGScope
                             .DistanceTo(leader.SweptLocation.FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
                         if (separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                         {
-                            if (leaderTable.TryGetValue(leader.Category, out double miles))
+                            if (leader.Category != null && leaderTable.TryGetValue(leader.Category, out double miles))
                                 follower.ATPARequiredMileage = miles;
                             else
                                 follower.ATPARequiredMileage = MinimumSeparation;
