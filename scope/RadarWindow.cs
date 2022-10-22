@@ -1738,6 +1738,19 @@ namespace DGScope
                             tempMinSep = null;
                         }
                         break;
+                    default:
+                        if (tempLine != null && enter)
+                        {
+                            var entered = KeysToString(keys[0]);
+                            var waypoint = Waypoints.Find(x => x.ID == entered);
+                            if (waypoint != null)
+                            {
+                                tempLine.EndGeo = waypoint.Location;
+                                tempLine = null;
+                                Preview.Clear();
+                            }
+                        }
+                        break;
                 }
             }
         }
