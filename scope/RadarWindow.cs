@@ -1180,6 +1180,12 @@ namespace DGScope
                 lock (radar.Aircraft)
                     typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
                         .Find(x => x.Callsign.Trim() == lastline.Trim());
+                if (typed == null)
+                {
+                    lock (radar.Aircraft)
+                        typed = radar.Aircraft.Where(x => x.Squawk != null).ToList()
+                            .Find(x => x.Squawk.Trim() == lastline.Trim());
+                }
                 if (!string.IsNullOrEmpty(lastline.Trim()) && !clickedplane && typed != null)
                 {
                     if (typed.Squawk != "1200" && typed.Squawk!= null )
