@@ -83,10 +83,10 @@ namespace DGScope
         public async Task Calculate(ICollection<Aircraft> aircraftList)
         {
             List<Aircraft> aircraft;
-            lock (aircraftList)
-                aircraft = aircraftList.ToList();
             if (!calculating)
             {
+                lock (aircraftList)
+                    aircraft = aircraftList.ToList();
                 calculating = true;
                 Task[] tasks;
                 lock (Volumes)
