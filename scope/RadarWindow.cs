@@ -2588,7 +2588,23 @@ namespace DGScope
                         bearing = 360;
                     range = line.StartGeo.DistanceTo(tempEndGeo);
                 }
-                line.Label.Text = string.Format("{0}/{1}-{2}", bearing.ToString("000"), range.ToString("0.00"), index);
+                if ((line.StartPlane != null && line.EndPlane == null) || (line.StartPlane == null && line.EndPlane != null))
+                {
+                    Aircraft plane;
+                    if (line.StartPlane == null)
+                        plane = line.EndPlane;
+                    else
+                        plane = line.StartPlane;
+                    var traversalTime = range * 60 / plane.GroundSpeed;
+                    int time;
+                    if (traversalTime - (int)traversalTime >= 0.5)
+                        time = (int)traversalTime + 1;
+                    else
+                        time = (int)traversalTime;
+                    line.Label.Text = string.Format("{0}/{1}/{3}-{2}", bearing.ToString("000"), range.ToString("0.00"), index, time);
+                }
+                else
+                    line.Label.Text = string.Format("{0}/{1}-{2}", bearing.ToString("000"), range.ToString("0.00"), index);
                 DrawLabel(line.Label);
             }
         }
