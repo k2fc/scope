@@ -1178,8 +1178,8 @@ namespace DGScope
                 string lastline = KeysToString(keys[commands - 1]);
                 Aircraft typed;
                 lock (radar.Aircraft)
-                    typed = radar.Aircraft.Where(x=> x.Callsign != null).ToList()
-                        .Find(x => x.Callsign.Trim() == lastline.Trim());
+                    typed = radar.Aircraft.Where(x=> x.FlightPlanCallsign != null).ToList()
+                        .Find(x => x.FlightPlanCallsign.Trim() == lastline.Trim());
                 if (typed == null)
                 {
                     lock (radar.Aircraft)
@@ -1198,7 +1198,7 @@ namespace DGScope
                     return;
                 switch (keys[0][0])
                 {
-                    case '1':
+                    case '1' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
@@ -1206,7 +1206,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '2':
+                    case '2' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
@@ -1214,7 +1214,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '3':
+                    case '3' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
@@ -1222,7 +1222,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '4':
+                    case '4' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
@@ -1230,7 +1230,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '6':
+                    case '6' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.E;
@@ -1238,7 +1238,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '7':
+                    case '7' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
@@ -1246,7 +1246,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '8':
+                    case '8' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
@@ -1254,7 +1254,7 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
-                    case '9':
+                    case '9' when keys[0].Length == 1:
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
@@ -1747,13 +1747,22 @@ namespace DGScope
                     default:
                         if (tempLine != null && enter)
                         {
-                            var entered = KeysToString(keys[0]);
-                            var waypoint = Waypoints.Find(x => x.ID == entered);
-                            if (waypoint != null)
+                            if (clickedplane)
                             {
-                                tempLine.EndGeo = waypoint.Location;
+                                tempLine.EndPlane = clicked as Aircraft;
                                 tempLine = null;
                                 Preview.Clear();
+                            }
+                            else
+                            { 
+                                var entered = KeysToString(keys[0]);
+                                var waypoint = Waypoints.Find(x => x.ID == entered);
+                                if (waypoint != null)
+                                {
+                                    tempLine.EndGeo = waypoint.Location;
+                                    tempLine = null;
+                                    Preview.Clear();
+                                }
                             }
                         }
                         break;
@@ -2388,7 +2397,6 @@ namespace DGScope
                     case Key.Enter:
                     case Key.KeypadEnter:
                     case Key.PageDown:
-                        
                         ProcessCommand(Preview);
                         break;
                     case Key.BackSpace:
