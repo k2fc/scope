@@ -40,15 +40,15 @@
             this.checkedListBox1.Size = new System.Drawing.Size(456, 450);
             this.checkedListBox1.TabIndex = 1;
             // 
-            // VideoMapSelector
+            // ATPAVolumeSelector
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(456, 450);
             this.Controls.Add(this.checkedListBox1);
             this.MaximumSize = new System.Drawing.Size(816, 489);
-            this.Name = "VideoMapSelector";
-            this.Text = "VideoMapSelector";
+            this.Name = "ATPAVolumeSelector";
+            this.Text = "ATPA Volume Selector";
             this.ResumeLayout(false);
 
         }

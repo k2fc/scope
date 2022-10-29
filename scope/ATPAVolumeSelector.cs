@@ -18,15 +18,9 @@ namespace DGScope
         {
             InitializeComponent();
             this.ATPAVolumes = ATPAVolumes;
-            this.KeyDown += ATPAVolumeSelector_KeyDown;
             LoadListBox();
         }
 
-        private void ATPAVolumeSelector_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.F2 && e.Control)
-                this.Close();
-        }
 
         private void CheckedListBox1_ItemCheck(object sender, ItemCheckEventArgs e)
         {
@@ -61,7 +55,7 @@ namespace DGScope
             {
                 RadarWindow adaptation = context.Instance as RadarWindow;
                 ATPAVolumeSelector sel = new ATPAVolumeSelector(adaptation.ATPA.Volumes);
-                sel.ShowDialog();
+                sel.Show();
             }
             return value;
         }
