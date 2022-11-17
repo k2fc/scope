@@ -2381,6 +2381,19 @@ namespace DGScope
             {
                 switch (e.Key)
                 {
+                    case Key.F13:
+                    case Key.F14:
+                    case Key.F15:
+                    case Key.F16:
+                    case Key.F17:
+                    case Key.F18:
+                    case Key.F19:
+                    case Key.F20:
+                    case Key.F21:
+                    case Key.F22:
+                    case Key.F23:
+                    case Key.F24:
+                        break;
                     case Key.Escape:
                         Preview.Clear();
                         previewmessage = null;
