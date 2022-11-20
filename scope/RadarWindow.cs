@@ -2393,6 +2393,8 @@ namespace DGScope
                     case Key.F22:
                     case Key.F23:
                     case Key.F24:
+                    case Key.LShift:
+                    case Key.RShift:
                         break;
                     case Key.Escape:
                         Preview.Clear();
