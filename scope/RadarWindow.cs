@@ -1095,8 +1095,6 @@ namespace DGScope
 
         public enum KeyCode
         {
-            
-            Triangle = 119,
             Min = 59, 
             InitCntl = 12,
             TermCntl = 13,
@@ -2103,183 +2101,188 @@ namespace DGScope
                 {
 
                     switch ((int)key)
-                {
-                    case (int)Key.A:
-                        output += "A";
-                        break;
-                    case (int)Key.B:
-                        output += "B";
-                        break;
-                    case (int)Key.C:
-                        output += "C";
-                        break;
-                    case (int)Key.D:
-                        output += "D";
-                        break;
-                    case (int)Key.E:
-                        output += "E";
-                        break;
-                    case (int)Key.F:
-                        output += "F";
-                        break;
-                    case (int)Key.G:
-                        output += "G";
-                        break;
-                    case (int)Key.H:
-                        output += "H";
-                        break;
-                    case (int)Key.I:
-                        output += "I";
-                        break;
-                    case (int)Key.J:
-                        output += "J";
-                        break;
-                    case (int)Key.K:
-                        output += "K";
-                        break;
-                    case (int)Key.L:
-                        output += "L";
-                        break;
-                    case (int)Key.M:
-                        output += "M";
-                        break;
-                    case (int)Key.N:
-                        output += "N";
-                        break;
-                    case (int)Key.O:
-                        output += "O";
-                        break;
-                    case (int)Key.P:
-                        output += "P";
-                        break;
-                    case (int)Key.Q:
-                        output += "Q";
-                        break;
-                    case (int)Key.R:
-                        output += "R";
-                        break;
-                    case (int)Key.S:
-                        output += "S";
-                        break;
-                    case (int)Key.T:
-                        output += "T";
-                        break;
-                    case (int)Key.U:
-                        output += "U";
-                        break;
-                    case (int)Key.V:
-                        output += "V";
-                        break;
-                    case (int)Key.W:
-                        output += "W";
-                        break;
-                    case (int)Key.X:
-                        output += "X";
-                        break;
-                    case (int)Key.Y:
-                        output += "Y";
-                        break;
-                    case (int)Key.Z:
-                        output += "Z";
-                        break;
-                    case (int)Key.Keypad0:
-                    case (int)Key.Number0:
-                        output += "0";
-                        break;
-                    case (int)Key.Keypad1:
-                    case (int)Key.Number1:
-                        output += "1";
-                        break;
-                    case (int)Key.Keypad2:
-                    case (int)Key.Number2:
-                        output += "2";
-                        break;
-                    case (int)Key.Keypad3:
-                    case (int)Key.Number3:
-                        output += "3";
-                        break;
-                    case (int)Key.Keypad4:
-                    case (int)Key.Number4:
-                        output += "4";
-                        break;
-                    case (int)Key.Keypad5:
-                    case (int)Key.Number5:
-                        output += "5";
-                        break;
-                    case (int)Key.Keypad6:
-                    case (int)Key.Number6:
-                        output += "6";
-                        break;
-                    case (int)Key.Keypad7:
-                    case (int)Key.Number7:
-                        output += "7";
-                        break;
-                    case (int)Key.Keypad8:
-                    case (int)Key.Number8:
-                        output += "8";
-                        break;
-                    case (int)Key.Keypad9:
-                    case (int)Key.Number9:
-                        output += "9";
-                        break;
-                    case (int)KeyCode.Triangle:
-                        output += "▲";
-                        break;
-                    case (int)KeyCode.FltData:
-                        output += "FD\r\n";
-                        break;
-                    case (int)KeyCode.HndOff:
-                        output += "HO\r\n";
-                        break;
-                    case (int)KeyCode.InitCntl:
-                        output += "IC\r\n";
-                        break;
-                    case (int)KeyCode.Min:
-                        output += "MIN\r\n";
-                        break;
-                    case (int)KeyCode.MultiFunc:
-                        output += "F\r\n";
-                        break;
-                    case (int)KeyCode.TermCntl:
-                        output += "TC\r\n";
-                        break;
-                    case (int)KeyCode.SignOn:
-                        output += "SIGN ON\r\n";
-                        break;
-                    case (int)KeyCode.VP:
-                        output += "VP\r\n";
-                        break;
-                    case (int)Key.Period:
-                    case (int)Key.KeypadPeriod:
-                        output += ".";
-                        break;
-                    case (int)Key.Plus:
-                    case (int)Key.KeypadPlus:
-                        output += "+";
-                        break;
-                    case (int)Key.KeypadMultiply:
-                        output += "*";
-                        break;
-                    case (int)Key.Slash:
-                    case (int)Key.KeypadDivide:
-                        output += "/";
-                        break;
-                    case (int)Key.Space:
-                        output += "\r\n";
-                        break;
-                    case (int)KeyCode.RngRing:
-                        output += "RR";
-                        break;
-                    default:
-                        break;
-                }
+                    {
+                        case (int)Key.A:
+                            output += "A";
+                            break;
+                        case (int)Key.B:
+                            output += "B";
+                            break;
+                        case (int)Key.C:
+                            output += "C";
+                            break;
+                        case (int)Key.D:
+                            output += "D";
+                            break;
+                        case (int)Key.E:
+                            output += "E";
+                            break;
+                        case (int)Key.F:
+                            output += "F";
+                            break;
+                        case (int)Key.G:
+                            output += "G";
+                            break;
+                        case (int)Key.H:
+                            output += "H";
+                            break;
+                        case (int)Key.I:
+                            output += "I";
+                            break;
+                        case (int)Key.J:
+                            output += "J";
+                            break;
+                        case (int)Key.K:
+                            output += "K";
+                            break;
+                        case (int)Key.L:
+                            output += "L";
+                            break;
+                        case (int)Key.M:
+                            output += "M";
+                            break;
+                        case (int)Key.N:
+                            output += "N";
+                            break;
+                        case (int)Key.O:
+                            output += "O";
+                            break;
+                        case (int)Key.P:
+                            output += "P";
+                            break;
+                        case (int)Key.Q:
+                            output += "Q";
+                            break;
+                        case (int)Key.R:
+                            output += "R";
+                            break;
+                        case (int)Key.S:
+                            output += "S";
+                            break;
+                        case (int)Key.T:
+                            output += "T";
+                            break;
+                        case (int)Key.U:
+                            output += "U";
+                            break;
+                        case (int)Key.V:
+                            output += "V";
+                            break;
+                        case (int)Key.W:
+                            output += "W";
+                            break;
+                        case (int)Key.X:
+                            output += "X";
+                            break;
+                        case (int)Key.Y:
+                            output += "Y";
+                            break;
+                        case (int)Key.Z:
+                            output += "Z";
+                            break;
+                        case (int)Key.Keypad0:
+                        case (int)Key.Number0:
+                            output += "0";
+                            break;
+                        case (int)Key.Keypad1:
+                        case (int)Key.Number1:
+                            output += "1";
+                            break;
+                        case (int)Key.Keypad2:
+                        case (int)Key.Number2:
+                            output += "2";
+                            break;
+                        case (int)Key.Keypad3:
+                        case (int)Key.Number3:
+                            output += "3";
+                            break;
+                        case (int)Key.Keypad4:
+                        case (int)Key.Number4:
+                            output += "4";
+                            break;
+                        case (int)Key.Keypad5:
+                        case (int)Key.Number5:
+                            output += "5";
+                            break;
+                        case (int)Key.Keypad6:
+                        case (int)Key.Number6:
+                            output += "6";
+                            break;
+                        case (int)Key.Keypad7:
+                        case (int)Key.Number7:
+                            output += "7";
+                            break;
+                        case (int)Key.Keypad8:
+                        case (int)Key.Number8:
+                            output += "8";
+                            break;
+                        case (int)Key.Keypad9:
+                        case (int)Key.Number9:
+                            output += "9";
+                            break;
+                        case (int)KeyCode.FltData:
+                            output += "FD\r\n";
+                            break;
+                        case (int)KeyCode.HndOff:
+                            output += "HO\r\n";
+                            break;
+                        case (int)KeyCode.InitCntl:
+                            output += "IC\r\n";
+                            break;
+                        case (int)KeyCode.Min:
+                            output += "MIN\r\n";
+                            break;
+                        case (int)KeyCode.MultiFunc:
+                            output += "F\r\n";
+                            break;
+                        case (int)KeyCode.TermCntl:
+                            output += "TC\r\n";
+                            break;
+                        case (int)KeyCode.SignOn:
+                            output += "SIGN ON\r\n";
+                            break;
+                        case (int)KeyCode.VP:
+                            output += "VP\r\n";
+                            break;
+                        case (int)Key.Period:
+                        case (int)Key.KeypadPeriod:
+                            output += ".";
+                            break;
+                        case (int)Key.Plus:
+                        case (int)Key.KeypadPlus:
+                            output += "+";
+                            break;
+                        case (int)Key.KeypadMultiply:
+                            output += "*";
+                            break;
+                        case (int)Key.Slash:
+                        case (int)Key.KeypadDivide:
+                            output += "/";
+                            break;
+                        case (int)Key.Space:
+                            output += "\r\n";
+                            break;
+                        case (int)KeyCode.RngRing:
+                            output += "RR";
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 else if (type == typeof(char))
                 {
-                    if ((char)key == ' ')
-                        output += "\r\n";
-                    else
-                        output += key;
+                    switch ((char)key)
+                    {
+                        case ' ':
+                            output += "\r\n";
+                            break;
+                        case '`':
+                            output += "▲";
+                            break;
+                        default:
+                            output += key;
+                            break;
+                    }
                 }
             }
             return output;
@@ -2422,7 +2425,7 @@ namespace DGScope
                         if (((int)e.Key > 9 && (int)e.Key < 22) || e.Key == Key.End)
                             Preview.Clear();
                         bool isText = (e.Key >= Key.A && e.Key <= Key.Z) || (e.Key >= Key.Number0 && e.Key <= Key.Number9) || (e.Key >= Key.Keypad0 && e.Key <= Key.Keypad9) || e.Key == Key.Period || e.Key == Key.KeypadPeriod
-            || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus || e.Key == Key.Space;
+            || e.Key == Key.Slash || e.Key == Key.Quote || e.Key == Key.Plus || e.Key == Key.BracketLeft || e.Key == Key.BracketRight || e.Key == Key.Minus || e.Key == Key.KeypadMultiply || e.Key == Key.KeypadPlus || e.Key == Key.Space || e.Key == Key.Grave;
                         if (!isText)
                             Preview.Add(e.Key);
                         break;
