@@ -3045,7 +3045,8 @@ namespace DGScope
             }
 
         }
-        private void GenerateTarget(Aircraft aircraft)
+
+        private async Task GenerateTargetAsync(Aircraft aircraft)
         {
             if (aircraft == debugPlane)
                 Console.Write("");
@@ -3071,7 +3072,7 @@ namespace DGScope
                 {
                     aircraft.TargetReturn.Fading = false;
                     aircraft.TargetReturn.Intensity = 1;
-                    lock(aircraft.ReturnTrails)
+                    lock (aircraft.ReturnTrails)
                         foreach (var item in aircraft.ReturnTrails)
                         {
                             item.IncrementColor();
@@ -3109,13 +3110,13 @@ namespace DGScope
                 double ptldistance = (aircraft.GroundSpeed / 60) * PTLlength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
-                if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) || 
+                if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) ||
                     aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
                         dataBlocks.Remove(aircraft.DataBlock);
-                
+
 
                 Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
                 var realWidth = text_bmp.Width * pixelScale;
@@ -3149,7 +3150,7 @@ namespace DGScope
                 }
                 aircraft.Drawn = true;
 
-                
+
 
             }
             else
@@ -3160,8 +3161,13 @@ namespace DGScope
                     posIndicators.Remove(aircraft.PositionIndicator);
             }
         }
+        private void GenerateTarget(Aircraft aircraft)
+        {
+            Task.Run(() => GenerateTargetAsync(aircraft));
+        }
         private void GenerateTargets()
         {
+            List<Task> tasks = new List<Task>();
             foreach (Aircraft aircraft in radar.Scan())
             {
                 var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
@@ -3183,8 +3189,9 @@ namespace DGScope
                     aircraft.QuickLook = false;
                 }
                 if (aircraft.Location != null)
-                    GenerateTarget(aircraft);
+                    tasks.Add(GenerateTargetAsync(aircraft));
             }
+            Task.WaitAll(tasks.ToArray());
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
                 if (target == null)

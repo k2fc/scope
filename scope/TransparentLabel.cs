@@ -130,7 +130,7 @@ namespace DGScope
 
         protected override void OnTextChanged(EventArgs e)
         {
-            base.OnTextChanged(e);
+            //base.OnTextChanged(e);
             Redraw = true;
         }
 
@@ -154,13 +154,13 @@ namespace DGScope
         public void DrawText()
         {
 
-            using (Graphics g = CreateGraphics())
-            {
+            //using (Graphics g = CreateGraphics())
+            //{
 
                 //_backBuffer = TextBitmap();
 
                 //g.DrawImageUnscaled(_backBuffer, 0, 0);
-            }
+            //}
         }
 
         public int TextureID { get; set; }
@@ -252,17 +252,18 @@ namespace DGScope
         /// <returns>
         /// The text associated with this control.
         /// </returns>
+        string text;
         public override string Text
         {
             get
             {
-                return base.Text;
+                return text;
             }
             set
             {
-                if (value == base.Text)
+                if (value == text)
                     return;
-                base.Text = value;
+                text = value;
                 Redraw = true;
                 //dg RecreateHandle();
             }
@@ -299,15 +300,16 @@ namespace DGScope
         /// <returns>
         /// The <see cref="T:System.Drawing.Font"/> to apply to the text displayed by the control. The default is the value of the <see cref="P:System.Windows.Forms.Control.DefaultFont"/> property.
         /// </returns>
+        private Font font = new Font("",1);
         public override Font Font
         {
             get
             {
-                return base.Font;
+                return font;
             }
             set
             {
-                base.Font = value;
+                font = value;
                 //if (value != base.Font)
                     //dg RecreateHandle();
             }
