@@ -410,6 +410,8 @@ namespace DGScope
             get => atpaVolumeFile;
             set
             {
+                if (string.IsNullOrEmpty(value))
+                    return;
                 try
                 {
                     ATPA.DeserializeVolumesFromJsonFile(value);
