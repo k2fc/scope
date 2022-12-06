@@ -2982,7 +2982,7 @@ namespace DGScope
         }
         private List<TransparentLabel> dataBlocks = new List<TransparentLabel>();
         private List<TransparentLabel> posIndicators = new List<TransparentLabel>();
-        private void GenerateDataBlock(Aircraft aircraft)
+        private async Task GenerateDataBlock(Aircraft aircraft)
         {
             lock (aircraft)
             {
