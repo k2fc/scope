@@ -2805,7 +2805,45 @@ namespace DGScope
             }
             PointF labellocation;
             var circlesize = (float)plane.TPA.Miles / scale;
-            var angle = (270 - (int)plane.LDRDirection) * (Math.PI / 180);
+            double angle;
+            LeaderDirection ldr;
+            if (plane.LDRDirection == null)
+                ldr = LDRDirection;
+            else
+                ldr = (LeaderDirection)plane.LDRDirection;
+
+            switch (ldr)
+            {
+                case LeaderDirection.N:
+                    angle = Math.PI;
+                    break;
+                case LeaderDirection.NW:
+                    angle = Math.PI * .75;
+                    break;
+                case LeaderDirection.W:
+                    angle = Math.PI * .5;
+                    break;
+                case LeaderDirection.SW:
+                    angle = Math.PI * .25;
+                    break;
+                case LeaderDirection.S:
+                    angle = 0; 
+                    break;
+                case LeaderDirection.SE:
+                    angle = Math.PI * 1.75;
+                    break;
+                case LeaderDirection.E:
+                    angle = Math.PI * 1.5;
+                    break;
+                case LeaderDirection.NE:
+                    angle = Math.PI * 1.25;
+                    break;
+                default: 
+                    angle = 0;
+                    break;
+            }
+
+            
             var labelsize = Math.Sqrt(Math.Pow(plane.TPA.Label.Width, 2) + Math.Pow(plane.TPA.Label.Height, 2));
             labelsize *= pixelScale;
             labelsize /= 2;
