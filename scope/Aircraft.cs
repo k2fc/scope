@@ -63,6 +63,8 @@ namespace DGScope
             get; set;
         } = new Altitude();
         private DateTime lastLocationSetTime = DateTime.MinValue;
+        private DateTime lastLocationExtrapolateTime = DateTime.MinValue;
+        private GeoPoint extrapolatedpos;
         private DateTime lastTrackUpdate = DateTime.MinValue;
         public GeoPoint Location { get;  private set; }
         public PointF LocationF { get; set; }
@@ -170,6 +172,8 @@ namespace DGScope
                 return;
             lastLocationSetTime = SetTime;
             this.Location = Location;
+            extrapolatedpos = Location;
+            lastLocationExtrapolateTime = SetTime;
             LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             Drawn = false;
         }
@@ -180,6 +184,8 @@ namespace DGScope
             lastLocationSetTime = SetTime;
             var newlocation = new GeoPoint(Latitude, Longitude);
             Location = newlocation;
+            extrapolatedpos = Location;
+            lastLocationExtrapolateTime = SetTime;
             LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, newlocation));
             Drawn = false;
         }
@@ -675,9 +681,12 @@ namespace DGScope
 
         public GeoPoint ExtrapolatePosition()
         {
-            var miles = GroundSpeed * (RadarWindow.CurrentTime - lastLocationSetTime).TotalHours;
+            var time = RadarWindow.CurrentTime;
+            var miles = GroundSpeed * (time - lastLocationExtrapolateTime).TotalHours;
             var track = ExtrapolateTrack();
-            var location = Location.FromPoint(miles, track);
+            var location = extrapolatedpos.FromPoint(miles, track);
+            extrapolatedpos = location;
+            lastLocationExtrapolateTime = time;
             return location;
         }
 
