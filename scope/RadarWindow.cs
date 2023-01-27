@@ -730,8 +730,10 @@ namespace DGScope
         public bool WindInStatusArea { get; set; } = false;
         [DisplayName("FPS in Status Area"), Description("Show FPS in Status Area"), Category("Display Properties")]
         public bool FPSInStatusArea { get; set; } = false;
-        [DisplayName("Use ADS-B Callsigns"), Description("Use the ADS-B Callsign for an aircraft without a flight plan"), Category("Display Properties")]
+        [DisplayName("Use ADS-B Callsigns Unassociated"), Description("Use the ADS-B Callsign for unassociated tracks"), Category("Display Properties")]
         public bool UseADSBCallsigns { get; set; } = false;
+        [DisplayName("Use ADS-B Callsigns Associated"), Description("Use the ADS-B Callsign for associated tracks"), Category("Display Properties")]
+        public bool UseADSBCallsignsAssociated { get; set; } = false;
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
@@ -3220,7 +3222,17 @@ namespace DGScope
         private async Task ADSBtoFlightPlanCallsign(Aircraft aircraft)
         {
             if (string.IsNullOrWhiteSpace(aircraft.FlightPlanCallsign) && !string.IsNullOrWhiteSpace(aircraft.Callsign))
-                aircraft.FlightPlanCallsign = aircraft.Callsign; 
+            {
+                var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
+                if (UseADSBCallsigns && !associated)
+                {
+                    aircraft.FlightPlanCallsign = aircraft.Callsign;
+                }
+                else if (UseADSBCallsignsAssociated && associated)
+                {
+                    aircraft.FlightPlanCallsign = aircraft.Callsign;
+                }
+            }
         }
         private void GenerateTarget(Aircraft aircraft)
         {
