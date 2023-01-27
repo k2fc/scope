@@ -2506,6 +2506,11 @@ namespace DGScope
             GL.Flush();
             window.SwapBuffers();
             fps = (int)(1f / e.Time);
+            if (UseADSBCallsigns)
+            {
+                lock(radar.Aircraft)
+                    ADSBtoFlightPlanCallsigns(radar.Aircraft.ToList());
+            }
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
@@ -3030,9 +3035,6 @@ namespace DGScope
             {
                 if (aircraft.Deleted)
                     return;
-                if (UseADSBCallsigns && aircraft.Squawk != null && aircraft.Squawk != "1200")
-                    if (string.IsNullOrWhiteSpace(aircraft.FlightPlanCallsign))
-                        aircraft.FlightPlanCallsign = aircraft.Callsign;
                 var oldcolor = aircraft.DataBlock.ForeColor;
                 if (aircraft.Emergency)
                 {
@@ -3205,6 +3207,15 @@ namespace DGScope
                 lock (posIndicators)
                     posIndicators.Remove(aircraft.PositionIndicator);
             }
+        }
+        private async Task ADSBtoFlightPlanCallsigns(List<Aircraft> aircraft)
+        {
+            aircraft.ForEach(x => ADSBtoFlightPlanCallsign(x));
+        }
+        private async Task ADSBtoFlightPlanCallsign(Aircraft aircraft)
+        {
+            if (string.IsNullOrWhiteSpace(aircraft.FlightPlanCallsign) && !string.IsNullOrWhiteSpace(aircraft.Callsign))
+                aircraft.FlightPlanCallsign = aircraft.Callsign; 
         }
         private void GenerateTarget(Aircraft aircraft)
         {
