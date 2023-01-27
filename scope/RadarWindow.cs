@@ -732,6 +732,8 @@ namespace DGScope
         public bool FPSInStatusArea { get; set; } = false;
         [DisplayName("Use ADS-B Callsigns"), Description("Use the ADS-B Callsign for an aircraft without a flight plan"), Category("Display Properties")]
         public bool UseADSBCallsigns { get; set; } = false;
+        [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
+        public bool QuickLook { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
@@ -2335,6 +2337,9 @@ namespace DGScope
                         PropertyForm properties = new PropertyForm(this);
                         properties.Show();
                         break;
+                    case Key.Q:
+                        QuickLook = !QuickLook; 
+                        break;
                     case Key.F1:
                         double bearing = ScreenCenterPoint.BearingTo(radar.Location) - ScreenRotation;
                         double distance = ScreenCenterPoint.DistanceTo(radar.Location);
@@ -3238,6 +3243,11 @@ namespace DGScope
                 {
                     aircraft.QuickLook = true;
                     aircraft.QuickLookPlus = true;
+                }
+                else if (QuickLook)
+                {
+                    aircraft.QuickLook = true;
+                    aircraft.QuickLookPlus = false;
                 }
                 else
                 {
