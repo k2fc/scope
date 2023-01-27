@@ -267,7 +267,7 @@ namespace DGScope
                 tpasize = value;
             }
         }
-        [DisplayName("Quick Look"), Description("Show FDB on these positions"), Category("Display Properties")]
+        [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
         public List<string> QuickLookList { get; set; } = new List<string>();
         [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
         public double TimeshareInterval
