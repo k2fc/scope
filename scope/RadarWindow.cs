@@ -730,6 +730,8 @@ namespace DGScope
         public bool WindInStatusArea { get; set; } = false;
         [DisplayName("FPS in Status Area"), Description("Show FPS in Status Area"), Category("Display Properties")]
         public bool FPSInStatusArea { get; set; } = false;
+        [DisplayName("Use ADS-B Callsigns"), Description("Use the ADS-B Callsign for an aircraft without a flight plan"), Category("Display Properties")]
+        public bool UseADSBCallsigns { get; set; } = false;
         List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
@@ -3028,6 +3030,9 @@ namespace DGScope
             {
                 if (aircraft.Deleted)
                     return;
+                if (UseADSBCallsigns && aircraft.Squawk != null && aircraft.Squawk != "1200")
+                    if (string.IsNullOrWhiteSpace(aircraft.FlightPlanCallsign))
+                        aircraft.FlightPlanCallsign = aircraft.Callsign;
                 var oldcolor = aircraft.DataBlock.ForeColor;
                 if (aircraft.Emergency)
                 {
