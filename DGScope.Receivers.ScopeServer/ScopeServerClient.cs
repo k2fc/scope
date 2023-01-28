@@ -255,7 +255,8 @@ namespace DGScope.Receivers.ScopeServer
             if (flightPlan != null)
             {
                 plane.Type = flightPlan.AircraftType;
-                plane.FlightPlanCallsign = flightPlan.Callsign;
+                if (!string.IsNullOrEmpty(flightPlan.Callsign))
+                    plane.FlightPlanCallsign = flightPlan.Callsign;
                 plane.Destination = flightPlan.Destination;
                 plane.FlightRules = flightPlan.FlightRules;
                 plane.Category = flightPlan.WakeCategory;
@@ -277,7 +278,8 @@ namespace DGScope.Receivers.ScopeServer
                         plane.Altitude.AltitudeType = track.Altitude.AltitudeType;
                     }
                 }
-                plane.Callsign = track.Callsign;
+                if (!string.IsNullOrEmpty(track.Callsign))
+                    plane.Callsign = track.Callsign;
                 plane.GroundSpeed = track.GroundSpeed;
                 if (update.GetType() == typeof(TrackUpdate))
                 {
