@@ -138,7 +138,16 @@ namespace DGScope
         {
             get
             {
-                return FlightPlanGuid != null;
+                return FlightPlanGuid != null && FlightPlanGuid != Guid.Empty;
+            }
+        }
+
+        public bool PrimaryOnly
+        {
+            get
+            {
+                return Squawk == null && ModeSCode == 0;
+                return ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown) && !Associated);
             }
         }
 
@@ -663,7 +672,14 @@ namespace DGScope
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(true);
                 TargetReturn.Intensity = 1;
-                SweptLocation = ExtrapolatePosition();
+                if (!PrimaryOnly)
+                {
+                    SweptLocation = ExtrapolatePosition();
+                }
+                else
+                {
+                    SweptLocation = Location;
+                }
                 SweptTrack = (int)ExtrapolateTrack();
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));

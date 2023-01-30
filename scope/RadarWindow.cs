@@ -3115,7 +3115,7 @@ namespace DGScope
             var location = GeoToScreenPoint(extrapolatedpos);
             if (location.X == 0 || location.Y == 0)
                 return;
-            if (aircraft.LastHistoryDrawn < CurrentTime.AddSeconds(-HistoryInterval))
+            if (aircraft.LastHistoryDrawn < CurrentTime.AddSeconds(-HistoryInterval) && (!aircraft.PrimaryOnly || aircraft.Associated))
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
                 aircraft.TargetReturn.Colors = HistoryColors;
@@ -3618,58 +3618,88 @@ namespace DGScope
                 if ((target.ParentAircraft.TrueAltitude > MaxAltitude || target.ParentAircraft.TrueAltitude < MinAltitude) && !target.ParentAircraft.FDB)
                     return;
             }
-            switch (target.Shape)
+            if (!target.ParentAircraft.PrimaryOnly)
             {
-                case TargetShape.Rectangle:
-                    float targetHeight = target.ShapeHeight * pixelScale;// (window.ClientRectangle.Height/2);
-                    float targetWidth = target.ShapeWidth * pixelScale;// (window.ClientRectangle.Width/2);
-                    float atan = (float)Math.Atan(targetHeight / targetWidth);
-                    float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
-                    float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
-                    float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
-                    float circleradius = 4f * pixelScale;
+                switch (target.Shape)
+                {
+                    case TargetShape.Rectangle:
+                        float targetHeight = target.ShapeHeight * pixelScale;// (window.ClientRectangle.Height/2);
+                        float targetWidth = target.ShapeWidth * pixelScale;// (window.ClientRectangle.Width/2);
+                        float atan = (float)Math.Atan(targetHeight / targetWidth);
+                        float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
+                        float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
+                        float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
+                        float circleradius = 4f * pixelScale;
 
-                    target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
+                        target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
-                    GL.PushMatrix();
+                        GL.PushMatrix();
 
-                    float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
-                    GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                    GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
-                    GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
-                    GL.Begin(PrimitiveType.Polygon);
+                        float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
+                        GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
+                        GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
+                        GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
+                        GL.Begin(PrimitiveType.Polygon);
 
-                    GL.Color4(target.ForeColor);
-                    GL.Vertex2(x1, y1);
-                    GL.Vertex2(-x1, y1);
-                    GL.Vertex2(-x1, -y1);
-                    GL.Vertex2(x1, -y1);
-
-
-                    GL.End();
-                    GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
+                        GL.Color4(target.ForeColor);
+                        GL.Vertex2(x1, y1);
+                        GL.Vertex2(-x1, y1);
+                        GL.Vertex2(-x1, -y1);
+                        GL.Vertex2(x1, -y1);
 
 
-                    GL.PopMatrix();
-                    break;
-                case TargetShape.Circle:
-                    float mileageSize = 0.2f / scale;
-                    float pixelSize = TargetWidth * pixelScale;
-                    if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
-                    {
-                        target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2);
-                        DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, 1, 30, target.ForeColor, true);
-                    }
-                    else
-                    {
-                        target.SizeF = new SizeF(target.ShapeWidth * 2 * pixelScale, target.ShapeWidth * 2 * pixelScale);
-                        DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * pixelScale, 1, 30, target.ForeColor, true);
-                    }
-                    break;
+                        GL.End();
+                        GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
+
+
+                        GL.PopMatrix();
+                        break;
+                    case TargetShape.Circle:
+                        float mileageSize = 0.2f / scale;
+                        float pixelSize = TargetWidth * pixelScale;
+                        if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
+                        {
+                            target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, 1, 30, target.ForeColor, true);
+                        }
+                        else
+                        {
+                            target.SizeF = new SizeF(target.ShapeWidth * 2 * pixelScale, target.ShapeWidth * 2 * pixelScale);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * pixelScale, 1, 30, target.ForeColor, true);
+                        }
+                        break;
+                }
             }
-            
-            
-            
+            else
+            {
+                float targetWidth = target.ShapeWidth * pixelScale;
+                float targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
+                float x1 = (float)(Math.Sqrt(2) * targetHypotenuse);
+                target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2);
+                GL.PushMatrix();
+
+                float angle = 0; // -(float)ScreenRotation;
+                GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
+                GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
+                GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
+                GL.Begin(PrimitiveType.Polygon);
+
+                GL.Color4(target.ForeColor);
+                GL.Vertex2(x1, x1);
+                GL.Vertex2(-x1, x1);
+                GL.Vertex2(-x1, -x1);
+                GL.Vertex2(x1, -x1);
+
+
+                GL.End();
+                GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
+
+
+                GL.PopMatrix();
+            }
+
+
+
         }
 
         private void DrawTargets()
@@ -3725,10 +3755,10 @@ namespace DGScope
                     DrawTarget(target);
             }
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
+                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB && (x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)) DrawLabel(x); });
             lock (dataBlocks)
             {
-                foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
+                foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null && (x.ParentAircraft.FDB || x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
                 {
                     if (block.ParentAircraft == debugPlane)
                         debugPlane = null; 
@@ -3745,7 +3775,7 @@ namespace DGScope
                 }
             }
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
+                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB && (x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)) DrawLabel(x); });
         }
 
         private void DrawLabel(TransparentLabel Label)
