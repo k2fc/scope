@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace DGScope.Receivers.SBS
@@ -23,6 +24,7 @@ namespace DGScope.Receivers.SBS
             this.Port = Port;
         }
         bool running = false;
+        Dictionary<int, string> callsigns = new Dictionary<int, string>();
         public override void Start()
         {
             if (running)
@@ -61,8 +63,24 @@ namespace DGScope.Receivers.SBS
                         case "MSG":
                             int icaoID = Convert.ToInt32(sbs_data[4], 16);
                             Aircraft plane = GetPlane(icaoID, CreateNewAircraft);
-                            if (plane == null)
+                            if (plane == null && !CreateNewAircraft && sbs_data[1] == "1")
+                            {
+                                lock (callsigns)
+                                    if (callsigns.ContainsKey(icaoID))
+                                        callsigns[icaoID] = sbs_data[10].Trim();
+                                    else
+                                        callsigns.Add(icaoID, sbs_data[10].Trim());
                                 return;
+                            }
+                            else if (plane == null)
+                                return;
+                            lock(callsigns)
+                                if (callsigns.ContainsKey((int)icaoID))
+                                {
+                                    if (callsigns.TryGetValue(icaoID, out string stored_callsign))
+                                        plane.Callsign = stored_callsign;
+                                    callsigns.Remove(icaoID);
+                                }
                             lock (plane)
                             {
                                 DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] +"Z").ToUniversalTime();
@@ -78,7 +96,6 @@ namespace DGScope.Receivers.SBS
                                 double longitude;
                                 switch (sbs_data[1])
                                 {
-
                                     case "1":
                                         plane.Callsign = sbs_data[10].Trim();
                                         break;

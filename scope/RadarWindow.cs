@@ -3223,7 +3223,7 @@ namespace DGScope
         {
             if (string.IsNullOrWhiteSpace(aircraft.FlightPlanCallsign) && !string.IsNullOrWhiteSpace(aircraft.Callsign))
             {
-                var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
+                var associated = aircraft.Associated;
                 if (UseADSBCallsigns && !associated && aircraft.Squawk != null && aircraft.Squawk != "1200")
                 {
                     aircraft.FlightPlanCallsign = aircraft.Callsign;
