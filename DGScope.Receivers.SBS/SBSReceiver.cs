@@ -46,16 +46,22 @@ namespace DGScope.Receivers.SBS
         }
 
 
-        string rxBuffer;
+        string rxBuffer = "";
         private void Client_DataReceived(EventDrivenTCPClient sender, object data)
         {
-            rxBuffer += data;
-            rxBuffer.Replace("\r\n", "\n");
-            while (rxBuffer.Contains("\n"))
+            string[] messages;
+            lock (rxBuffer)
             {
-                string message = rxBuffer.Substring(0, rxBuffer.IndexOf("\n"));
+                (data as string).Replace("\r\n", "\n");
+                rxBuffer += data;
+                messages = rxBuffer.Split('\n');
+                rxBuffer = messages[messages.Length - 1];
+            }
+            for (int i = 0; i < messages.Length - 1; i++)
+            {
+                string message = messages[i];
                 string[] sbs_data = message.ToString().Split(',');
-                rxBuffer = rxBuffer.Substring(rxBuffer.IndexOf("\n") + 1);
+                
                 try
                 {
                     switch (sbs_data[0])
@@ -74,8 +80,8 @@ namespace DGScope.Receivers.SBS
                             }
                             if (plane == null)
                                 return;
-                            lock(callsigns)
-                                if (callsigns.ContainsKey((int)icaoID))
+                            lock (callsigns)
+                                if (callsigns.ContainsKey(icaoID))
                                 {
                                     if (callsigns.TryGetValue(icaoID, out string stored_callsign))
                                         plane.Callsign = stored_callsign;
@@ -83,8 +89,8 @@ namespace DGScope.Receivers.SBS
                                 }
                             lock (plane)
                             {
-                                DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] +"Z").ToUniversalTime();
-                                
+                                DateTime messageTime = DateTime.Parse(sbs_data[6] + " " + sbs_data[7] + "Z").ToUniversalTime();
+
                                 //DateTime messageTime = DateTime.UtcNow;
                                 if (plane.LastMessageTime < messageTime)
                                     plane.LastMessageTime = messageTime;
@@ -102,7 +108,7 @@ namespace DGScope.Receivers.SBS
                                     case "2":
                                         if (messageTime > plane.LastPositionTime)
                                         {
-                                            if (int.TryParse(sbs_data[11],out alt))
+                                            if (int.TryParse(sbs_data[11], out alt))
                                                 plane.Altitude.PressureAltitude = alt;
                                             if (double.TryParse(sbs_data[12], out speed))
                                                 plane.GroundSpeed = (int)speed;
@@ -114,8 +120,8 @@ namespace DGScope.Receivers.SBS
                                             }
                                             plane.IsOnGround = sbs_data[21] == "-1";
                                         }
-                                        
-                                        
+
+
                                         break;
                                     case "3":
                                         if (messageTime > plane.LastPositionTime)
@@ -171,7 +177,7 @@ namespace DGScope.Receivers.SBS
                         default:
                             break;
                     }
-                    
+
                 }
                 catch (Exception ex)
                 {
@@ -181,7 +187,6 @@ namespace DGScope.Receivers.SBS
 
 
             }
-
         }
         public override string ToString()
         {
