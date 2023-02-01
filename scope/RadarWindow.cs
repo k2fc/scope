@@ -732,6 +732,8 @@ namespace DGScope
         public bool FPSInStatusArea { get; set; } = false;
         [DisplayName("Use ADS-B Callsigns Unassociated"), Description("Use the ADS-B Callsign for unassociated tracks"), Category("Display Properties")]
         public bool UseADSBCallsigns { get; set; } = false;
+        [DisplayName("Use ADS-B Callsigns Unassociated 1200"), Description("Use the ADS-B Callsign for unassociated tracks squawking 1200"), Category("Display Properties")]
+        public bool UseADSBCallsigns1200 { get; set; } = false;
         [DisplayName("Use ADS-B Callsigns Associated"), Description("Use the ADS-B Callsign for associated tracks"), Category("Display Properties")]
         public bool UseADSBCallsignsAssociated { get; set; } = false;
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
@@ -2513,7 +2515,7 @@ namespace DGScope
             GL.Flush();
             window.SwapBuffers();
             fps = (int)(1f / e.Time);
-            if (UseADSBCallsigns || UseADSBCallsignsAssociated)
+            if (UseADSBCallsigns || UseADSBCallsignsAssociated || UseADSBCallsigns1200)
             {
                 lock(radar.Aircraft)
                     ADSBtoFlightPlanCallsigns(radar.Aircraft.ToList());
@@ -3225,6 +3227,10 @@ namespace DGScope
             {
                 var associated = aircraft.Associated;
                 if (UseADSBCallsigns && !associated && aircraft.Squawk != null && aircraft.Squawk != "1200")
+                {
+                    aircraft.FlightPlanCallsign = aircraft.Callsign;
+                }
+                else if (UseADSBCallsigns1200 && !associated && aircraft.Squawk != null && aircraft.Squawk == "1200")
                 {
                     aircraft.FlightPlanCallsign = aircraft.Callsign;
                 }
