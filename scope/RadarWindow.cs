@@ -3262,7 +3262,8 @@ namespace DGScope
                     aircraft.QuickLook = true;
                     aircraft.QuickLookPlus = true;
                 }
-                else if (QuickLook)
+                else if (QuickLook && aircraft.TrueAltitude >= MinAltitude && aircraft.TrueAltitude <= MaxAltitude &&
+                    aircraft.LastMessageTime >= CurrentTime.AddSeconds(-LostTargetSeconds))
                 {
                     aircraft.QuickLook = true;
                     aircraft.QuickLookPlus = false;
