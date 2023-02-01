@@ -63,7 +63,7 @@ namespace DGScope.Receivers.SBS
                         case "MSG":
                             int icaoID = Convert.ToInt32(sbs_data[4], 16);
                             Aircraft plane = GetPlane(icaoID, CreateNewAircraft);
-                            if (plane == null && !CreateNewAircraft && sbs_data[1] == "1")
+                            if (plane == null && sbs_data[1] == "1")
                             {
                                 lock (callsigns)
                                     if (callsigns.ContainsKey(icaoID))
@@ -72,7 +72,7 @@ namespace DGScope.Receivers.SBS
                                         callsigns.Add(icaoID, sbs_data[10].Trim());
                                 return;
                             }
-                            else if (plane == null)
+                            if (plane == null)
                                 return;
                             lock(callsigns)
                                 if (callsigns.ContainsKey((int)icaoID))
