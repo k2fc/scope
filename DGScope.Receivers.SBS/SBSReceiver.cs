@@ -52,8 +52,7 @@ namespace DGScope.Receivers.SBS
             string[] messages;
             lock (rxBuffer)
             {
-                (data as string).Replace("\r\n", "\n");
-                rxBuffer += data;
+                rxBuffer += (data as string).Replace("\r\n", "\n"); 
                 messages = rxBuffer.Split('\n');
                 rxBuffer = messages[messages.Length - 1];
             }
