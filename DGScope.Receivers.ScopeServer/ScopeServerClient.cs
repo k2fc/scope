@@ -222,7 +222,10 @@ namespace DGScope.Receivers.ScopeServer
                             }
                             flightPlan = new FlightPlan("");
                             if (plane != null)
+                            {
                                 plane.Owned = false;
+                                plane.FlightPlanCallsign = string.Empty;
+                            }
                         }
                     }
                     lock (tracks)
