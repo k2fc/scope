@@ -3232,9 +3232,9 @@ namespace DGScope
             if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
             {
                 aircraft.RedrawTarget(location, radar);
-                aircraft.PTL.End1 = extrapolatedpos;
-                double ptldistance = (aircraft.GroundSpeed / 60) * PTLlength;
-                aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
+                aircraft.PTL.End1 = aircraft.SweptLocation(radar);
+                double ptldistance = (aircraft.SweptSpeed(radar) / 60) * PTLlength;
+                aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
 
                 if (InFilter(aircraft) ||
                     aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk)
