@@ -585,7 +585,7 @@ namespace DGScope
             }
         }
         */
-        [DisplayName("Max Altitude"), Category("Radar Properties"), Description("The maximum altitude of displayed aircraft.")]
+        [DisplayName("Unassociated Max Altitude"), Category("Altitude Filters"), Description("The maximum altitude of unassociated targets.")]
         public int MaxAltitude
         {
             get => radar.MaxAltitude;
@@ -595,7 +595,7 @@ namespace DGScope
             }
         }
 
-        [DisplayName("Minimum Altitude"), Category("Radar Properties"), Description("The minimum altitude of displayed aircraft.")]
+        [DisplayName("Unassociated Minimum Altitude"), Category("Altitude Filters"), Description("The minimum altitude of unassociated targets.")]
         public int MinAltitude
         {
             get => radar.MinAltitude;
@@ -604,6 +604,10 @@ namespace DGScope
                 radar.MinAltitude = value;
             }
         }
+        [DisplayName("Associated Minimum Altitude"), Category("Altitude Filters"), Description("The minimum altitude of associated targets.")]
+        public int MinAltitudeAssociated { get; set; } = -9900;
+        [DisplayName("Associated Maximum Altitude"), Category("Altitude Filters"), Description("The maximum altitude of associated targets.")]
+        public int MaxAltitudeAssociated { get; set; } = 99900;
         [DisplayName("Rotating"), Category("Radar Properties"), Description("Behave as if the radar is rotating.")]
         public bool Rotating
         {
@@ -1604,6 +1608,74 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
+                            case 'F': //Multifunction F: Filters
+                                bool success = false;
+                                if (keys[0].Length == 8)
+                                {
+                                    var alts = KeysToString(keys[0], 2);
+                                    if (int.TryParse(alts.Substring(0,3), out int min))
+                                    {
+                                        if (int.TryParse(alts.Substring(3), out int max))
+                                        {
+                                            if (min == 0)
+                                            {
+                                                MinAltitude = -9990;
+                                            }
+                                            else
+                                            {
+                                                MinAltitude = min * 100;
+                                            }
+                                            MaxAltitude = max * 100;
+                                            success = true;
+                                            Preview.Clear();
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("FORMAT");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("FORMAT");
+                                    }
+                                }
+                                if (keys.Length == 2 && keys[1].Length == 6)
+                                {
+                                    var alts = KeysToString(keys[1]);
+                                    if (int.TryParse(alts.Substring(0, 3), out int min))
+                                    {
+                                        if (int.TryParse(alts.Substring(3), out int max))
+                                        {
+                                            if (min == 0)
+                                            {
+                                                MinAltitudeAssociated = -9990;
+                                            }
+                                            else
+                                            {
+                                                MinAltitudeAssociated = min * 100;
+                                            }
+                                            MaxAltitudeAssociated = max * 100;
+                                            Preview.Clear();
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("FORMAT");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("FORMAT");
+                                    }
+                                }
+                                else
+                                {
+                                    DisplayPreviewMessage("FORMAT");
+                                }
+                                if (!success)
+                                {
+                                    DisplayPreviewMessage("FORMAT");
+                                }
+                                break;
                             case 'P':
                                 if (!clickedplane)
                                 {
@@ -2055,6 +2127,8 @@ namespace DGScope
                 StatusArea.Text += "\r\n";
             }
             StatusArea.Text += (int)radar.Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
+            StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
+                + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
             int metarnum = 0;
             foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
             {
@@ -2100,6 +2174,15 @@ namespace DGScope
             if (oldtext != StatusArea.Text)
                 StatusArea.Redraw = true;
             DrawLabel(StatusArea);
+        }
+
+        private string ToFilterAltitudeString(int altitude)
+        {
+            int hundreds = Math.Abs(altitude / 100);
+            string altString = hundreds.ToString("000");
+            if (altitude < 0)
+                altString = "N99";
+            return altString;
         }
         private string GeneratePreviewString(List<object> keys)
         {
@@ -3166,7 +3249,7 @@ namespace DGScope
                 double ptldistance = (aircraft.GroundSpeed / 60) * PTLlength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.ExtrapolateTrack());
 
-                if ((aircraft.TrueAltitude <= radar.MaxAltitude && aircraft.TrueAltitude >= MinAltitude) ||
+                if (InFilter(aircraft) ||
                     aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
@@ -3262,7 +3345,7 @@ namespace DGScope
                     aircraft.QuickLook = true;
                     aircraft.QuickLookPlus = true;
                 }
-                else if (QuickLook && aircraft.TrueAltitude >= MinAltitude && aircraft.TrueAltitude <= MaxAltitude &&
+                else if (QuickLook && InFilter(aircraft) &&
                     aircraft.LastMessageTime >= CurrentTime.AddSeconds(-LostTargetSeconds))
                 {
                     aircraft.QuickLook = true;
@@ -3614,6 +3697,13 @@ namespace DGScope
             }
         }
 
+        private bool InFilter(Aircraft aircraft)
+        {
+            if (!aircraft.Associated)
+                return (aircraft.TrueAltitude <= MaxAltitude && aircraft.TrueAltitude >= MinAltitude);
+            return (aircraft.TrueAltitude <= MaxAltitudeAssociated && aircraft.TrueAltitude >= MinAltitudeAssociated);
+        }
+
         private void DrawTarget(PrimaryReturn target)
         {
             if (target.ParentAircraft.Location == null)
@@ -3622,7 +3712,7 @@ namespace DGScope
                 return;
             if (target != target.ParentAircraft.TargetReturn) // history
             {
-                if ((target.ParentAircraft.TrueAltitude > MaxAltitude || target.ParentAircraft.TrueAltitude < MinAltitude) && !target.ParentAircraft.FDB)
+                if (!InFilter(target.ParentAircraft) && !target.ParentAircraft.FDB)
                     return;
             }
             if (!target.ParentAircraft.PrimaryOnly)
@@ -3630,8 +3720,8 @@ namespace DGScope
                 switch (target.Shape)
                 {
                     case TargetShape.Rectangle:
-                        float targetHeight = target.ShapeHeight * pixelScale;// (window.ClientRectangle.Height/2);
-                        float targetWidth = target.ShapeWidth * pixelScale;// (window.ClientRectangle.Width/2);
+                        float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
+                        float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
                         float atan = (float)Math.Atan(targetHeight / targetWidth);
                         float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
                         float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
