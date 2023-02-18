@@ -25,10 +25,15 @@ namespace DGScope
         [Browsable(false)]
         public double Longitude { get => Location.Longitude; }
         public double Range { get; set; } = 200;
-        [DisplayName("Update Rate"), Category("Radar Properties"), Description("The rate at which to draw targets. The rate at which the radar sweep rotates, if rotating is true")] public bool Rotating { get; set; } = false;
+        [DisplayName("Update Rate"), Description("The rate at which to draw targets. The rate at which the radar sweep rotates, if rotating is true")] 
         public double UpdateRate { get; set; } = 1;
-        [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
+        public bool Rotating { get; set; } = false;
+        [DisplayName("Primary Target Shape"), Description("Shape of primary targets")]
         public TargetShape TargetShape { get; set; } = TargetShape.Circle;
+        [Category("Identiy")]
+        public string Name { get; set; }
+        [Category("Identity")]
+        public char Char { get; set; }
         [XmlIgnore]
         private Airports Airports { get; set; } = new Airports();
         [XmlIgnore]

@@ -575,7 +575,7 @@ namespace DGScope
         [DisplayName("Range Ringe Center"), Category("Display Properties")]
         public GeoPoint RangeRingCenter { get; set; } = new GeoPoint(0, 0);
         private double _startingRange = 20;
-        [DisplayName("Scope Range"), Category("Radar Properties")]
+        [DisplayName("Scope Range"), Category("Display Properties")]
         public int Range { get; set; }
         
         [DisplayName("Unassociated Max Altitude"), Category("Altitude Filters"), Description("The maximum altitude of unassociated targets.")]
@@ -587,7 +587,9 @@ namespace DGScope
         public int MinAltitudeAssociated { get; set; } = -9900;
         [DisplayName("Associated Maximum Altitude"), Category("Altitude Filters"), Description("The maximum altitude of associated targets.")]
         public int MaxAltitudeAssociated { get; set; } = 99900;
-        public List<Radar> RadarSites { get; set; } = new List<Radar> { new Radar() };
+        [DisplayName("Radar Sites"), Category("Radar Properties")]
+        public List<Radar> RadarSites { get; set; } = new List<Radar>();
+        [DisplayName("Active Radar Site"), Category("Radar Properties")]
         public int ActiveRadarSite
         {
             get => RadarSites.IndexOf(radar);
@@ -769,7 +771,10 @@ namespace DGScope
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
             window.MouseDown += Window_MouseDown;
-            radar = RadarSites[0];
+            if (RadarSites.Count > 0)
+                radar = RadarSites[0];
+            else
+                radar = new Radar();
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
             dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
@@ -3718,7 +3723,7 @@ namespace DGScope
 
                         GL.PushMatrix();
 
-                        float angle = (float)(-(target.ParentAircraft.Bearing(radar.Location) + 360) % 360) + (float)ScreenRotation;
+                        float angle = (float)(-(target.ParentAircraft.SweptLocation(radar).BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
                         GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                         GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
