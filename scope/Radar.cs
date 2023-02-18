@@ -27,8 +27,8 @@ namespace DGScope
         public double Range { get; set; } = 20;
         public int MaxAltitude { get; set; } = 1000000;
         public int MinAltitude { get; set; } = 0;
-        public bool Rotating { get; set; } = true;
-        public double UpdateRate { get; set; } = 4.8;
+        public bool Rotating { get; set; } = false;
+        public double UpdateRate { get; set; } = 1;
         public int TransitionAltitude { get; set; } = 18000;
         [Browsable(false)]
         public int Width { get; set; }
