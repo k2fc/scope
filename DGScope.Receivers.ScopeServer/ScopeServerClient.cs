@@ -220,7 +220,7 @@ namespace DGScope.Receivers.ScopeServer
                                 plane = GetPlane(flightPlan.AssociatedTrack.Guid, false);
                                 track = flightPlan.AssociatedTrack;
                             }
-                            flightPlan = new FlightPlan("");
+                            flightPlan = new FlightPlan(Guid.Empty);
                             if (plane != null)
                             {
                                 plane.Owned = false;
