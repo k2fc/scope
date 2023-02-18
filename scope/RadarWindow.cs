@@ -1667,7 +1667,7 @@ namespace DGScope
                                         DisplayPreviewMessage("FORMAT");
                                     }
                                 }
-                                else
+                                else if (keys.Length != 1)
                                 {
                                     DisplayPreviewMessage("FORMAT");
                                 }
