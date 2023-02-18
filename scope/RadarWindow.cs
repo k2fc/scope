@@ -538,7 +538,7 @@ namespace DGScope
             }
         }
         private Radar radar;
-        private ObservableCollection<Aircraft> Aircraft = new ObservableCollection<Aircraft>();
+        public static ObservableCollection<Aircraft> Aircraft = new ObservableCollection<Aircraft>();
         [Editor(typeof(ReceiverCollectionEditor), typeof(UITypeEditor))]
         [DisplayName("Receivers"), Description("The collection of data receivers for the Radar scope")]
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();

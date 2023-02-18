@@ -29,7 +29,6 @@ namespace DGScope
         public double UpdateRate { get; set; } = 1;
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
         public TargetShape TargetShape { get; set; } = TargetShape.Circle;
-        private ObservableCollection<Aircraft> Aircraft { get; } = new ObservableCollection<Aircraft>();
         [XmlIgnore]
         private Airports Airports { get; set; } = new Airports();
         [XmlIgnore]
@@ -62,7 +61,7 @@ namespace DGScope
         private double lastazimuth = 0;
         public List<Aircraft> Scan()
         {
-            if (Aircraft == null)
+            if (RadarWindow.Aircraft == null)
                 return new List<Aircraft>();
             if (!Stopwatch.IsRunning)
                 Stopwatch.Start();
@@ -70,12 +69,12 @@ namespace DGScope
             double slicewidth = (lastazimuth - newazimuth) % 360;
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
-            {
                 return TargetsScanned;
-            }
+            if (RadarWindow.Aircraft == null)
+                return TargetsScanned;
             Stopwatch.Restart();
-            lock (Aircraft)
-                TargetsScanned.AddRange(from x in Aircraft
+            lock (RadarWindow.Aircraft)
+                TargetsScanned.AddRange(from x in RadarWindow.Aircraft
                                         where (BearingIsBetween(x.Bearing(Location), lastazimuth, newazimuth) || !Rotating) && !x.IsOnGround 
                                         && x.Location != null
                                         select x);
@@ -113,6 +112,7 @@ namespace DGScope
         }
         public Radar()
         {
+
         }
 
     }
