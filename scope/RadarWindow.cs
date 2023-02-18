@@ -549,14 +549,32 @@ namespace DGScope
                 radar.Receivers = value;
             }
         }
-        private GeoPoint _homeLocation = new GeoPoint();
-        [DisplayName("Screen Center Point"), Category("Radar Properties")]
+        private GeoPoint _screenCenter = null;
+        [Browsable(false)]
         public GeoPoint ScreenCenterPoint
+        {
+            get
+            {
+                if (_screenCenter == null)
+                {
+                    return HomeLocation;
+                }
+                return _screenCenter;
+            }
+            set
+            {
+                _screenCenter = value;
+                if (HomeLocation.Latitude == 0 && HomeLocation.Longitude == 0) //Check to see if this value needs to be created.
+                    HomeLocation = value;
+            }
+        }
+        private GeoPoint _homeLocation = new GeoPoint(0, 0);
+        [DisplayName("Facility Center")]
+        public GeoPoint HomeLocation
         {
             get => _homeLocation;
             set
             {
-                radar.Location = value;
                 _homeLocation = value;
                 OrderWaypoints();
             }
@@ -985,7 +1003,7 @@ namespace DGScope
             try
             {
                 if (radar.Waypoints.Waypoint != null)
-                    Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(ScreenCenterPoint)).ToList();
+                    Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(HomeLocation)).ToList();
                 else
                     Waypoints = new List<WaypointsWaypoint>();
             }
@@ -1023,8 +1041,8 @@ namespace DGScope
             {
                 double xMove = e.XDelta * pixelScale;
                 double yMove = e.YDelta * pixelScale;
-                radar.Location = radar.Location.FromPoint(xMove * scale, 270 + ScreenRotation);
-                radar.Location = radar.Location.FromPoint(yMove * scale, 0 + ScreenRotation);
+                ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
+                ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
                 MoveTargets((float)xMove, (float)yMove);
             }
 
@@ -2428,11 +2446,11 @@ namespace DGScope
                         QuickLook = !QuickLook; 
                         break;
                     case Key.F1:
-                        double bearing = ScreenCenterPoint.BearingTo(radar.Location) - ScreenRotation;
-                        double distance = ScreenCenterPoint.DistanceTo(radar.Location);
+                        double bearing = ScreenCenterPoint.BearingTo(HomeLocation) - ScreenRotation;
+                        double distance = ScreenCenterPoint.DistanceTo(HomeLocation);
                         float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
                         float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
-                        ScreenCenterPoint = _homeLocation;
+                        ScreenCenterPoint = HomeLocation;
                         MoveTargets(x, -y);
                         break;
                     case Key.F2:
@@ -2606,8 +2624,8 @@ namespace DGScope
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
-            double bearing = radar.Location.BearingTo(geoPoint) - ScreenRotation;
-            double distance = radar.Location.DistanceTo(geoPoint);
+            double bearing = ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation;
+            double distance = ScreenCenterPoint.DistanceTo(geoPoint);
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             return new PointF(x, y);
@@ -2621,7 +2639,7 @@ namespace DGScope
                 angle += Math.PI;
             double bearing = 90 - (angle * 180 / Math.PI) + ScreenRotation;
             double distance = r * scale;
-            return radar.Location.FromPoint(distance, bearing);
+            return ScreenCenterPoint.FromPoint(distance, bearing);
         }
         private GeoPoint ScreenToGeoPoint(Point Point)
         {
@@ -2794,7 +2812,7 @@ namespace DGScope
             float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             */
-            double distance = radar.Location.DistanceTo(RangeRingCenter);
+            double distance = ScreenCenterPoint.DistanceTo(RangeRingCenter);
             var rrr = (aspect_ratio > 1 ? radar.Range * aspect_ratio : radar.Range / aspect_ratio) + distance;
             var center = GeoToScreenPoint(RangeRingCenter);
             var x = center.X;
@@ -3098,7 +3116,7 @@ namespace DGScope
         {
             foreach (var nexrad in Nexrads)
             {
-                var polygons = nexrad.Polygons(radar.Location, scale, ScreenRotation);
+                var polygons = nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
                 for (int i = 0; i < polygons.Length; i++)
                 {
                     if(polygons[i].Color.A > 0)
