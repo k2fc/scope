@@ -18,6 +18,7 @@ using System.Threading;
 using libmetar;
 using System.Windows.Forms.Design;
 using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 
 namespace DGScope
 {
@@ -256,9 +257,9 @@ namespace DGScope
             }
             set
             {
-                lock (radar.Aircraft)
+                lock (Aircraft)
                 {
-                    radar.Aircraft.ToList().ForEach(x =>
+                    Aircraft.ToList().ForEach(x =>
                     {
                         if (x.TPA != null)
                             x.TPA.ShowSize = value;
@@ -446,7 +447,7 @@ namespace DGScope
         [Editor(typeof(ATPAVolumeSelectorEditor), typeof(UITypeEditor))]
         [DisplayName("Active Volumes"), Category("ATPA")]
         public List<ATPAVolume> ActiveVolumes { get; set; } = new List<ATPAVolume>();
-        float scale => (float)(radar.Range / Math.Sqrt(2));
+        float scale => (float)(Range / Math.Sqrt(2));
         float pixelScale; 
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
         //float yPixelScale;// => pixelScale; // 2f / window.ClientSize.Height;
@@ -489,13 +490,13 @@ namespace DGScope
             {
                 try
                 {
-                    radar.Airports = XmlSerializer<Airports>.DeserializeFromFile(value);
+                    Airports = XmlSerializer<Airports>.DeserializeFromFile(value).Airport.ToList();
                     airportsFileName = value;
                     OrderWaypoints();
                 }
                 catch
                 {
-                    radar.Airports = new Airports();
+                    Airports = new Airports().Airport.ToList();
                 }
             }
         }
@@ -512,13 +513,13 @@ namespace DGScope
             {
                 try
                 {
-                    radar.Waypoints = XmlSerializer<Waypoints>.DeserializeFromFile(value);
+                    Waypoints = XmlSerializer<Waypoints>.DeserializeFromFile(value).Waypoint.ToList();
                     waypointsFileName = value;
                     OrderWaypoints();
                 }
                 catch
                 {
-                    radar.Airports = new Airports();
+                    Waypoints = new Waypoints().Waypoint.ToList();
                 }
             }
         }
@@ -528,27 +529,19 @@ namespace DGScope
         {
             get
             {
-                return radar.AltimeterStations.ToArray();
+                return wx.AltimeterStations.ToArray();
             }
             set
             {
-                radar.AltimeterStations = value.ToList();
+                wx.AltimeterStations = value.ToList();
                 cbWxUpdateTimer(null);
             }
         }
-        private Radar radar = new Radar();
-        [Browsable(false)]
-        public bool isRadarRunning  => radar.isRunning;
+        private Radar radar;
+        private ObservableCollection<Aircraft> Aircraft = new ObservableCollection<Aircraft>();
         [Editor(typeof(ReceiverCollectionEditor), typeof(UITypeEditor))]
         [DisplayName("Receivers"), Description("The collection of data receivers for the Radar scope")]
-        public ListOfIReceiver Receivers
-        {
-            get => radar.Receivers; 
-            set
-            {
-                radar.Receivers = value;
-            }
-        }
+        public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
         private GeoPoint _screenCenter = null;
         [Browsable(false)]
         public GeoPoint ScreenCenterPoint
@@ -582,66 +575,32 @@ namespace DGScope
         [DisplayName("Range Ringe Center"), Category("Display Properties")]
         public GeoPoint RangeRingCenter { get; set; } = new GeoPoint(0, 0);
         private double _startingRange = 20;
-        [DisplayName("Radar Range"), Category("Radar Properties"), Description("About two more minutes, chief!")]
-        public double Range
-        {
-            get => _startingRange;
-            set
-            {
-                radar.Range = value;
-                _startingRange = value;
-            }
-        }
-        /*
-        [DisplayName("Rotation Period"), Category("Radar Properties"), Description("The number of seconds the radar takes to make one revolution")]
-        public double RotationPeriod
-        {
-            get => radar.RotationPeriod;
-            set
-            {
-                radar.RotationPeriod = value;
-            }
-        }
-        */
+        [DisplayName("Scope Range"), Category("Radar Properties")]
+        public int Range { get; set; }
+        
         [DisplayName("Unassociated Max Altitude"), Category("Altitude Filters"), Description("The maximum altitude of unassociated targets.")]
-        public int MaxAltitude
-        {
-            get => radar.MaxAltitude;
-            set
-            {
-                radar.MaxAltitude = value;
-            }
-        }
+        public int MaxAltitude { get; set; }
 
         [DisplayName("Unassociated Minimum Altitude"), Category("Altitude Filters"), Description("The minimum altitude of unassociated targets.")]
-        public int MinAltitude
-        {
-            get => radar.MinAltitude;
-            set
-            {
-                radar.MinAltitude = value;
-            }
-        }
+        public int MinAltitude { get; set; }
         [DisplayName("Associated Minimum Altitude"), Category("Altitude Filters"), Description("The minimum altitude of associated targets.")]
         public int MinAltitudeAssociated { get; set; } = -9900;
         [DisplayName("Associated Maximum Altitude"), Category("Altitude Filters"), Description("The maximum altitude of associated targets.")]
         public int MaxAltitudeAssociated { get; set; } = 99900;
-        [DisplayName("Rotating"), Category("Radar Properties"), Description("Behave as if the radar is rotating.")]
-        public bool Rotating
+        public List<Radar> RadarSites { get; set; } = new List<Radar> { new Radar() };
+        public int ActiveRadarSite
         {
-            get => radar.Rotating;
+            get => RadarSites.IndexOf(radar);
             set
             {
-                radar.Rotating = value;
-            }
-        }
-        [DisplayName("Update Rate"), Category("Radar Properties"), Description("The rate at which to draw targets. The rate at which the radar sweep rotates, if rotating is true")]
-        public double UpdateRate
-        {
-            get => radar.UpdateRate;
-            set
-            {
-                radar.UpdateRate = value;
+                if (value >= RadarSites.Count)
+                {
+                    radar = RadarSites.Last();
+                }
+                else
+                {
+                    radar = RadarSites[value];
+                }
             }
         }
 
@@ -664,8 +623,7 @@ namespace DGScope
         public float TargetHeight { get; set; } = 15;
         [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
         public float TPAConeWidth { get; set; } = 10; 
-        [DisplayName("Primary Target Shape"), Description("Shape of primary targets"), Category("Display Properties")]
-        public TargetShape TargetShape { get; set; } = TargetShape.Circle;
+        
         [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
         public TargetShape HistoryShape { get; set; } = TargetShape.Circle;
         [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
@@ -792,9 +750,10 @@ namespace DGScope
         Timer wxUpdateTimer;
         int timeshareinterval = 1000;
         Timer dataBlockTimeshareTimer;
-        List<WaypointsWaypoint> Waypoints;
-        List<Airport> Airports;
+        List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
+        List<Airport> Airports = new Airports().Airport.ToList();
         byte timeshare = 0;
+        WeatherService wx = new WeatherService();
         private void Initialize()
         {
             window.Title = "DGScope";
@@ -810,6 +769,7 @@ namespace DGScope
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
             window.MouseDown += Window_MouseDown;
+            radar = RadarSites[0];
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
             dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
@@ -829,7 +789,7 @@ namespace DGScope
                 settingshash = new byte[0];
             }
             OrderWaypoints();
-            radar.Aircraft.CollectionChanged += Aircraft_CollectionChanged;
+            Aircraft.CollectionChanged += Aircraft_CollectionChanged;
         }
 
         private void Aircraft_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -844,7 +804,7 @@ namespace DGScope
                         item.OwnershipChange += Aircraft_OwnershipChange;
                         if (item.Altitude == null)
                             item.Altitude = new Altitude();
-                        item.Altitude.SetAltitudeProperties(18000, radar.Altimeter);
+                        item.Altitude.SetAltitudeProperties(18000, wx.Altimeter);
                         item.SetSelectedSquawkList(SelectedBeaconCodes, SelectedBeaconCodeChar);
                     }
                     break;
@@ -916,9 +876,9 @@ namespace DGScope
         }
         private void PositionChange()
         {
-            lock (radar.Aircraft)
+            lock (Aircraft)
             {
-                var aclist = radar.Aircraft.ToList();
+                var aclist = Aircraft.ToList();
                 aclist.ForEach(x => x.Owned = x.PositionInd == ThisPositionIndicator || x.PendingHandoff == ThisPositionIndicator);
                 aclist.ForEach(x => x.DataBlock.Flashing = x.PendingHandoff == ThisPositionIndicator);
                 aclist.ForEach(x => x.DataBlock2.Flashing = x.PendingHandoff == ThisPositionIndicator);
@@ -944,7 +904,7 @@ namespace DGScope
 
         private void cbWxUpdateTimer(object state)
         {
-            Task.Run(() => radar.GetWeather(true));
+            Task.Run(() => wx.GetWeather(true));
         }
 
         private void cbTimeshareTimer(object state)
@@ -956,12 +916,12 @@ namespace DGScope
         private void cbAircraftGarbageCollectorTimer(object state)
         {
             List<Aircraft> delplane;
-            lock(radar.Aircraft)
-                delplane = radar.Aircraft.Where(x => x.LastMessageTime < CurrentTime.AddSeconds(-AircraftGCInterval)).ToList();
+            lock(Aircraft)
+                delplane = Aircraft.Where(x => x.LastMessageTime < CurrentTime.AddSeconds(-AircraftGCInterval)).ToList();
             foreach (var plane in delplane)
             {
-                lock(radar.Aircraft)
-                    radar.Aircraft.Remove(plane);
+                lock(Aircraft)
+                    Aircraft.Remove(plane);
                 DeletePlane(plane);
                 Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
@@ -986,32 +946,33 @@ namespace DGScope
                 });
             }
         }
+        public void StartReceivers()
+        {
+            foreach (Receiver receiver in Receivers)
+            {
+                receiver.SetAircraftList(Aircraft);
+                if (receiver.Enabled)
+                    try
+                    {
+                        receiver.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.Forms.MessageBox.Show(string.Format("An error occured starting receiver {0}.\r\n{1}",
+                            receiver.Name, ex.Message), "Error starting receiver", System.Windows.Forms.MessageBoxButtons.OK,
+                            System.Windows.Forms.MessageBoxIcon.Warning);
+                    }
+            }
+        }
+
+        public void StopReceivers()
+        {
+            foreach (Receiver receiver in Receivers)
+                receiver.Stop();
+        }
         private void OrderWaypoints()
         {
-            try
-            {
-                if (radar.Airports.Airport != null)
-                    Airports = radar.Airports.Airport.ToList();
-                else
-                    Airports = new List<Airport>();
-            }
-            catch 
-            { 
-                radar.Airports.Airport = new Airport[1] { new Airport() };
-                Airports = radar.Airports.Airport.ToList();
-            }
-            try
-            {
-                if (radar.Waypoints.Waypoint != null)
-                    Waypoints = radar.Waypoints.Waypoint.ToList().OrderBy(x => x.Location.DistanceTo(HomeLocation)).ToList();
-                else
-                    Waypoints = new List<WaypointsWaypoint>();
-            }
-            catch 
-            { 
-                radar.Waypoints.Waypoint = new WaypointsWaypoint[1] { new WaypointsWaypoint() };
-                Waypoints = radar.Waypoints.Waypoint.ToList();
-            }
+            Waypoints = Waypoints.ToList().OrderBy(x => x.Location.DistanceTo(HomeLocation)).ToList();
         }
         private void Window_WindowStateChanged(object sender, EventArgs e)
         {
@@ -1031,7 +992,7 @@ namespace DGScope
 
                 if (move > 10 && isScreenSaver && _mousesettled)
                 {
-                    radar.Stop();
+                    StopReceivers();
                     Environment.Exit(0);
                 }
                 _mousesettled = true;
@@ -1052,9 +1013,9 @@ namespace DGScope
         {
             var clickpoint = LocationFromScreenPoint(ClickedPoint);
             object clicked;
-            lock (radar.Aircraft)
+            lock (Aircraft)
             {
-                clicked = radar.Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
+                clicked = Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
                 && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
@@ -1207,13 +1168,13 @@ namespace DGScope
                 }
                 string lastline = KeysToString(keys[commands - 1]);
                 Aircraft typed;
-                lock (radar.Aircraft)
-                    typed = radar.Aircraft.Where(x=> x.FlightPlanCallsign != null).ToList()
+                lock (Aircraft)
+                    typed = Aircraft.Where(x=> x.FlightPlanCallsign != null).ToList()
                         .Find(x => x.FlightPlanCallsign.Trim() == lastline.Trim());
                 if (typed == null)
                 {
-                    lock (radar.Aircraft)
-                        typed = radar.Aircraft.Where(x => x.Squawk != null).ToList()
+                    lock (Aircraft)
+                        typed = Aircraft.Where(x => x.Squawk != null).ToList()
                             .Find(x => x.Squawk.Trim() == lastline.Trim());
                 }
                 if (!string.IsNullOrEmpty(lastline.Trim()) && !clickedplane && typed != null)
@@ -1338,9 +1299,9 @@ namespace DGScope
                             ThisPositionIndicator = "NONE";
                         else
                             ThisPositionIndicator = newpos;
-                        lock (radar.Aircraft)
+                        lock (Aircraft)
                         {
-                            radar.Aircraft.Where(x => x.PositionInd != ThisPositionIndicator &&
+                            Aircraft.Where(x => x.PositionInd != ThisPositionIndicator &&
                             x.PendingHandoff != ThisPositionIndicator).ToList().ForEach(x => x.Owned = false);
                         }
                         Preview.Clear();
@@ -1575,13 +1536,13 @@ namespace DGScope
                                         switch (keys[0][2])
                                         {
                                             case 'J':
-                                                lock (radar.Aircraft)
-                                                    radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
+                                                lock (Aircraft)
+                                                    Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.JRing).ToList().ForEach(x => x.TPA = null);
                                                 Preview.Clear();
                                                 break;
                                             case 'P':
-                                                lock (radar.Aircraft)
-                                                    radar.Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
+                                                lock (Aircraft)
+                                                    Aircraft.Where(x => x.TPA != null).Where(x => x.TPA.Type == TPAType.PCone).ToList().ForEach(x => x.TPA = null);
                                                 Preview.Clear();
                                                 break;
                                             default:
@@ -2124,7 +2085,7 @@ namespace DGScope
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             var timesyncind = timesync.Synchronized ? " " : "*";
-            StatusArea.Text = CurrentTime.ToString("HHmm-ss") + timesyncind + Converter.Pressure(radar.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            StatusArea.Text = CurrentTime.ToString("HHmm-ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
             for (int i = 0; i < 10; i++)
             {
                 if (atises[i] != null)
@@ -2148,7 +2109,7 @@ namespace DGScope
             StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
                 + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
             int metarnum = 0;
-            foreach (var metar in radar.Metars.OrderBy(x=> x.Icao))
+            foreach (var metar in wx.Metars.OrderBy(x=> x.Icao))
             {
                 metarnum++;
                 if (metar.IsParsed)
@@ -2177,7 +2138,7 @@ namespace DGScope
             }
             if (FPSInStatusArea)
             {
-                StatusArea.Text += $"FPS: {fps} AC: {radar.Aircraft.Count}";
+                StatusArea.Text += $"FPS: {fps} AC: {Aircraft.Count}";
                 StatusArea.Text += "\r\n";
             }
             if (QuickLookList.Count > 0)
@@ -2414,7 +2375,7 @@ namespace DGScope
                 {
                     case Key.C:
                         Preview.Clear();
-                        radar.Stop();
+                        StopReceivers();
                         Environment.Exit(0);
                         break;
                     case Key.S:
@@ -2479,7 +2440,7 @@ namespace DGScope
                     case Key.KeypadEnter:
                         if (isScreenSaver)
                         {
-                            radar.Stop();
+                            StopReceivers();
                             Environment.Exit(0);
                         }
                         else
@@ -2487,7 +2448,7 @@ namespace DGScope
                         break;
                     case Key.F4:
                         Preview.Clear();
-                        radar.Stop();
+                        StopReceivers();
                         SaveSettings(settingsPath);
                         Environment.Exit(0);
                         break;
@@ -2603,7 +2564,7 @@ namespace DGScope
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
             DrawRangeRings();
-            ATPA.Calculate(radar.Aircraft);
+            ATPA.Calculate(Aircraft);
             if(!hidewx)
                 DrawNexrad();
             DrawVideoMapLines();
@@ -2618,8 +2579,8 @@ namespace DGScope
             fps = (int)(1f / e.Time);
             if (UseADSBCallsigns || UseADSBCallsignsAssociated || UseADSBCallsigns1200)
             {
-                lock(radar.Aircraft)
-                    ADSBtoFlightPlanCallsigns(radar.Aircraft.ToList());
+                lock(Aircraft)
+                    ADSBtoFlightPlanCallsigns(Aircraft.ToList());
             }
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
@@ -2771,12 +2732,12 @@ namespace DGScope
                 window.WindowState = WindowState.Fullscreen;
                 window.CursorVisible = false;
             }
-            radar.Start();
+            StartReceivers();
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             //System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(this.GetType());
-            radar.Stop();
+            StopReceivers();
             
         }
 
@@ -3254,7 +3215,7 @@ namespace DGScope
                 newreturn.ForeColor = ReturnColor;
                 newreturn.ShapeHeight = TargetHeight;
                 newreturn.ShapeWidth = TargetWidth;
-                newreturn.Shape = TargetShape;
+                //newreturn.Shape = radar.TargetShape;
                 lock (PrimaryReturns)
                     PrimaryReturns.Add(newreturn);
                 aircraft.LastHistoryDrawn = CurrentTime;
@@ -3667,9 +3628,9 @@ namespace DGScope
                     PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
                     target.LocationF = newLocation;
                 }
-            lock (radar.Aircraft)
+            lock (Aircraft)
             {
-                foreach (Aircraft plane in radar.Aircraft)
+                foreach (Aircraft plane in Aircraft)
                 {
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange));
                     plane.LocationF = newLocation;
@@ -3704,9 +3665,9 @@ namespace DGScope
             }
             lock (posIndicators)
                 posIndicators.ForEach(x => x.LocationF = new PointF(x.LocationF.X + xChange, x.LocationF.Y - yChange));
-            lock (radar.Aircraft)
+            lock (Aircraft)
             {
-                foreach (Aircraft plane in radar.Aircraft)
+                foreach (Aircraft plane in Aircraft)
                 {
                     if (plane.LocationF.X == 0 && plane.LocationF.Y == 0)
                         continue;
@@ -3735,7 +3696,7 @@ namespace DGScope
             }
             if (!target.ParentAircraft.PrimaryOnly)
             {
-                switch (target.Shape)
+                switch (radar.TargetShape)
                 {
                     case TargetShape.Rectangle:
                         float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
@@ -3819,11 +3780,11 @@ namespace DGScope
 
         private void DrawTargets()
         {
-            lock (radar.Aircraft)
+            lock (Aircraft)
             {
-                radar.Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                radar.Aircraft.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
-                foreach (var handoffPlane in radar.Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
+                Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
+                Aircraft.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
+                foreach (var handoffPlane in Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
                 {
                     if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
                         continue;
@@ -3833,7 +3794,7 @@ namespace DGScope
                     if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                         GenerateDataBlock(handoffPlane);
                 }
-                foreach (var handedoffPlane in radar.Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
+                foreach (var handedoffPlane in Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
                 {
                     if (handedoffPlane.PendingHandoff != null)
                         handedoffPlane.PendingHandoff = null;
@@ -3846,7 +3807,7 @@ namespace DGScope
                             GenerateDataBlock(handedoffPlane);
                     }
                 }
-                foreach (var flashingPlane in radar.Aircraft.Where(x => x.DataBlock.Flashing))
+                foreach (var flashingPlane in Aircraft.Where(x => x.DataBlock.Flashing))
                 {
                     if (flashingPlane.PendingHandoff != ThisPositionIndicator)
                     {
@@ -3857,7 +3818,7 @@ namespace DGScope
                             GenerateDataBlock(flashingPlane);
                     }
                 }
-                foreach (var beaconatorplane in radar.Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
+                foreach (var beaconatorplane in Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
                 {
                     beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
                     GenerateDataBlock(beaconatorplane);
@@ -3895,7 +3856,7 @@ namespace DGScope
 
         private void DrawLabel(TransparentLabel Label)
         {
-            /*if (!radar.Aircraft.Contains(Label.ParentAircraft))
+            /*if (!Aircraft.Contains(Label.ParentAircraft))
                 return;*/
             lock (Label)
             {

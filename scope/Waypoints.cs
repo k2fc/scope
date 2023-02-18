@@ -15,7 +15,7 @@ namespace DGScope
     [System.Xml.Serialization.XmlRootAttribute(Namespace="", IsNullable=false)]
     public partial class Waypoints {
     
-        private WaypointsWaypoint[] waypointField;
+        private WaypointsWaypoint[] waypointField = new WaypointsWaypoint[0];
     
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("Waypoint")]

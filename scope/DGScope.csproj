@@ -281,6 +281,7 @@
     </Compile>
     <Compile Include="VRCFileParser.cs" />
     <Compile Include="Waypoints.cs" />
+    <Compile Include="WeatherService.cs" />
     <Compile Include="XmlSerializer.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

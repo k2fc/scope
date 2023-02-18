@@ -10,7 +10,7 @@
     public partial class Airports
     {
 
-        private Airport[] airportField;
+        private Airport[] airportField = new Airport[0];
 
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("Airport")]
