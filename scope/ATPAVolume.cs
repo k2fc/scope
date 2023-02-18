@@ -20,13 +20,13 @@ namespace DGScope
 
         private List<Aircraft> order;
         private object orderlock = new object();
-        public bool IsInside (Aircraft aircraft)
+        public bool IsInside (Aircraft aircraft, Radar radar)
         {
             if (aircraft == null)
                 return false;
-            if (aircraft.SweptLocation == null)
+            if (aircraft.SweptLocation(radar) == null)
                 return false;
-            if (!aircraft.SweptLocation.IsInsidePolygon(this))
+            if (!aircraft.SweptLocation(radar).IsInsidePolygon(this))
                 return false;
             if (aircraft.TrueAltitude > MaxAltitude || aircraft.TrueAltitude < MinAltitude)
                 return false;
@@ -36,8 +36,8 @@ namespace DGScope
                 return false;
             if (LDRDirection != null && LDRDirection != (int?)aircraft.LDRDirection)
                 return false;
-            double currentdistance = aircraft.SweptLocation.DistanceTo(MergePoint);
-            double testdistance = aircraft.SweptLocation.FromPoint(aircraft.GroundSpeed / 3600d, aircraft.ExtrapolateTrack()).DistanceTo(MergePoint);
+            double currentdistance = aircraft.SweptLocation(radar).DistanceTo(MergePoint);
+            double testdistance = aircraft.SweptLocation(radar).FromPoint(aircraft.GroundSpeed / 3600d, aircraft.ExtrapolateTrack()).DistanceTo(MergePoint);
             if (testdistance >= currentdistance) // Plane is moving away from merge point
                 return false;
             return true;
@@ -56,7 +56,7 @@ namespace DGScope
             aircraft.ATPACone = null;
         }
 
-        public void CalculateATPA(List<Aircraft> aircraft, SeparationTable separationtable)
+        public void CalculateATPA(List<Aircraft> aircraft, SeparationTable separationtable, Radar radar)
         {
             lock (orderlock) 
             {
@@ -65,7 +65,7 @@ namespace DGScope
                     aircraft.Where(x => x.ATPAVolume == this).ToList().ForEach(x => ResetAircraftATPAValues(x));
                     return;
                 }
-                order = (aircraft.ToList().Where(x => IsInside(x)).OrderBy(x => x.SweptLocation.DistanceTo(MergePoint))).ToList();
+                order = (aircraft.ToList().Where(x => IsInside(x, radar)).OrderBy(x => x.SweptLocation(radar).DistanceTo(MergePoint))).ToList();
                 aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
                 {
                     ResetAircraftATPAValues(x);
@@ -80,11 +80,11 @@ namespace DGScope
                         var follower = order[i];
                         follower.ATPAVolume = this;
                         follower.ATPAFollowing = leader;
-                        follower.ATPAMileageNow = follower.SweptLocation.DistanceTo(leader.SweptLocation);
-                        follower.ATPAMileage24 = follower.SweptLocation.FromPoint(follower.GroundSpeed * 24 / 3600d, follower.ExtrapolateTrack())
-                            .DistanceTo(leader.SweptLocation.FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
-                        follower.ATPAMileage45 = follower.SweptLocation.FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
-                            .DistanceTo(leader.SweptLocation.FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
+                        follower.ATPAMileageNow = follower.SweptLocation(radar).DistanceTo(leader.SweptLocation(radar));
+                        follower.ATPAMileage24 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 24 / 3600d, follower.ExtrapolateTrack())
+                            .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
+                        follower.ATPAMileage45 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
+                            .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
                         if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                         {
                             if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
@@ -102,7 +102,7 @@ namespace DGScope
                             follower.ATPAStatus = ATPAStatus.Caution;
                         else
                             follower.ATPAStatus = ATPAStatus.Monitor;
-                        follower.ATPATrackToLeader = follower.SweptLocation.BearingTo(leader.SweptLocation);
+                        follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
                     }
                 }
                 else if (order.Count == 1)

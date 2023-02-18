@@ -59,30 +59,88 @@ namespace DGScope
         }
         private Stopwatch Stopwatch = new Stopwatch();
         private double lastazimuth = 0;
-        public List<Aircraft> Scan()
+        private void Scan()
         {
             if (RadarWindow.Aircraft == null)
-                return new List<Aircraft>();
+                return;
             if (!Stopwatch.IsRunning)
                 Stopwatch.Start();
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
-                return TargetsScanned;
+                return;
             if (RadarWindow.Aircraft == null)
-                return TargetsScanned;
+                return;
             Stopwatch.Restart();
             lock (RadarWindow.Aircraft)
                 TargetsScanned.AddRange(from x in RadarWindow.Aircraft
                                         where (BearingIsBetween(x.Bearing(Location), lastazimuth, newazimuth) || !Rotating) && !x.IsOnGround 
                                         && x.Location != null
                                         select x);
+            TargetsScanned.ForEach(x => ScanTarget(x));
             //Console.WriteLine("Scanned method returned {0} aircraft", TargetsScanned.Count);
             lastazimuth = newazimuth;
             if (lastazimuth == 360)
                 lastazimuth = 0;
-            return TargetsScanned;
+            return;
+        }
+
+        private async void ScanTarget(Aircraft plane)
+        {
+            GeoPoint location;
+            if (plane.PrimaryOnly)
+            {
+                location = plane.Location;
+            }
+            else
+            {
+                location = plane.ExtrapolatePosition();
+            }
+            lock (plane.SweptLocations)
+            {
+                if (plane.SweptLocations.ContainsKey(this))
+                {
+                    plane.SweptLocations[this] = location;
+                }
+                else
+                {
+                    plane.SweptLocations.Add(this, location);
+                }
+            }
+            lock (plane.SweptTracks)
+            {
+                if (plane.SweptTracks.ContainsKey(this))
+                {
+                    plane.SweptTracks[this] = plane.Track;
+                }
+                else
+                {
+                    plane.SweptTracks.Add(this, plane.Track);
+                }
+            }
+            lock (plane.SweptAltitudes)
+            {
+                if (plane.SweptAltitudes.ContainsKey(this))
+                {
+                    plane.SweptAltitudes[this] = plane.TrueAltitude;
+                }
+                else
+                {
+                    plane.SweptAltitudes.Add(this, plane.TrueAltitude);
+                }
+            }
+            lock (plane.SweptSpeeds)
+            {
+                if (plane.SweptSpeeds.ContainsKey(this))
+                {
+                    plane.SweptSpeeds[this] = plane.GroundSpeed;
+                }
+                else
+                {
+                    plane.SweptSpeeds.Add(this, plane.GroundSpeed);
+                }
+            }
         }
 
         public bool BearingIsBetween(double bearing, double az1, double az2)
@@ -112,7 +170,16 @@ namespace DGScope
         }
         public Radar()
         {
+            Task.Run(() => Run());
+        }
 
+        public void Run()
+        {
+            while (true)
+            {
+                Scan();
+                System.Threading.Thread.Sleep(10);
+            }
         }
 
     }

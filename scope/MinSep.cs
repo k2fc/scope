@@ -28,7 +28,7 @@ namespace DGScope
             this.Plane2 = Plane2;
         }
         bool workingonit = false;
-        public async Task<bool> CalculateMinSep()
+        public async Task<bool> CalculateMinSep(Radar radar)
         {
             if (workingonit)
                 return false;
@@ -38,20 +38,20 @@ namespace DGScope
                 workingonit = false;
                 return false;
             }
-            if (Plane1.SweptLocation == null || Plane2.SweptLocation == null)
+            if (Plane1.SweptLocation(radar) == null || Plane2.SweptLocation(radar) == null)
             {
                 workingonit = false;
                 return false;
             }
             double secondsStep = START_SECONDS_STEP;
-            double minsep = Plane1.SweptLocation.DistanceTo(Plane2.SweptLocation);
-            double testdistance = Plane1.SweptLocation.FromPoint(Plane1.GroundSpeed / 3600d, Plane1.ExtrapolateTrack()).DistanceTo(Plane2.SweptLocation.FromPoint(Plane2.GroundSpeed / 3600d, Plane2.ExtrapolateTrack()));
+            double minsep = Plane1.SweptLocation(radar).DistanceTo(Plane2.SweptLocation(radar));
+            double testdistance = Plane1.SweptLocation(radar).FromPoint(Plane1.GroundSpeed / 3600d, Plane1.ExtrapolateTrack()).DistanceTo(Plane2.SweptLocation(radar).FromPoint(Plane2.GroundSpeed / 3600d, Plane2.ExtrapolateTrack()));
             if (testdistance >= minsep)
             {
                 // Planes are moving away from each other
                 // NO XING
-                Point1 = Plane1.SweptLocation;
-                Point2 = Plane2.SweptLocation;
+                Point1 = Plane1.SweptLocation(radar);
+                Point2 = Plane2.SweptLocation(radar);
                 SepLine.End1 = Point1;
                 SepLine.End2 = Point2;
                 Line1 = new Line();
@@ -68,8 +68,8 @@ namespace DGScope
             while (Math.Abs(testdistance - minsep) > DESIREDPRECISION || Math.Abs(testdistance - lastdistance) > DESIREDPRECISION)
             {
                 hours += 1 / (3600 / secondsStep);
-                GeoPoint point1 = Plane1.SweptLocation.FromPoint(Plane1.GroundSpeed * hours, Plane1.ExtrapolateTrack());
-                GeoPoint point2 = Plane2.SweptLocation.FromPoint(Plane2.GroundSpeed * hours, Plane2.ExtrapolateTrack());
+                GeoPoint point1 = Plane1.SweptLocation(radar).FromPoint(Plane1.GroundSpeed * hours, Plane1.ExtrapolateTrack());
+                GeoPoint point2 = Plane2.SweptLocation(radar).FromPoint(Plane2.GroundSpeed * hours, Plane2.ExtrapolateTrack());
                 lastdistance = testdistance;
                 testdistance = point1.DistanceTo(point2);
                 if (testdistance < minsep)
@@ -88,9 +88,9 @@ namespace DGScope
             MinSepDistance = minsep;
             Point1 = minPoint1;
             Point2 = minPoint2;
-            Line1.End1 = Plane1.SweptLocation;
+            Line1.End1 = Plane1.SweptLocation(radar);
             Line1.End2 = Point1;
-            Line2.End1 = Plane2.SweptLocation;
+            Line2.End1 = Plane2.SweptLocation(radar);
             Line2.End2 = Point2;
             SepLine.End1 = Point1;
             SepLine.End2 = Point2;

@@ -128,8 +128,6 @@ namespace DGScope
             {
                 var oldvalue = _fdb;
                 _fdb = value;
-                if (oldvalue != value)
-                    RedrawDataBlock(false);
                 if (QuickLook)
                     QuickLook = false;
             }
@@ -294,7 +292,7 @@ namespace DGScope
 
         private int dbAlt, dbSpeed = 0;
 
-        public void RedrawDataBlock(bool updatepos = false, RadarWindow.LeaderDirection? leaderDirection = null)
+        public void RedrawDataBlock(Radar radar, RadarWindow.LeaderDirection? leaderDirection = null)
         {
             if (Callsign == null)
                 Callsign = string.Empty;
@@ -315,11 +313,9 @@ namespace DGScope
             {
                 altstring = "RDR";
             }
-            if (updatepos || dbAlt == 0 || dbSpeed == 0)
-            {
-                dbAlt = TrueAltitude;
-                dbSpeed = GroundSpeed;
-            }
+            dbAlt = SweptAltitude(radar);
+            dbSpeed = SweptSpeed(radar);
+            
             string vfrchar = " ";
             string catchar = " ";
             string handoffchar = " ";
@@ -662,7 +658,7 @@ namespace DGScope
             Destination = null;
             FpDeleted?.Invoke(this, new EventArgs());
         }
-        public void RedrawTarget(PointF LocationF)
+        public void RedrawTarget(PointF LocationF, Radar radar)
         {
             this.LocationF = LocationF;
             if (LocationF.X != 0 || LocationF.Y != 0)
@@ -670,19 +666,89 @@ namespace DGScope
                 //TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
                 TargetReturn.LocationF = LocationF;
                 PositionIndicator.CenterOnPoint(LocationF);
-                RedrawDataBlock(true);
+                RedrawDataBlock(radar);
                 TargetReturn.Intensity = 1;
-                if (!PrimaryOnly)
-                {
-                    SweptLocation = ExtrapolatePosition();
-                }
-                else
-                {
-                    SweptLocation = Location;
-                }
-                SweptTrack = (int)ExtrapolateTrack();
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
+            }
+        }
+
+        public GeoPoint SweptLocation(Radar radar)
+        {
+            if (!PrimaryOnly)
+            {
+                lock(SweptLocations)
+                    if (SweptLocations.ContainsKey(radar))
+                    {
+                        return SweptLocations[radar];
+                    }
+                    else
+                    {
+                        return null;
+                    }
+            }
+            else
+            {
+                return Location;
+            }
+        }
+
+        public int SweptTrack(Radar radar)
+        {
+            if (!PrimaryOnly)
+            {
+                lock (SweptTracks)
+                    if (SweptTracks.ContainsKey(radar))
+                    {
+                        return SweptTracks[radar];
+                    }
+                    else
+                    {
+                        return Track;
+                    }
+            }
+            else
+            {
+                return Track;
+            }
+        }
+        public int SweptAltitude(Radar radar)
+        {
+            if (!PrimaryOnly)
+            {
+                lock (SweptAltitudes)
+                    if (SweptAltitudes.ContainsKey(radar))
+                    {
+                        return SweptAltitudes[radar];
+                    }
+                    else
+                    {
+                        return PressureAltitude;
+                    }
+            }
+            else
+            {
+                return PressureAltitude;
+            }
+        }
+
+        public int SweptSpeed(Radar radar)
+        {
+            if (!PrimaryOnly)
+            {
+                lock (SweptSpeeds)
+                    if (SweptSpeeds.ContainsKey(radar))
+                    {
+                        return SweptSpeeds[radar];
+                    }
+                    else
+                    {
+                        return GroundSpeed;
+                    }
+            }
+            else
+            {
+                return GroundSpeed;
             }
         }
 
@@ -706,8 +772,10 @@ namespace DGScope
             return location;
         }
 
-        public GeoPoint SweptLocation;
-        public int SweptTrack;
+        public Dictionary<Radar, GeoPoint> SweptLocations = new Dictionary<Radar, GeoPoint>();
+        public Dictionary<Radar, int> SweptTracks = new Dictionary<Radar, int>();
+        public Dictionary<Radar, int> SweptAltitudes = new Dictionary<Radar, int>();
+        public Dictionary<Radar, int> SweptSpeeds = new Dictionary<Radar, int>();
         public override string ToString()
         {
             return Callsign;

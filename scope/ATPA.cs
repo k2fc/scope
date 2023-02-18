@@ -80,7 +80,7 @@ namespace DGScope
             RequiredSeparation.Add("I", ibehind);
         }
         private bool calculating = false;
-        public async Task Calculate(ICollection<Aircraft> aircraftList)
+        public async Task Calculate(ICollection<Aircraft> aircraftList, Radar radar)
         {
             List<Aircraft> aircraft;
             if (!calculating)
@@ -94,7 +94,7 @@ namespace DGScope
                     List<Task> tasklist = new List<Task>();
                     foreach (var volume in Volumes)
                     {
-                        tasklist.Add(CalculateATPA(volume, aircraft, RequiredSeparation));
+                        tasklist.Add(CalculateATPA(volume, aircraft, RequiredSeparation, radar));
                     }
                     tasks = tasklist.ToArray();
                 }
@@ -103,9 +103,9 @@ namespace DGScope
             }
         }
 
-        private static Task CalculateATPA(ATPAVolume volume, List<Aircraft> aircraft, SeparationTable requiredSeparation)
+        private static Task CalculateATPA(ATPAVolume volume, List<Aircraft> aircraft, SeparationTable requiredSeparation, Radar radar)
         {
-            return Task.Run(() => volume.CalculateATPA(aircraft, requiredSeparation));
+            return Task.Run(() => volume.CalculateATPA(aircraft, requiredSeparation, radar));
         }
 
         public void DeserializeVolumesFromJsonFile(string filename)
