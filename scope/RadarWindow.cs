@@ -3314,15 +3314,22 @@ namespace DGScope
         {
             Task.Run(() => GenerateTargetAsync(aircraft));
         }
-        private void GenerateTargets()
+        bool generating = false;
+        private async Task GenerateTargets()
         {
+            if (generating)
+                return;
+            generating = true;
             List<Task> tasks = new List<Task>();
+            var time = CurrentTime;
             Aircraft[] ac;
             lock (Aircraft)
             {
-                ac = radar.Scan(CurrentTime).ToArray();
+                ac = Aircraft.ToArray();
+                RadarSites.ForEach(x => x.Scan(time));
+                if (!RadarSites.Contains(radar))
+                    radar.Scan(time);
             }
-            var time = CurrentTime;
             
             for (int i = 0; i < ac.Length; i++)
             {
@@ -3352,10 +3359,9 @@ namespace DGScope
                     aircraft.QuickLook = false;
                 }
                 if (aircraft.Location != null)
-                    tasks.Add(GenerateTargetAsync(aircraft));
+                    GenerateTargetAsync(aircraft);
             }
             
-            Task.WaitAll(tasks.ToArray());
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
                 if (target == null)
@@ -3378,7 +3384,8 @@ namespace DGScope
                 {
 
                 }
-            }            
+            }       
+            generating = false;
         }
         private bool inRange (Aircraft plane)
         {
