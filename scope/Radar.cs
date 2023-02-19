@@ -64,20 +64,20 @@ namespace DGScope
         }
         private Stopwatch Stopwatch = new Stopwatch();
         private double lastazimuth = 0;
-        public async Task Scan(DateTime time)
+        public List<Aircraft> Scan(DateTime time)
         {
             List<Aircraft> TargetsScanned = new List<Aircraft>();
             List<Task> tasks = new List<Task>();
             if (RadarWindow.Aircraft == null)
-                return;
+                return TargetsScanned;
             if (!Stopwatch.IsRunning)
                 Stopwatch.Start();
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
             if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
-                return;
+                return TargetsScanned;
             if (RadarWindow.Aircraft == null)
-                return;
+                return TargetsScanned;
             Stopwatch.Restart();
             lock (RadarWindow.Aircraft)
                 TargetsScanned.AddRange(from x in RadarWindow.Aircraft
@@ -90,7 +90,7 @@ namespace DGScope
             if (lastazimuth == 360)
                 lastazimuth = 0;
             Task.WaitAll(tasks.ToArray());
-            return;
+            return TargetsScanned; 
         }
 
         private async Task ScanTarget(Aircraft plane, DateTime time)

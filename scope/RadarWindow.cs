@@ -3320,10 +3320,10 @@ namespace DGScope
             Aircraft[] ac;
             lock (Aircraft)
             {
-                ac = Aircraft.ToArray();
+                ac = radar.Scan(CurrentTime).ToArray();
             }
             var time = CurrentTime;
-            RadarSites.ForEach(site => tasks.Add(site.Scan(time)));
+            
             for (int i = 0; i < ac.Length; i++)
             {
                 var aircraft = ac[i];
