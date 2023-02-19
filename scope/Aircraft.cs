@@ -752,24 +752,32 @@ namespace DGScope
             }
         }
 
-        public double ExtrapolateTrack()
+        public double ExtrapolateTrack(DateTime time)
         {
             if (Math.Abs(rateofturn) > 5) // sanity check
             {
                 return Track;
             }
-            return ((Track + ((rateofturn / 2) * (RadarWindow.CurrentTime - lastTrackUpdate).TotalSeconds)) + 360) % 360;
+            return ((Track + ((rateofturn / 2) * (time - lastTrackUpdate).TotalSeconds)) + 360) % 360;
         }
 
-        public GeoPoint ExtrapolatePosition()
+        public double ExtrapolateTrack()
         {
-            var time = RadarWindow.CurrentTime;
+            return ExtrapolateTrack(RadarWindow.CurrentTime);
+        }
+
+        public GeoPoint ExtrapolatePosition(DateTime time)
+        {
             var miles = GroundSpeed * (time - lastLocationExtrapolateTime).TotalHours;
             var track = ExtrapolateTrack();
             var location = extrapolatedpos.FromPoint(miles, track);
             extrapolatedpos = location;
             lastLocationExtrapolateTime = time;
             return location;
+        }
+        public GeoPoint ExtrapolatePosition()
+        {
+            return ExtrapolatePosition(RadarWindow.CurrentTime);
         }
 
         public Dictionary<Radar, GeoPoint> SweptLocations = new Dictionary<Radar, GeoPoint>();

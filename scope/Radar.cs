@@ -64,15 +64,16 @@ namespace DGScope
         }
         private Stopwatch Stopwatch = new Stopwatch();
         private double lastazimuth = 0;
-        private void Scan()
+        public async Task Scan(DateTime time)
         {
+            List<Aircraft> TargetsScanned = new List<Aircraft>();
+            List<Task> tasks = new List<Task>();
             if (RadarWindow.Aircraft == null)
                 return;
             if (!Stopwatch.IsRunning)
                 Stopwatch.Start();
             double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
-            List<Aircraft> TargetsScanned = new List<Aircraft>();
             if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
                 return;
             if (RadarWindow.Aircraft == null)
@@ -83,15 +84,16 @@ namespace DGScope
                                         where (BearingIsBetween(x.Bearing(Location), lastazimuth, newazimuth) || !Rotating) && !x.IsOnGround 
                                         && x.Location != null
                                         select x);
-            TargetsScanned.ForEach(x => ScanTarget(x));
+            TargetsScanned.ForEach(x => tasks.Add(ScanTarget(x, time)));
             //Console.WriteLine("Scanned method returned {0} aircraft", TargetsScanned.Count);
             lastazimuth = newazimuth;
             if (lastazimuth == 360)
                 lastazimuth = 0;
+            Task.WaitAll(tasks.ToArray());
             return;
         }
 
-        private async void ScanTarget(Aircraft plane)
+        private async Task ScanTarget(Aircraft plane, DateTime time)
         {
             GeoPoint location;
             if (plane.PrimaryOnly)
@@ -100,7 +102,7 @@ namespace DGScope
             }
             else
             {
-                location = plane.ExtrapolatePosition();
+                location = plane.ExtrapolatePosition(time);
             }
             lock (plane.SweptLocations)
             {
@@ -117,11 +119,11 @@ namespace DGScope
             {
                 if (plane.SweptTracks.ContainsKey(this))
                 {
-                    plane.SweptTracks[this] = plane.Track;
+                    plane.SweptTracks[this] = (int)plane.ExtrapolateTrack(time);
                 }
                 else
                 {
-                    plane.SweptTracks.Add(this, plane.Track);
+                    plane.SweptTracks.Add(this, (int)plane.ExtrapolateTrack(time));
                 }
             }
             lock (plane.SweptAltitudes)
@@ -175,16 +177,6 @@ namespace DGScope
         }
         public Radar()
         {
-            Task.Run(() => Run());
-        }
-
-        public void Run()
-        {
-            while (true)
-            {
-                Scan();
-                System.Threading.Thread.Sleep(10);
-            }
         }
 
     }

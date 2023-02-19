@@ -3317,10 +3317,16 @@ namespace DGScope
         private void GenerateTargets()
         {
             List<Task> tasks = new List<Task>();
+            Aircraft[] ac;
             lock (Aircraft)
             {
-                foreach (Aircraft aircraft in Aircraft)
+                ac = Aircraft.ToArray();
+            }
+            var time = CurrentTime;
+            RadarSites.ForEach(site => tasks.Add(site.Scan(time)));
+            for (int i = 0; i < ac.Length; i++)
             {
+                var aircraft = ac[i];
                 var associated = !(string.IsNullOrEmpty(aircraft.PositionInd) || aircraft.PositionInd == "*");
                 var qlall = associated && QuickLookList.Contains("ALL");
                 var qlallplus = associated && QuickLookList.Contains("ALL+");
@@ -3348,7 +3354,7 @@ namespace DGScope
                 if (aircraft.Location != null)
                     tasks.Add(GenerateTargetAsync(aircraft));
             }
-            }
+            
             Task.WaitAll(tasks.ToArray());
             foreach (PrimaryReturn target in PrimaryReturns.ToList())
             {
