@@ -3727,7 +3727,8 @@ namespace DGScope
                 {
                     case TargetShape.Rectangle:
                         float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
-                        float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
+                        //float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
+                        float targetWidth = (float)(scale * .035 * target.ParentAircraft.Location.DistanceTo(radar.Location));
                         float atan = (float)Math.Atan(targetHeight / targetWidth);
                         float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
                         float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
