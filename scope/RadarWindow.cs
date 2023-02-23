@@ -1057,7 +1057,7 @@ namespace DGScope
                 {
                     Aircraft plane = (Aircraft)clicked;
                     plane.Marked = plane.Marked ? false : true;
-                    GenerateDataBlock(plane);
+                    //GenerateDataBlock(plane);
                 }
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
@@ -1138,7 +1138,7 @@ namespace DGScope
                 {
                     plane.Owned = false;
                 }
-                GenerateDataBlock(plane);
+                //GenerateDataBlock(plane);
             }
             else if (KeyList.Count > 0)
             {
@@ -1263,7 +1263,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).Owned = true;
                             ((Aircraft)clicked).PositionInd = ThisPositionIndicator;
-                            GenerateDataBlock((Aircraft)clicked);
+                            //GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
                         break;
@@ -1289,7 +1289,7 @@ namespace DGScope
                                 plane.Scratchpad2 = null;
                                 plane.Owned = false;
                                 plane.LDRDirection = LDRDirection;
-                                GenerateDataBlock((Aircraft)clicked);
+                                //GenerateDataBlock((Aircraft)clicked);
                                 Preview.Clear();
                             }
                         }
@@ -1558,7 +1558,7 @@ namespace DGScope
                                                     {
                                                         var plane = clicked as Aircraft;
                                                         plane.ForceQuickLook = true;
-                                                        GenerateDataBlock(plane);
+                                                        //GenerateDataBlock(plane);
                                                         Preview.Clear();
                                                     }
                                                 }
@@ -1912,7 +1912,7 @@ namespace DGScope
                 {
                     plane.FDB = !plane.FDB;
                 }
-                GenerateDataBlock(plane);
+                //GenerateDataBlock(plane);
             }
         }
         private string KeysToString (object[] keys, int start = 0)
@@ -3721,6 +3721,8 @@ namespace DGScope
             if (!target.ParentAircraft.PrimaryOnly)
             {
                 var shape = target == target.ParentAircraft.TargetReturn ? radar.TargetShape : HistoryShape;
+                if (target.ParentAircraft.SweptLocation(radar) == null)
+                    return;
                 switch (shape)
                 {
                     case TargetShape.Rectangle:
@@ -3735,7 +3737,6 @@ namespace DGScope
                         target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
                         GL.PushMatrix();
-
                         float angle = (float)(-(target.ParentAircraft.SweptLocation(radar).BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
                         GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                         GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
@@ -3816,8 +3817,8 @@ namespace DGScope
                     handoffPlane.Owned = true;
                     handoffPlane.DataBlock.Flashing = true;
                     handoffPlane.DataBlock2.Flashing = true;
-                    if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                        GenerateDataBlock(handoffPlane);
+                    //if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                        //GenerateDataBlock(handoffPlane);
                 }
                 foreach (var handedoffPlane in Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
                 {
@@ -3828,8 +3829,8 @@ namespace DGScope
                         handedoffPlane.DataBlock.Flashing = false;
                         handedoffPlane.DataBlock2.Flashing = false;
                         handedoffPlane.DataBlock3.Flashing = false;
-                        if (handedoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                            GenerateDataBlock(handedoffPlane);
+                        //if (handedoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                            //GenerateDataBlock(handedoffPlane);
                     }
                 }
                 foreach (var flashingPlane in Aircraft.Where(x => x.DataBlock.Flashing))
@@ -3839,14 +3840,14 @@ namespace DGScope
                         flashingPlane.DataBlock.Flashing = false;
                         flashingPlane.DataBlock2.Flashing = false;
                         flashingPlane.DataBlock3.Flashing = false;
-                        if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                            GenerateDataBlock(flashingPlane);
+                        //if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                            //GenerateDataBlock(flashingPlane);
                     }
                 }
                 foreach (var beaconatorplane in Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
                 {
                     beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
-                    GenerateDataBlock(beaconatorplane);
+                    //GenerateDataBlock(beaconatorplane);
                     beaconatorplane.RedrawDataBlock(radar);
                 }
             }
