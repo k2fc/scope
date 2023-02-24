@@ -599,6 +599,10 @@ namespace DGScope
                 {
                     radar = RadarSites.Last();
                 }
+                else if (value < 0)
+                {
+                    radar = new Radar();
+                }
                 else
                 {
                     radar = RadarSites[value];
