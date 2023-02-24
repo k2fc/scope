@@ -1267,6 +1267,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).Owned = true;
                             ((Aircraft)clicked).PositionInd = ThisPositionIndicator;
+                            ((Aircraft)clicked).SendUpdate();
                             //GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
@@ -1295,6 +1296,7 @@ namespace DGScope
                                 plane.LDRDirection = LDRDirection;
                                 //GenerateDataBlock((Aircraft)clicked);
                                 Preview.Clear();
+                                plane.SendUpdate();
                             }
                         }
                         else
@@ -1833,6 +1835,20 @@ namespace DGScope
                                 }
                             }
                         }
+                        if (keys[0].Length == 3 && clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            plane.Scratchpad = KeysToString(keys[0]);
+                            plane.SendUpdate();
+                            Preview.Clear();
+                        }
+                        else if (keys[0].Length == 2 && clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            plane.PendingHandoff = KeysToString(keys[0]);
+                            plane.SendUpdate();
+                            Preview.Clear();
+                        }
                         break;
                 }
             }
@@ -1866,10 +1882,12 @@ namespace DGScope
                 {
                     plane.PositionInd = ThisPositionIndicator;
                     plane.PendingHandoff = null;
+                    plane.SendUpdate();
                 }
                 else if (plane.PositionInd == ThisPositionIndicator && !string.IsNullOrEmpty(plane.PendingHandoff))
                 {
                     plane.PendingHandoff = null;
+                    plane.SendUpdate();
                 }
                 // Accept pointout, Recall pointout, Clear pointout color, Clear/reject / cancel pointout indication
                 else if (plane.Pointout)

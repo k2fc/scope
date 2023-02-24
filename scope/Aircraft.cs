@@ -162,6 +162,11 @@ namespace DGScope
                 return _fdb;
             }
         }
+
+        public void SendUpdate()
+        {
+            Update?.Invoke(this, null);
+        }
         public Aircraft(int icaoID)
         {
             ModeSCode = icaoID;
@@ -796,6 +801,7 @@ namespace DGScope
         public event EventHandler<AircraftEventArgs> OwnershipChange;
         public event EventHandler Dropped;
         public event EventHandler FpDeleted;
+        public event EventHandler Update;
         //public event EventHandler Tracked;
         //public event EventHandler Idented;
 

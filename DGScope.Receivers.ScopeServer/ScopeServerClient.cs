@@ -37,6 +37,48 @@ namespace DGScope.Receivers.ScopeServer
             running = true;
             stop = false;
             Task.Run(Receive);
+            aircraft.CollectionChanged += Aircraft_CollectionChanged;
+        }
+
+        private void Aircraft_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            
+            switch (e.Action)
+            {
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+                    foreach (Aircraft plane in e.NewItems)
+                    {
+                        plane.Update += Plane_Update;
+                    }
+                    break;
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
+                    foreach (Aircraft plane in e.OldItems)
+                    {
+                        plane.Update -= Plane_Update;
+                    }
+                    break;
+            }
+        }
+
+        private void Plane_Update(object sender, EventArgs e)
+        {
+            Aircraft plane = sender as Aircraft;
+            FlightPlan flightPlan;
+            lock (flightPlans)
+                flightPlan = flightPlans.Where(x => x.Guid == plane.FlightPlanGuid).FirstOrDefault();
+            if (flightPlan == null)
+                return;
+            FlightPlanUpdate upd = new FlightPlanUpdate(flightPlan, RadarWindow.CurrentTime)
+            {
+                Callsign = plane.FlightPlanCallsign,
+                PendingHandoff = plane.PendingHandoff,
+                Owner = plane.PositionInd,
+                AssociatedTrackGuid = plane.TrackGuid,
+                Scratchpad1 = plane.Scratchpad,
+                Scratchpad2 = plane.Scratchpad2
+            };
+            upd.RemoveUnchanged();
+            Send(upd);
         }
 
         private bool streamended = true;
@@ -309,13 +351,19 @@ namespace DGScope.Receivers.ScopeServer
         {
             using (var client = new WebClient())
             {
-
+                client.Credentials = new NetworkCredential(Username, Password);
+                update.RemoveUnchanged();
+                var json = JsonConvert.SerializeObject(update, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                var uri = new Uri(Url + "/update");
+                client.UploadStringAsync(uri, json);
             }
-            return false;
+            return true;
         }
         public override void Stop()
         {
             stop = true;
+            if (aircraft != null) 
+                aircraft.CollectionChanged -= Aircraft_CollectionChanged;
         }
     }
 }
