@@ -3241,7 +3241,7 @@ namespace DGScope
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
 
                 if (InFilter(aircraft) ||
-                    aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk)
+                    aircraft.Owned || aircraft.QuickLook || aircraft.PendingHandoff == ThisPositionIndicator || aircraft.ShowCallsignWithNoSquawk || aircraft.FDB)
                     GenerateDataBlock(aircraft);
                 else if (!aircraft.Owned && !aircraft.FDB)
                     lock (dataBlocks)
@@ -3725,14 +3725,15 @@ namespace DGScope
             if (!target.ParentAircraft.PrimaryOnly)
             {
                 var shape = target == target.ParentAircraft.TargetReturn ? radar.TargetShape : HistoryShape;
-                if (target.ParentAircraft.SweptLocation(radar) == null)
+                var location = target.ParentAircraft.SweptLocation(radar);
+                if (location == null)
                     return;
                 switch (shape)
                 {
                     case TargetShape.Rectangle:
-                        float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
-                        //float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
-                        float targetWidth = (float)(scale * .035 * target.ParentAircraft.Location.DistanceTo(radar.Location));
+                        //float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
+                        float targetHeight = (float)((1 / scale) * .2 * Math.Sqrt(location.DistanceTo(radar.Location)));
+                        float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
                         float atan = (float)Math.Atan(targetHeight / targetWidth);
                         float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
                         float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
@@ -3742,7 +3743,7 @@ namespace DGScope
                         target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
                         GL.PushMatrix();
-                        float angle = (float)(-(target.ParentAircraft.SweptLocation(radar).BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
+                        float angle = (float)(-(location.BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
                         GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                         GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
