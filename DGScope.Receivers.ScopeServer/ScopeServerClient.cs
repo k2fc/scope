@@ -82,7 +82,11 @@ namespace DGScope.Receivers.ScopeServer
         private async Task<bool> Receive()
         {
             /// Try some websocket
-            Uri uri = new Uri(Url);
+            Uri uri;
+            if (Url.EndsWith("/updates"))
+                uri = new Uri(Url);
+            else
+                uri = new Uri(Url + "/updates");
             NetworkCredential credentials = new NetworkCredential(Username, Password);
             
             var scheme = uri.GetLeftPart(UriPartial.Scheme);
@@ -115,6 +119,7 @@ namespace DGScope.Receivers.ScopeServer
                     using (var client = new WebClient())
                     {
                         client.Credentials = new NetworkCredential(Username, Password);
+                        client.BaseAddress = Url;
                         client.OpenReadCompleted += (sender, e) =>
                         {
                             if (e.Error == null)
@@ -149,7 +154,7 @@ namespace DGScope.Receivers.ScopeServer
                         while (!stop)
                         {
                             streamended = false;
-                            client.OpenReadAsync(new Uri(Url));
+                            client.OpenReadAsync(uri);
                             while (!streamended)
                             {
                                 System.Threading.Thread.Sleep(1000);
@@ -300,7 +305,14 @@ namespace DGScope.Receivers.ScopeServer
                 plane.VerticalRate = track.VerticalRate;
             }
         }
+        public async Task<bool> Send(Update update)
+        {
+            using (var client = new WebClient())
+            {
 
+            }
+            return false;
+        }
         public override void Stop()
         {
             stop = true;
