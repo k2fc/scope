@@ -127,6 +127,8 @@ namespace DGScope.Receivers.ScopeServer
             Uri uri;
             if (Url.EndsWith("/updates"))
                 uri = new Uri(Url);
+            else if (Url.EndsWith("/"))
+                uri = new Uri(Url + "updates");
             else
                 uri = new Uri(Url + "/updates");
             NetworkCredential credentials = new NetworkCredential(Username, Password);
@@ -354,7 +356,7 @@ namespace DGScope.Receivers.ScopeServer
                 client.Credentials = new NetworkCredential(Username, Password);
                 update.RemoveUnchanged();
                 var json = JsonConvert.SerializeObject(update, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-                var uri = new Uri(Url + "/update");
+                var uri = new Uri(Url + "update");
                 client.UploadStringAsync(uri, json);
             }
             return true;
