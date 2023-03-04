@@ -68,15 +68,14 @@ namespace DGScope.Receivers.ScopeServer
                 flightPlan = flightPlans.Where(x => x.Guid == plane.FlightPlanGuid).FirstOrDefault();
             if (flightPlan == null)
                 return;
-            FlightPlanUpdate upd = new FlightPlanUpdate(flightPlan, RadarWindow.CurrentTime)
-            {
-                Callsign = plane.FlightPlanCallsign,
-                PendingHandoff = plane.PendingHandoff,
-                Owner = plane.PositionInd,
-                AssociatedTrackGuid = plane.TrackGuid,
-                Scratchpad1 = plane.Scratchpad,
-                Scratchpad2 = plane.Scratchpad2
-            };
+            FlightPlanUpdate upd = flightPlan.GetCompleteUpdate() as FlightPlanUpdate;
+            upd.TimeStamp = RadarWindow.CurrentTime;
+            upd.Callsign = plane.FlightPlanCallsign;
+            upd.PendingHandoff = plane.PendingHandoff;
+            upd.Owner = plane.PositionInd;
+            upd.AssociatedTrackGuid = plane.TrackGuid;
+            upd.Scratchpad1 = plane.Scratchpad;
+            upd.Scratchpad2 = plane.Scratchpad2;
             Send(upd);
         }
 
