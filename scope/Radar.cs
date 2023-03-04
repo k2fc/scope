@@ -27,6 +27,8 @@ namespace DGScope
         public double Range { get; set; } = 200;
         [DisplayName("Update Rate"), Description("The rate at which to draw targets. The rate at which the radar sweep rotates, if rotating is true")] 
         public double UpdateRate { get; set; } = 1;
+        [DisplayName("Inhibit Extrapolation"), Description("Inhibit extrapolation of aircraft positions")]
+        public bool InhibitExtrapolation { get; set; } = false;
         public bool Rotating { get; set; } = false;
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets")]
         public TargetShape TargetShape { get; set; } = TargetShape.Circle;
@@ -96,7 +98,7 @@ namespace DGScope
         private async Task ScanTarget(Aircraft plane, DateTime time)
         {
             GeoPoint location;
-            if (plane.PrimaryOnly)
+            if (plane.PrimaryOnly || InhibitExtrapolation)
             {
                 location = plane.Location;
             }
@@ -117,6 +119,16 @@ namespace DGScope
             }
             lock (plane.SweptTracks)
             {
+                int track;
+
+                if (InhibitExtrapolation)
+                {
+                    track = plane.Track;
+                }
+                else
+                {
+                    track = (int)plane.ExtrapolateTrack(time);
+                }
                 if (plane.SweptTracks.ContainsKey(this))
                 {
                     plane.SweptTracks[this] = (int)plane.ExtrapolateTrack(time);
