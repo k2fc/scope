@@ -30,7 +30,7 @@ namespace DGScope
         public bool Rotating { get; set; } = false;
         [DisplayName("Primary Target Shape"), Description("Shape of primary targets")]
         public TargetShape TargetShape { get; set; } = TargetShape.Circle;
-        [Category("Identiy")]
+        [Category("Identity")]
         public string Name { get; set; }
         [Category("Identity")]
         public char Char { get; set; }
