@@ -19,6 +19,7 @@ using libmetar;
 using System.Windows.Forms.Design;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using System.Numerics;
 
 namespace DGScope
 {
@@ -1847,6 +1848,13 @@ namespace DGScope
                         {
                             var plane = clicked as Aircraft;
                             plane.Scratchpad = KeysToString(keys[0]);
+                            plane.SendUpdate();
+                            Preview.Clear();
+                        }
+                        else if (keys[0].Length == 4 && clickedplane && KeysToString(keys[0]).Last() == '+')
+                        {
+                            var plane = clicked as Aircraft;
+                            plane.Scratchpad2 = KeysToString(keys[0]).Substring(0,3);
                             plane.SendUpdate();
                             Preview.Clear();
                         }
