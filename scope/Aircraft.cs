@@ -529,7 +529,7 @@ namespace DGScope
                 DataBlock2.Redraw = DataBlock.Text != oldtext2;
             if (!DataBlock3.Redraw)
                 DataBlock3.Redraw = DataBlock.Text != oldtext3;
-            if (PositionInd != null)
+            if (!string.IsNullOrEmpty(PositionInd))
                 PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
             else if (isSquawkSelected())
                 PositionIndicator.Text = selectedSquawkChar.ToString();

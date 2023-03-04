@@ -77,7 +77,6 @@ namespace DGScope.Receivers.ScopeServer
                 Scratchpad1 = plane.Scratchpad,
                 Scratchpad2 = plane.Scratchpad2
             };
-            upd.RemoveUnchanged();
             Send(upd);
         }
 
@@ -103,20 +102,21 @@ namespace DGScope.Receivers.ScopeServer
 
         private async Task ProcessLine(string line)
         {
-            JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line);
+            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line, settings);
             Update update;
             switch (obj.UpdateType)
             {
                 case 0:
-                    update = JsonConvert.DeserializeObject<TrackUpdate>(line);
+                    update = JsonConvert.DeserializeObject<TrackUpdate>(line, settings);
                     ProcessUpdate(update);
                     break;
                 case 1:
-                    update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line);
+                    update = JsonConvert.DeserializeObject<FlightPlanUpdate>(line, settings);
                     ProcessUpdate(update);
                     break;
                 case 2:
-                    update = JsonConvert.DeserializeObject<DeletionUpdate>(line);
+                    update = JsonConvert.DeserializeObject<DeletionUpdate>(line, settings);
                     ProcessUpdate(update);
                     break;
             }
@@ -355,7 +355,7 @@ namespace DGScope.Receivers.ScopeServer
             {
                 client.Credentials = new NetworkCredential(Username, Password);
                 update.RemoveUnchanged();
-                var json = JsonConvert.SerializeObject(update, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                var json = update.SerializeToJson();
                 var uri = new Uri(Url + "update");
                 client.Headers.Add("Content-Type", "application/json");
                 client.UploadStringAsync(uri, json);

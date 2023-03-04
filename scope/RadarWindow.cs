@@ -1203,6 +1203,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1211,6 +1212,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1219,6 +1221,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1227,6 +1230,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1235,6 +1239,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.E;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1243,6 +1248,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1251,6 +1257,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1259,6 +1266,7 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
+                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;

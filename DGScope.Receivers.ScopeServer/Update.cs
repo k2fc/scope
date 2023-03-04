@@ -84,12 +84,19 @@ namespace DGScope.Library
                     continue; 
                 if (!property.CanWrite)
                     continue;
-                if (property.GetType() == typeof(string) && thisValue == null)
+                if (property.PropertyType == typeof(string) && thisValue == null && thisValue != baseValue)
                     property.SetValue(this, string.Empty);
-                else if (baseValue == null && thisValue != null)
+                else if ((thisValue == null) != (baseValue == null))
                     continue;
-                else if (thisValue == null || thisValue.Equals(baseValue))
+                else if (thisValue != null && !thisValue.Equals(baseValue))
+                    continue;
+                else
                     property.SetValue(this, null);
+                //    property.SetValue(this, string.Empty);
+                //else if (baseValue == null && thisValue != null)
+                //    continue;
+                //else if (thisValue == null || thisValue.Equals(baseValue))
+                //    property.SetValue(this, null);
             }
 
         }
