@@ -64,7 +64,6 @@ namespace DGScope.Receivers
                 {
                     plane = new Aircraft(guid);
                     aircraft.Add(plane);
-                    Debug.WriteLine("Added airplane {0} from {1}", guid.ToString(), Name);
                 }
             }
             return plane;
@@ -81,7 +80,6 @@ namespace DGScope.Receivers
                 {
                     plane = new Aircraft(icaoID);
                     aircraft.Add(plane);
-                    Debug.WriteLine("Added airplane {0} from {1}", icaoID.ToString("X"), Name);
                 }
             }
             return plane;

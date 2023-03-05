@@ -933,7 +933,6 @@ namespace DGScope
                 lock(Aircraft)
                     Aircraft.Remove(plane);
                 DeletePlane(plane);
-                Debug.WriteLine("Deleted airplane " + plane.ModeSCode.ToString("X"));
             }
         }
         private List<Aircraft> deletedPlanes = new List<Aircraft>();

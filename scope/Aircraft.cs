@@ -182,24 +182,21 @@ namespace DGScope
         {
             if (lastLocationSetTime > SetTime)
                 return;
+            int timeElapsed = (int)(SetTime - lastLocationSetTime).TotalSeconds;
             lastLocationSetTime = SetTime;
             this.Location = Location;
             extrapolatedpos = Location;
             lastLocationExtrapolateTime = SetTime;
             LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
             Drawn = false;
+            int updateAge = (int)(RadarWindow.CurrentTime - SetTime).TotalSeconds;
+            if (timeElapsed > 15 )
+                Console.WriteLine("Received update for {2} {0} sec late, after {1} seconds", updateAge, timeElapsed, FlightPlanCallsign);
         }
         public void SetLocation (double Latitude, double Longitude, DateTime SetTime)
         {
-            if (lastLocationSetTime > SetTime)
-                return;
-            lastLocationSetTime = SetTime;
-            var newlocation = new GeoPoint(Latitude, Longitude);
-            Location = newlocation;
-            extrapolatedpos = Location;
-            lastLocationExtrapolateTime = SetTime;
-            LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, newlocation));
-            Drawn = false;
+            var location = new GeoPoint(Latitude, Longitude);
+            SetLocation(location, SetTime);
         }
         public void SetTrack (double Track, DateTime SetTime)
         {
