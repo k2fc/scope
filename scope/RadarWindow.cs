@@ -1263,12 +1263,13 @@ namespace DGScope
                         }
                         break;
                     case Key.F3:
-                        if (clickedplane)
+                        /*if (clickedplane)
                         {
                             ((Aircraft)clicked).Owned = true;
                             ((Aircraft)clicked).PositionInd = ThisPositionIndicator;
                             Preview.Clear();
                         }
+                        */
                         break;
                     case Key.F4:
                         if (clickedplane)
@@ -1560,7 +1561,38 @@ namespace DGScope
                             }
                         }
                         break;
-
+                    case '.':
+                        if (keys[0].Length == 1 && clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Scratchpad = "";
+                                Preview.Clear();
+                                plane.SendUpdate();
+                            }
+                        }
+                        break;
+                    case '+':
+                        if (keys[0].Length == 1 && clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Scratchpad2 = "";
+                                Preview.Clear();
+                                plane.SendUpdate();
+                            }
+                        }
+                        break;
                     case Key.F7:
                         //MultiFuntion
                         if (keys[0].Count() < 2)
@@ -1749,6 +1781,112 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
+                            case 'Y':
+                                if (clickedplane && keys.Length == 1)
+                                {
+                                    var plane = clicked as Aircraft;
+                                    if (keys[0].Length == 2)
+                                    {
+                                        if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                                        {
+                                            DisplayPreviewMessage("ILL TRK");
+                                        }
+                                        else
+                                        {
+                                            plane.Scratchpad = "";
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                    }
+                                    else if (keys[0].Length == 3 && (char)keys[0][2] == '+')
+                                    {
+                                        if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                                        {
+                                            DisplayPreviewMessage("ILL TRK");
+                                        }
+                                        else
+                                        {
+                                            plane.Scratchpad2 = "";
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                    }
+                                    else if (keys[0].Length >= 3 && keys[0].Length <= 6 && (char)keys[0][2] != '+')
+                                    {
+                                        if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                                        {
+                                            DisplayPreviewMessage("ILL TRK");
+                                        }
+                                        else
+                                        {
+                                            plane.Scratchpad = KeysToString(keys[0], 2);
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                    }
+                                    else if (keys[0].Length >= 4 && keys[0].Length <= 7 && (char)keys[0][2] == '+')
+                                    {
+                                        if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                                        {
+                                            DisplayPreviewMessage("ILL TRK");
+                                        }
+                                        else
+                                        {
+                                            plane.Scratchpad2 = KeysToString(keys[0], 3);
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("FORMAT");
+                                    }
+                                }
+                                else if (!clickedplane && keys.Length == 2)
+                                {
+                                    var planestring = KeysToString(keys[0], 2);
+                                    var planes = Aircraft.Where(x => 
+                                    {
+                                        if (x.FlightPlanCallsign != null && x.FlightPlanCallsign.Trim() == planestring)
+                                        {
+                                            return true;
+                                        }
+                                        if (x.AssignedSquawk != null && x.AssignedSquawk.Trim() == planestring)
+                                        {
+                                            return true;
+                                        }
+                                        return false;
+                                    });
+                                    if (planes.Count() != 1)
+                                    {
+                                        DisplayPreviewMessage("NO FLIGHT");
+                                    }
+                                    else
+                                    {
+                                        var plane = planes.First();
+                                        if ((char)keys[1][0] == '+' && keys[1].Length >= 2 && keys[1].Length <= 5)
+                                        {
+                                            plane.Scratchpad2 = KeysToString(keys[1], 1);
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                        else if ((char)keys[1][0] != '+' && keys[1].Length >= 1 && keys[1].Length <= 4)
+                                        {
+                                            plane.Scratchpad = KeysToString(keys[1]);
+                                            Preview.Clear();
+                                            plane.SendUpdate();
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("FORMAT");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    DisplayPreviewMessage("FORMAT");
+                                }
+                                break;
                         }
                         break;
                     case KeyCode.RngRing:
@@ -1823,23 +1961,58 @@ namespace DGScope
                         if (keys[0].Length == 3 && clickedplane)
                         {
                             var plane = clicked as Aircraft;
-                            plane.Scratchpad = KeysToString(keys[0]);
-                            plane.SendUpdate();
-                            Preview.Clear();
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Scratchpad = KeysToString(keys[0]);
+                                plane.SendUpdate();
+                                Preview.Clear();
+                            }
                         }
                         else if (keys[0].Length == 4 && clickedplane && KeysToString(keys[0]).Last() == '+')
                         {
                             var plane = clicked as Aircraft;
-                            plane.Scratchpad2 = KeysToString(keys[0]).Substring(0,3);
-                            plane.SendUpdate();
-                            Preview.Clear();
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Scratchpad2 = KeysToString(keys[0]).Substring(0, 3);
+                                plane.SendUpdate();
+                                Preview.Clear();
+                            }
+                        }
+                        else if (keys[0].Length == 4 && clickedplane)
+                        {
+                            var plane = clicked as Aircraft;
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.Type = KeysToString(keys[0]);
+                                plane.SendUpdate();
+                                Preview.Clear();
+                            }
                         }
                         else if (keys[0].Length == 2 && clickedplane)
                         {
                             var plane = clicked as Aircraft;
-                            plane.PendingHandoff = KeysToString(keys[0]);
-                            plane.SendUpdate();
-                            Preview.Clear();
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
+                            {
+                                DisplayPreviewMessage("ILL TRK");
+                            }
+                            else
+                            {
+                                plane.PendingHandoff = KeysToString(keys[0]);
+                                plane.SendUpdate();
+                                Preview.Clear();
+                            }
                         }
                         break;
                 }
