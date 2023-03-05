@@ -324,7 +324,7 @@ namespace DGScope
             if (!string.IsNullOrEmpty(PendingHandoff))
                 handoffchar = PendingHandoff.Substring(PendingHandoff.Length - 1);
 
-            if (FlightRules == null)
+            if (string.IsNullOrEmpty(FlightRules))
             {
                 vfrchar = " ";
             }
@@ -337,7 +337,7 @@ namespace DGScope
                 vfrchar = FlightRules[0].ToString();
             }
 
-            if (Category != null)
+            if (!string.IsNullOrEmpty(Category))
             {
                 catchar = Category;
             }
@@ -347,7 +347,7 @@ namespace DGScope
             string yscratch2;
             string reqalt = "    ";
 
-            if (Destination == null)
+            if (string.IsNullOrEmpty(Destination))
             {
                 destination = altstring;
             }
@@ -382,7 +382,7 @@ namespace DGScope
                 yscratch2 = destination;
             }
 
-            if (Type == null)
+            if (string.IsNullOrEmpty(Type))
             {
                 type = (dbSpeed / 10).ToString("D2") + vfrchar + catchar;
             }
@@ -647,17 +647,22 @@ namespace DGScope
         }
         public void DeleteFP()
         {
+            /*Type = null;
+            FlightPlanCallsign = null;
+            Destination = null;
+            FlightRules = null;
+            Category = null;
+            PositionInd = null;
+            PendingHandoff = null;
+            RequestedAltitude = 0;
+            Scratchpad = null;
+            Scratchpad2 = null;
             Owned = false;
             QuickLook = false;
             QuickLookPlus = false;
-            PositionInd = "*";
-            PendingHandoff = null;
-            Scratchpad = null;
-            Scratchpad2 = null;
-            Type = null;
             LDRDirection = null;
             Runway = null;
-            Destination = null;
+            */
             FpDeleted?.Invoke(this, new EventArgs());
         }
         public void RedrawTarget(PointF LocationF, Radar radar)

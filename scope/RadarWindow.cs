@@ -1203,7 +1203,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1212,7 +1211,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1221,7 +1219,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1230,7 +1227,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1239,7 +1235,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.E;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1248,7 +1243,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1257,7 +1251,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1266,7 +1259,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
-                            ((Aircraft)clicked).SendUpdate();
                             Preview.Clear();
                         }
                         break;
@@ -1275,8 +1267,6 @@ namespace DGScope
                         {
                             ((Aircraft)clicked).Owned = true;
                             ((Aircraft)clicked).PositionInd = ThisPositionIndicator;
-                            ((Aircraft)clicked).SendUpdate();
-                            //GenerateDataBlock((Aircraft)clicked);
                             Preview.Clear();
                         }
                         break;
@@ -1284,27 +1274,14 @@ namespace DGScope
                         if (clickedplane)
                         {
                             var plane = (Aircraft)clicked;
-                            if (plane.PendingHandoff != null || plane.PositionInd != ThisPositionIndicator)
+                            if (!string.IsNullOrEmpty(plane.PendingHandoff) || plane.PositionInd != ThisPositionIndicator)
                             {
                                 DisplayPreviewMessage("ILL TRK");
                             }
                             else
                             {
-                                plane.Type = null;
-                                plane.FlightPlanCallsign = null;
-                                plane.Destination = null;
-                                plane.FlightRules = null;
-                                plane.Category = null;
-                                plane.PositionInd = null;
-                                plane.PendingHandoff = null;
-                                plane.RequestedAltitude = 0;
-                                plane.Scratchpad = null;
-                                plane.Scratchpad2 = null;
-                                plane.Owned = false;
-                                plane.LDRDirection = LDRDirection;
-                                //GenerateDataBlock((Aircraft)clicked);
                                 Preview.Clear();
-                                plane.SendUpdate();
+                                plane.DeleteFP();
                             }
                         }
                         else

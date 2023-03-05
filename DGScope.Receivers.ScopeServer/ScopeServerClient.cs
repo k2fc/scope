@@ -20,7 +20,6 @@ namespace DGScope.Receivers.ScopeServer
 {
     public class ScopeServerClient : Receiver
     {
-        private Dictionary<Guid, Guid> associatedFlightPlans = new Dictionary<Guid, Guid>();
         private List<Track> tracks = new List<Track>();
         private List<FlightPlan> flightPlans = new List<FlightPlan>();
         private UpdateConverter updateConverter = new UpdateConverter();
@@ -49,15 +48,24 @@ namespace DGScope.Receivers.ScopeServer
                     foreach (Aircraft plane in e.NewItems)
                     {
                         plane.Update += Plane_Update;
+                        plane.FpDeleted += Plane_FpDeleted; 
                     }
                     break;
                 case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
                     foreach (Aircraft plane in e.OldItems)
                     {
                         plane.Update -= Plane_Update;
+                        plane.FpDeleted -= Plane_FpDeleted; 
+                        
                     }
                     break;
             }
+        }
+
+        private void Plane_FpDeleted(object sender, EventArgs e)
+        {
+            DeletionUpdate del = new DeletionUpdate() { Guid = (sender as Aircraft).FlightPlanGuid };
+            Send(del);
         }
 
         private void Plane_Update(object sender, EventArgs e)
