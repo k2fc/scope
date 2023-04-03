@@ -108,6 +108,7 @@ namespace DGScope.Receivers.Asterix
             byte category = data[0];
             int p = 3;
             bool[] fspec = readFspec(data, ref p);
+            DateTime velocityTime = DateTime.MinValue;
             Aircraft plane;
             switch (category)
             {
@@ -176,9 +177,8 @@ namespace DGScope.Receivers.Asterix
                     {
                         if (latitude.HasValue && longitude.HasValue)
                         {
-                            int timeval = (data[p] << 16) + (data[p + 1] << 8) + data[p + 2];
-                            p += 3;
-                            var time = decodeTime(timeval);
+                            
+                            var time = decodeTime(data, ref p);
                             if (fspec[12]) //  I021/074 Time of Message Reception of Position–High Precision
                             {
                                 decodeHighPrecisionTime(ref time, data, ref p);
@@ -188,18 +188,17 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[13]) // I021/075 Time of Message Reception of Velocity
                     {
-                        int timeval = (data[p] << 16) + (data[p + 1] << 8) + data[p + 2];
-                        p += 3;
-                        var time = decodeTime(timeval);
+                        
+                        velocityTime = decodeTime(data, ref p);
                         if (fspec[14]) //  I021/076 Time of Message Reception of Velocity-High Precision
                         {
-                            decodeHighPrecisionTime(ref time, data, ref p);
+                            decodeHighPrecisionTime(ref velocityTime, data, ref p);
                         }
                     }
                     if (fspec[15]) // I021/140 Geometric Height
                     {
                         double alt = ((data[p] << 8) + data[p + 1]) + 6.25;
-                        plane.Altitude = new Altitude() { Value = (int)alt, AltitudeType = AltitudeType.True };
+                        plane.Altitude.TrueAltitude = (int)alt;
                         p += 2;
                     }
                     if (fspec[16]) // I021/090 Quality Indicators
@@ -214,6 +213,82 @@ namespace DGScope.Receivers.Asterix
                     {
                         plane.Squawk = decodeSquawk(data, ref p);
                     }
+                    if (fspec[19]) // I021/230 Roll Angle
+                    {
+                        p += 2;
+                    }
+                    if (fspec[20]) // I021/145 Flight Level
+                    {
+                        int alt = ((data[p] << 8) + data[p + 1]) * 25;
+                        p += 2;
+                        plane.Altitude.PressureAltitude = alt;
+                    }
+                    if (fspec[21]) // I021/152 Magnetic Heading
+                    {
+                        p += 2;
+                    }
+                    if (fspec[22]) // I021/200 Target Status
+                    {
+                        plane.Ident = (data[p] & 0x3) == 3;
+                        plane.Emergency = (data[p] & 0x1c) != 0;
+                        p += 1;
+                    }
+                    if (fspec[23]) // ID021/155 Barometric Vertical Rate
+                    {
+                        if ((data[p] & 0x80) == 0)
+                        {
+                            short rate = (short)((short)(data[p] << 9) + (data[p + 1] << 1));
+                            plane.VerticalRate = (int)(rate * 3.125);
+                        }
+                        p += 2;
+                    }
+                    if (fspec[24]) // ID021/157 Geometric Vertical Rate
+                    {
+                        if ((data[p] & 0x80) == 0)
+                        {
+                            short rate = (short)((short)(data[p] << 9) + (data[p + 1] << 1));
+                            plane.VerticalRate = (int)(rate * 3.125);
+                        }
+                        p += 2;
+                    }
+                    if (fspec[25]) // ID021/160 Airborne Ground Vector
+                    {
+                        if ((data[p] & 0x80) == 0)
+                        {
+                            uint speed = (uint)((data[p] << 8) + data[p + 1]);
+                            plane.GroundSpeed = (int)(speed * (Math.Pow(2, -14) / 3600));
+                        }
+                        p += 2;
+                        uint track = (uint)((data[p] << 8) + data[p + 1]);
+                        p += 2;
+                        if (velocityTime != DateTime.MinValue)
+                            plane.SetTrack(track * (360 / Math.Pow(2, -16)), velocityTime);
+                    }
+                    if (fspec[26]) // ID021/165 Track Angle Rate
+                    {
+                        p += 2;
+                    }
+                    if (fspec[27]) // ID021/077 Time of Report Transmission
+                    {
+                        plane.LastMessageTime = decodeTime(data, ref p);
+                    }
+                    if (fspec[28]) // ID021/170 Target Identification
+                    {
+                        ulong encoded_cs = ((ulong)data[p] << 40) + ((ulong)data[p + 1] << 32) + ((ulong)data[p + 2] << 24) + ((ulong)data[p + 3] << 16) 
+                            + ((ulong)data[p + 4] << 8) + data[p + 5];
+                        
+                        const string ais_charset = " ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
+                        char[] chars = new char[8];
+                        chars[0] = ais_charset[(int)((encoded_cs & 0xFC0000000000) >> 42)];
+                        chars[1] = ais_charset[(int)((encoded_cs & 0x3F000000000) >> 36)];
+                        chars[2] = ais_charset[(int)((encoded_cs & 0xFC0000000) >> 30)];
+                        chars[3] = ais_charset[(int)((encoded_cs & 0x3F000000) >> 24)];
+                        chars[4] = ais_charset[(int)((encoded_cs & 0xFC0000) >> 18)];
+                        chars[5] = ais_charset[(int)((encoded_cs & 0x3F000) >> 12)];
+                        chars[6] = ais_charset[(int)((encoded_cs & 0xFC0) >> 6)];
+                        chars[7] = ais_charset[(int)(encoded_cs & 0x3F)];
+                        plane.Callsign = new string(chars).Trim();
+                    }
                     break;
                     
             }
@@ -225,7 +300,7 @@ namespace DGScope.Receivers.Asterix
             char a = ((code & 0xe00) >> 9).ToString().ToCharArray()[0];
             char b = ((code & 0x1c0) >> 6).ToString().ToCharArray()[0];
             char c = ((code & 0x38) >> 3).ToString().ToCharArray()[0];
-            char d = (code & 0xe7).ToString().ToCharArray()[0];
+            char d = (code & 0x7).ToString().ToCharArray()[0];
             return new string(new char[] { a, b, c, d });
         }
         private static void decodeHighPrecisionTime(ref DateTime time, byte[] data, ref int p)
@@ -249,8 +324,10 @@ namespace DGScope.Receivers.Asterix
             }
             time = wholesecond.AddSeconds(offset);
         }
-        private static DateTime decodeTime(int time)
+        private static DateTime decodeTime(byte[] data, ref int p)
         {
+            int time = (data[p] << 16) + (data[p + 1] << 8) + data[p + 2];
+            p += 3;
             DateTime dt = DateTime.UtcNow.Date;
             dt = dt.AddSeconds(time / 128d);
             if ((dt - DateTime.UtcNow).TotalDays >= 0.5)
