@@ -79,6 +79,7 @@ namespace DGScope.Receivers.ScopeServer
             FlightPlanUpdate upd = flightPlan.GetCompleteUpdate() as FlightPlanUpdate;
             upd.TimeStamp = RadarWindow.CurrentTime;
             upd.Callsign = plane.FlightPlanCallsign;
+            upd.AircraftType = plane.Type;
             upd.PendingHandoff = plane.PendingHandoff;
             upd.Owner = plane.PositionInd;
             upd.AssociatedTrackGuid = plane.TrackGuid;
