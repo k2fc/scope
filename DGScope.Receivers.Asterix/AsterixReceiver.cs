@@ -256,13 +256,13 @@ namespace DGScope.Receivers.Asterix
                         if ((data[p] & 0x80) == 0)
                         {
                             uint speed = (uint)((data[p] << 8) + data[p + 1]);
-                            plane.GroundSpeed = (int)(speed * (Math.Pow(2, -14) / 3600));
+                            plane.GroundSpeed = (int)(speed * (Math.Pow(2, -14) * 3600));
                         }
                         p += 2;
                         uint track = (uint)((data[p] << 8) + data[p + 1]);
                         p += 2;
                         if (velocityTime != DateTime.MinValue)
-                            plane.SetTrack(track * (360 / Math.Pow(2, -16)), velocityTime);
+                            plane.SetTrack(track * .0055, velocityTime);
                     }
                     if (fspec[26]) // ID021/165 Track Angle Rate
                     {
@@ -270,7 +270,13 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[27]) // ID021/077 Time of Report Transmission
                     {
-                        plane.LastMessageTime = decodeTime(data, ref p);
+                        var time = decodeTime(data, ref p);
+                        if (plane.LastMessageTime < time)
+                            plane.LastMessageTime = time;
+                    }
+                    else if (plane.LastMessageTime < RadarWindow.CurrentTime)
+                    {
+                        plane.LastMessageTime = RadarWindow.CurrentTime;
                     }
                     if (fspec[28]) // ID021/170 Target Identification
                     {
@@ -328,15 +334,15 @@ namespace DGScope.Receivers.Asterix
         {
             int time = (data[p] << 16) + (data[p + 1] << 8) + data[p + 2];
             p += 3;
-            DateTime dt = DateTime.UtcNow.Date;
+            DateTime dt = RadarWindow.CurrentTime.Date;
             dt = dt.AddSeconds(time / 128d);
-            if ((dt - DateTime.UtcNow).TotalDays >= 0.5)
+            if ((dt - RadarWindow.CurrentTime).TotalDays >= 0.5)
             {
-                dt.AddDays(-1);
+                dt = dt.AddDays(-1);
             }
-            else if (((dt - DateTime.UtcNow).TotalDays <= -0.5))
+            else if (((dt - RadarWindow.CurrentTime).TotalDays <= -0.5))
             {
-                dt.AddDays(1);
+                dt = dt.AddDays(1);
             }
 
             return dt;
