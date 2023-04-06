@@ -149,6 +149,7 @@ namespace DGScope.Receivers.Asterix
                 case 21: // ADS-B Message
                     double? latitude = null;
                     double? longitude = null;
+                    bool? onground = null;
                     if (!fspec[10]) // no address.  this is useless to us
                         return;
                     if (fspec[0]) // I021/010 Data Source Identification
@@ -157,7 +158,8 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[1]) // I021/040 Target Report Descriptor
                     {
-                        readFspec(data, ref p);
+                        var trd = readFspec(data, ref p);
+                        onground = trd[8];
                     }
                     if (fspec[2]) // I021/161 Track Number
                     {
@@ -207,6 +209,8 @@ namespace DGScope.Receivers.Asterix
                     plane = GetPlane(addr, CreateNewAircraft);
                     if (plane == null)
                         return;
+                    if (onground.HasValue)
+                        plane.IsOnGround = onground.Value;
                     if (fspec[11]) // I021 / 073 Time of Message Reception of Position
                     {
                         if (latitude.HasValue && longitude.HasValue)
