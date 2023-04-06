@@ -142,7 +142,6 @@ namespace DGScope.Receivers.Asterix
             byte category = data[0];
             int p = 3;
             bool[] fspec = readFspec(data, ref p);
-            DateTime velocityTime = DateTime.MinValue;
             Aircraft plane;
             switch (category)
             {
@@ -150,6 +149,8 @@ namespace DGScope.Receivers.Asterix
                     double? latitude = null;
                     double? longitude = null;
                     bool? onground = null;
+                    DateTime? posTime = null;
+                    DateTime velocityTime = DateTime.MinValue;
                     if (!fspec[10]) // no address.  this is useless to us
                         return;
                     if (fspec[0]) // I021/010 Data Source Identification
@@ -171,7 +172,7 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[4]) // I021/071 Time of Applicability for Position 3
                     {
-                        p += 3;
+                        posTime = decodeTime(data, ref p);
                     }
                     if (fspec[5]) // I021/130 Position in WGS-84 co-ordinates
                     {
@@ -193,7 +194,7 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[7]) // I021/072 Time of Applicability for Velocity
                     {
-                        p += 3;
+                        velocityTime = decodeTime(data, ref p);
                     }
                     if (fspec[8]) // I021/150 Air Speed
                     {
@@ -221,16 +222,26 @@ namespace DGScope.Receivers.Asterix
                             {
                                 decodeHighPrecisionTime(ref time, data, ref p);
                             }
-                            plane.SetLocation(latitude.Value, longitude.Value, time);
+                            if (posTime.HasValue)
+                            {
+                                plane.SetLocation(latitude.Value, longitude.Value, posTime.Value);
+                            }
+                            else
+                            {
+                                plane.SetLocation(latitude.Value, longitude.Value, time);
+                            }
                         }
                     }
                     if (fspec[13]) // I021/075 Time of Message Reception of Velocity
                     {
-                        
-                        velocityTime = decodeTime(data, ref p);
+                        var velocityRxTime = decodeTime(data, ref p);
                         if (fspec[14]) //  I021/076 Time of Message Reception of Velocity-High Precision
                         {
-                            decodeHighPrecisionTime(ref velocityTime, data, ref p);
+                            decodeHighPrecisionTime(ref velocityRxTime, data, ref p);
+                        }
+                        if (velocityTime == DateTime.MinValue)
+                        {
+                            velocityTime = velocityRxTime;
                         }
                     }
                     if (fspec[15]) // I021/140 Geometric Height
