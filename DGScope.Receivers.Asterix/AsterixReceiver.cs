@@ -16,7 +16,7 @@ namespace DGScope.Receivers.Asterix
         public string Address { get; set; } 
         public AsteriskReceiverMode Mode { get; set; }
         UdpClient udpclient;
-        TcpClient tcpclient;
+        EventDrivenTCPClient tcpclient;
         public AsterixReceiver() { }
         
         public override void Start()
@@ -43,8 +43,31 @@ namespace DGScope.Receivers.Asterix
         }
         private bool startTcpClient()
         {
-            return false;
+            try
+            {
+                tcpclient = new EventDrivenTCPClient(Address, Port, true);
+                tcpclient.Connect();
+                tcpclient.DataReceived += Tcpclient_DataReceived;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                return false;
+            }
+            return true;
         }
+
+        private void Tcpclient_DataReceived(EventDrivenTCPClient sender, byte[] rawdata, int len)
+        {
+            byte[] data = new byte[len];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = rawdata[i];
+            }
+            parseAsteriskPacket(data);
+
+        }
+
         private bool startUdpReceiver()
         {
             try
@@ -64,9 +87,14 @@ namespace DGScope.Receivers.Asterix
         {
             running = false;
             if (udpclient != null)
+            {
                 udpclient.Close();
+            }
             if (tcpclient != null)
-                tcpclient.Close();
+            {
+                tcpclient.DataReceived -= Tcpclient_DataReceived;
+                tcpclient.Disconnect();
+            }
         }
 
         bool running;
@@ -87,7 +115,13 @@ namespace DGScope.Receivers.Asterix
         }
         private async void parseAsteriskPacket(byte[] data)
         {
+            if (data.Length < 3)
+                return;
             ushort len = (ushort)((data[1] << 8) + data[2]);
+            if (len > data.Length)
+                return;
+            if (len < 3)
+                return;
             byte[] thisMessage = new byte[len];
             byte[] theRest = new byte[data.Length - len];
             for (int i = 0; i < data.Length; i++)
@@ -97,7 +131,7 @@ namespace DGScope.Receivers.Asterix
                 else
                     thisMessage[i] = data[i];
             }
-            if (theRest.Length > 0)
+            if (theRest.Length >= 3)
             {
                 parseAsteriskPacket(theRest);
             }
