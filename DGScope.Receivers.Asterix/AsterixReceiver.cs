@@ -247,8 +247,9 @@ namespace DGScope.Receivers.Asterix
                     if (fspec[15]) // I021/140 Geometric Height
                     {
                         double alt = ((data[p] << 8) + data[p + 1]) + 6.25;
-                        plane.Altitude.TrueAltitude = (int)alt;
                         p += 2;
+                        if (alt <= 600000) 
+                            plane.Altitude.TrueAltitude = (int)alt;
                     }
                     if (fspec[16]) // I021/090 Quality Indicators
                     {
@@ -270,7 +271,8 @@ namespace DGScope.Receivers.Asterix
                     {
                         int alt = ((data[p] << 8) + data[p + 1]) * 25;
                         p += 2;
-                        plane.Altitude.PressureAltitude = alt;
+                        if (alt <= 600000)
+                            plane.Altitude.PressureAltitude = alt;
                     }
                     if (fspec[21]) // I021/152 Magnetic Heading
                     {
