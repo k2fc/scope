@@ -40,7 +40,8 @@ namespace DGScope
         private Airports Airports { get; set; } = new Airports();
         [XmlIgnore]
         private Waypoints Waypoints { get; set; } = new Waypoints();
-        
+        [XmlIgnore]
+        public Dictionary<Aircraft, DateTime> SweptTimes { get; set; } = new Dictionary<Aircraft, DateTime>();
 
         public double LatitudeOfTarget(double distance, double bearing)
         {
@@ -158,6 +159,25 @@ namespace DGScope
                 else
                 {
                     plane.SweptSpeeds.Add(this, plane.GroundSpeed);
+                }
+            }
+            lock (plane.LastHistoryTimes)
+            {
+                
+                if (!plane.LastHistoryTimes.ContainsKey(this))
+                {
+                    plane.LastHistoryTimes.Add(this, DateTime.MinValue);
+                }
+            }
+            lock (SweptTimes)
+            {
+                if (!SweptTimes.ContainsKey(plane))
+                {
+                    SweptTimes.Add(plane, RadarWindow.CurrentTime);
+                }
+                else
+                {
+                    SweptTimes[plane] = RadarWindow.CurrentTime;
                 }
             }
         }

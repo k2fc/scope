@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Windows.Forms;
 using DGScope.Receivers;
 
 namespace DGScope
@@ -171,11 +172,13 @@ namespace DGScope
         {
             ModeSCode = icaoID;
             Created?.Invoke(this, new EventArgs());
+            History.Initialize();
         }
         public Aircraft(Guid guid)
         {
             TrackGuid = guid;
             Created?.Invoke(this, new EventArgs());
+            History.Initialize();
         }
 
         public void SetLocation (GeoPoint Location, DateTime SetTime)
@@ -259,7 +262,7 @@ namespace DGScope
         }
 
         public PrimaryReturn TargetReturn = new PrimaryReturn() { BackColor = Color.Transparent, ForeColor = Color.Lime };
-        public List<PrimaryReturn> ReturnTrails = new List<PrimaryReturn>();
+        public PrimaryReturn[] History = new PrimaryReturn[10];
         public ConnectingLineF ConnectingLine = new ConnectingLineF() { };
 
         public TransparentLabel DataBlock = new TransparentLabel()
@@ -759,6 +762,19 @@ namespace DGScope
             }
         }
 
+        public PrimaryReturn[] SweptHistory(Radar radar)
+        {
+            lock(SweptHistories)
+                if (SweptHistories.ContainsKey(radar))
+                {
+                    return SweptHistories[radar];
+                }
+                else
+                {
+                    return History;
+                }
+        }
+
         public double ExtrapolateTrack(DateTime time)
         {
             if (Math.Abs(rateofturn) > 5) // sanity check
@@ -791,6 +807,8 @@ namespace DGScope
         public Dictionary<Radar, int> SweptTracks = new Dictionary<Radar, int>();
         public Dictionary<Radar, int> SweptAltitudes = new Dictionary<Radar, int>();
         public Dictionary<Radar, int> SweptSpeeds = new Dictionary<Radar, int>();
+        public Dictionary<Radar, PrimaryReturn[]> SweptHistories = new Dictionary<Radar, PrimaryReturn[]>();
+        public Dictionary<Radar, DateTime> LastHistoryTimes = new Dictionary<Radar, DateTime>();
         public override string ToString()
         {
             return Callsign;

@@ -240,6 +240,8 @@ namespace DGScope
         public double FadeTime { get; set; } = 30;
         [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
         public double HistoryInterval { get; set; } = 4.5;
+        [DisplayName("History Number"), Description("The number of histories to draw."), Category("Display Properties")]
+        public int NumHistory { get; set; } = 10;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
@@ -725,7 +727,6 @@ namespace DGScope
         public bool UseADSBCallsignsAssociated { get; set; } = false;
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
-        List<PrimaryReturn> PrimaryReturns = new List<PrimaryReturn>();
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
         private GameWindow window;
@@ -835,22 +836,6 @@ namespace DGScope
         {
             lock (plane)
             {
-                if (!leaveHistory)
-                {
-                    lock (PrimaryReturns)
-                    {
-                        PrimaryReturns.ToList().ForEach(p =>
-                        {
-                            if (p.ParentAircraft == plane)
-                                PrimaryReturns.Remove(p);
-                        });
-                    }
-                }
-                else
-                {
-                    lock (PrimaryReturns)
-                        PrimaryReturns.Remove(plane.TargetReturn);
-                }
                 lock (dataBlocks)
                     dataBlocks.Remove(plane.DataBlock);
                 lock (posIndicators)
@@ -932,7 +917,7 @@ namespace DGScope
             {
                 lock(Aircraft)
                     Aircraft.Remove(plane);
-                DeletePlane(plane);
+                DeletePlane(plane, false);
             }
         }
         private List<Aircraft> deletedPlanes = new List<Aircraft>();
@@ -3374,10 +3359,10 @@ namespace DGScope
             var location = GeoToScreenPoint(extrapolatedpos);
             if (location.X == 0 || location.Y == 0)
                 return;
-            if (aircraft.LastHistoryDrawn < CurrentTime.AddSeconds(-HistoryInterval) && (!aircraft.PrimaryOnly || aircraft.Associated))
+            if (aircraft.LastHistoryTimes.ContainsKey(radar) && 
+                (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= HistoryInterval)
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
-                aircraft.TargetReturn.Colors = HistoryColors;
                 aircraft.TargetReturn.ShapeHeight = HistoryHeight;
                 aircraft.TargetReturn.ShapeWidth = HistoryWidth;
                 aircraft.TargetReturn.Shape = HistoryShape;
@@ -3385,10 +3370,17 @@ namespace DGScope
                 {
                     aircraft.TargetReturn.Fading = false;
                     aircraft.TargetReturn.Intensity = 1;
-                    lock (aircraft.ReturnTrails)
-                        foreach (var item in aircraft.ReturnTrails)
+                    var lastHistory = aircraft.History.Length - 1;
+                    lock (aircraft.History)
+                        for (int i = lastHistory; i > 0; i--)
                         {
-                            item.IncrementColor();
+                            aircraft.History[i] = aircraft.History[i - 1];
+                            if (aircraft.History[i] == null)
+                                continue;
+                            if (i >= HistoryColors.Length)
+                                aircraft.History[i].ForeColor = HistoryColors[HistoryColors.Length - 1];
+                            else
+                                aircraft.History[i].ForeColor = HistoryColors[i];
                         }
                 }
                 else
@@ -3400,7 +3392,7 @@ namespace DGScope
                     aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
                 }
                 PrimaryReturn newreturn = new PrimaryReturn();
-                aircraft.ReturnTrails.Add(aircraft.TargetReturn);
+                aircraft.History[0] = aircraft.TargetReturn;
                 aircraft.TargetReturn = newreturn;
                 newreturn.ParentAircraft = aircraft;
                 newreturn.Fading = PrimaryFade;
@@ -3411,9 +3403,7 @@ namespace DGScope
                 newreturn.ShapeHeight = TargetHeight;
                 newreturn.ShapeWidth = TargetWidth;
                 //newreturn.Shape = radar.TargetShape;
-                lock (PrimaryReturns)
-                    PrimaryReturns.Add(newreturn);
-                aircraft.LastHistoryDrawn = CurrentTime;
+                aircraft.LastHistoryTimes[radar] = CurrentTime;
             }
 
             if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
@@ -3547,31 +3537,23 @@ namespace DGScope
                 }
                 if (aircraft.Location != null)
                     GenerateTargetAsync(aircraft);
-            }
-            
-            foreach (PrimaryReturn target in PrimaryReturns.ToList())
-            {
-                if (target == null)
-                    continue;
-                if (target.Intensity < .001)
+                for (int j = 0; j < aircraft.History.Length; j++)
                 {
-                    lock(PrimaryReturns)
-                        PrimaryReturns.Remove(target);
-                    lock (target.ParentAircraft.ReturnTrails)
-                        target.ParentAircraft.ReturnTrails.Remove(target);
-                    if (target.ParentAircraft.TargetReturn == target)
+                    var target = aircraft.History[j];
+                    if (target == null)
+                        continue;
+                    if (target.Intensity < .001)
                     {
-                        lock(dataBlocks)
-                            dataBlocks.Remove(target.ParentAircraft.DataBlock);
-                        lock (posIndicators)
-                            posIndicators.Remove(target.ParentAircraft.PositionIndicator);
+                        if (target.ParentAircraft.TargetReturn == target)
+                        {
+                            lock (dataBlocks)
+                                dataBlocks.Remove(target.ParentAircraft.DataBlock);
+                            lock (posIndicators)
+                                posIndicators.Remove(target.ParentAircraft.PositionIndicator);
+                        }
                     }
                 }
-                else
-                {
-
-                }
-            }       
+            }    
             generating = false;
         }
         private bool inRange (Aircraft plane)
@@ -3829,20 +3811,21 @@ namespace DGScope
         }
 
         Timer aircraftGCTimer;
-
+        private void RescaleTarget(PrimaryReturn target, float scalechange)
+        {
+            if (target == null)
+                return;
+            PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
+            target.LocationF = newLocation;
+        }
         private void RescaleTargets(float scalechange)
         {
-            
-            lock(PrimaryReturns)
-                foreach (PrimaryReturn target in PrimaryReturns.ToList())
-                {
-                    PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
-                    target.LocationF = newLocation;
-                }
             lock (Aircraft)
             {
                 foreach (Aircraft plane in Aircraft)
                 {
+                    RescaleTarget(plane.TargetReturn, scalechange);
+                    plane.History.ToList().ForEach(x => RescaleTarget(x, scalechange));
                     PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange));
                     plane.LocationF = newLocation;
                     plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
@@ -3853,16 +3836,17 @@ namespace DGScope
                 }
             }
         }
-
+        private void MoveTarget(PrimaryReturn target, float xChange, float yChange)
+        {
+            if (target == null)
+                return;
+            if (target.LocationF.X == 0 && target.LocationF.Y == 0)
+                return;
+            target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
+        }
         private void MoveTargets(float xChange, float yChange)
         {
-            lock(PrimaryReturns)
-                foreach (PrimaryReturn target in PrimaryReturns.ToList())
-                {
-                    if (target.LocationF.X == 0 && target.LocationF.Y == 0)
-                        continue;
-                    target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
-                }
+            
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
                 if (block.LocationF.X == 0 && block.LocationF.Y == 0)
@@ -3882,6 +3866,8 @@ namespace DGScope
                 {
                     if (plane.LocationF.X == 0 && plane.LocationF.Y == 0)
                         continue;
+                    MoveTarget(plane.TargetReturn, xChange, yChange);
+                    plane.History.ToList().ForEach(x => MoveTarget(x, xChange, yChange));
                     plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
                 }
             }
@@ -3896,6 +3882,8 @@ namespace DGScope
 
         private void DrawTarget(PrimaryReturn target)
         {
+            if (target == null)
+                return;
             if (target.ParentAircraft.Location == null)
                 return;
             if (target.LocationF.X == 0 || target.LocationF.Y == 0)
@@ -3903,6 +3891,8 @@ namespace DGScope
             if (target != target.ParentAircraft.TargetReturn) // history
             {
                 if (!InFilter(target.ParentAircraft) && !target.ParentAircraft.FDB)
+                    return;
+                if (Array.IndexOf(target.ParentAircraft.History, target) >= NumHistory)
                     return;
             }
             if (!target.ParentAircraft.PrimaryOnly)
@@ -4040,11 +4030,25 @@ namespace DGScope
                     beaconatorplane.RedrawDataBlock(radar);
                 }
             }
-            foreach (var target in PrimaryReturns.ToList().OrderBy(x => x.Intensity))
+            Aircraft.ToList().ForEach(x =>
             {
-                if (!(target.LocationF.X == 0 && target.LocationF.Y == 0))
-                    DrawTarget(target);
-            }
+                if ((!x.PrimaryOnly || x.Associated))
+                {
+                    for (var i = x.History.Length - 1; i >= 0; i--)
+                    {
+                        if (x.History[i] != null && x.History[i].ParentAircraft == null)
+                            x.History[i].ParentAircraft = x;
+                        if (x.History[i] != null)
+                            DrawTarget(x.History[i]);
+                    }
+                }
+            });
+            Aircraft.ToList().ForEach(x =>
+            {
+                if (x.TargetReturn.ParentAircraft == null)
+                    x.TargetReturn.ParentAircraft = x;
+                DrawTarget(x.TargetReturn);
+            });
             lock (posIndicators)
                 posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB && (x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)) DrawLabel(x); });
             lock (dataBlocks)
@@ -4169,8 +4173,6 @@ namespace DGScope
         private void DrawAllScreenObjectBounds()
         {
             List<IScreenObject> screenObjects = new List<IScreenObject>();
-            lock (PrimaryReturns)
-                screenObjects.AddRange(PrimaryReturns);
             
             foreach (var item in screenObjects)
             {

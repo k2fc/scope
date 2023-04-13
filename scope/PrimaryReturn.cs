@@ -72,11 +72,7 @@ namespace DGScope
             {
                 if (!Fading)
                 {
-                    if (Colors == null)
-                        return initialColor;
-                    var color = Colors[currentColor];
-                    
-                    return color;
+                    return initialColor;
                 }
                 if (Intensity >= 1)
                     return initialColor;
@@ -95,17 +91,15 @@ namespace DGScope
             }
 
         }
-        public Color[] Colors
-        {
-            get; set;
-        }
-        private int currentColor = 0;
+        
         Stopwatch Stopwatch = new Stopwatch();
         double intensity;
         public double Intensity
         {
             get
             {
+                if (!Fading)
+                    return 1;
                 return (intensity - Stopwatch.ElapsedMilliseconds / (FadeTime * 1000));
             }
             set
@@ -115,14 +109,7 @@ namespace DGScope
             }
         }
 
-        public int IncrementColor()
-        {
-            if (Colors == null)
-                return -1;
-            if (currentColor < Colors.Length - 1)
-                currentColor++;
-            return currentColor;
-        }
+        
         public PrimaryReturn()
         {
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
