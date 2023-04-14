@@ -837,9 +837,15 @@ namespace DGScope
             lock (plane)
             {
                 lock (dataBlocks)
+                {
                     dataBlocks.Remove(plane.DataBlock);
+                    dataBlocks.Remove(plane.DataBlock2);
+                    dataBlocks.Remove(plane.DataBlock3);
+                }
                 lock (posIndicators)
+                {
                     posIndicators.Remove(plane.PositionIndicator);
+                }
                 lock (rangeBearingLines)
                     rangeBearingLines.RemoveAll(line => line.EndPlane == plane || line.StartPlane == plane);
                 lock (minSeps)
@@ -932,10 +938,27 @@ namespace DGScope
                         GL.DeleteTexture(plane.DataBlock.TextureID);
                         GL.DeleteTexture(plane.DataBlock2.TextureID);
                         GL.DeleteTexture(plane.DataBlock3.TextureID);
+                        GL.DeleteTexture(plane.PositionIndicator.TextureID);
                         plane.DataBlock.TextureID = 0;
                         plane.DataBlock2.TextureID = 0;
                         plane.DataBlock3.TextureID = 0;
+                        plane.PositionIndicator.TextureID = 0;
+                        plane.DataBlock.Dispose();
+                        plane.DataBlock2.Dispose();
+                        plane.DataBlock3.Dispose();
+                        plane.PositionIndicator.Dispose();
                     }
+                    lock(plane.History)
+                    {
+                        for (int i = 0; i < plane.History.Length; i++)
+                        {
+                            if (plane.History[i] != null)
+                            {
+                                plane.History[i].Dispose();
+                            }
+                        }
+                    }
+                    plane.TargetReturn.Dispose();
                     deletedPlanes.Remove(plane);
                 });
             }
@@ -3372,6 +3395,9 @@ namespace DGScope
                     aircraft.TargetReturn.Intensity = 1;
                     var lastHistory = aircraft.History.Length - 1;
                     lock (aircraft.History)
+                    {
+                        if (aircraft.History[lastHistory] != null)
+                            aircraft.History[lastHistory].Dispose();
                         for (int i = lastHistory; i > 0; i--)
                         {
                             aircraft.History[i] = aircraft.History[i - 1];
@@ -3382,6 +3408,7 @@ namespace DGScope
                             else
                                 aircraft.History[i].ForeColor = HistoryColors[i];
                         }
+                    }
                 }
                 else
                 {
@@ -4034,12 +4061,15 @@ namespace DGScope
             {
                 if ((!x.PrimaryOnly || x.Associated))
                 {
-                    for (var i = x.History.Length - 1; i >= 0; i--)
+                    lock (x.History)
                     {
-                        if (x.History[i] != null && x.History[i].ParentAircraft == null)
-                            x.History[i].ParentAircraft = x;
-                        if (x.History[i] != null)
-                            DrawTarget(x.History[i]);
+                        for (var i = x.History.Length - 1; i >= 0; i--)
+                        {
+                            if (x.History[i] != null && x.History[i].ParentAircraft == null)
+                                x.History[i].ParentAircraft = x;
+                            if (x.History[i] != null)
+                                DrawTarget(x.History[i]);
+                        }
                     }
                 }
             });
