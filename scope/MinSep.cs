@@ -68,8 +68,8 @@ namespace DGScope
             while (Math.Abs(testdistance - minsep) > DESIREDPRECISION || Math.Abs(testdistance - lastdistance) > DESIREDPRECISION)
             {
                 hours += 1 / (3600 / secondsStep);
-                GeoPoint point1 = Plane1.SweptLocation(radar).FromPoint(Plane1.GroundSpeed * hours, Plane1.ExtrapolateTrack());
-                GeoPoint point2 = Plane2.SweptLocation(radar).FromPoint(Plane2.GroundSpeed * hours, Plane2.ExtrapolateTrack());
+                GeoPoint point1 = Plane1.SweptLocation(radar).FromPoint(Plane1.SweptSpeed(radar) * hours, Plane1.SweptTrack(radar));
+                GeoPoint point2 = Plane2.SweptLocation(radar).FromPoint(Plane2.SweptSpeed(radar) * hours, Plane2.SweptTrack(radar));
                 lastdistance = testdistance;
                 testdistance = point1.DistanceTo(point2);
                 if (testdistance < minsep)
