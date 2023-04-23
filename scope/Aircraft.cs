@@ -312,6 +312,8 @@ namespace DGScope
             string altstring;
             if (Altitude != null && Altitude.AltitudeType != AltitudeType.Unknown)
             {
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100;
                 altstring = (dbAlt / 100).ToString("D3");
             }
             else
@@ -319,6 +321,8 @@ namespace DGScope
                 altstring = "RDR";
             }
             dbAlt = SweptAltitude(radar);
+            if (dbAlt % 100 > 50)
+                dbAlt = ((dbAlt / 100) * 100) + 100;
             dbSpeed = SweptSpeed(radar);
             
             string vfrchar = " ";
@@ -360,6 +364,8 @@ namespace DGScope
             }
             else
             {
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100; 
                 destination = (dbAlt / 100).ToString("D3");
             }
             
@@ -560,6 +566,8 @@ namespace DGScope
             if (updatepos || dbAlt == 0 || dbSpeed == 0)
             {
                 dbAlt = TrueAltitude;
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100;
                 dbSpeed = GroundSpeed;
             }
             string vrchar = " ";
@@ -587,6 +595,8 @@ namespace DGScope
 
             if (field1.Trim() == "")
             {
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100; 
                 field1 = (dbAlt / 100).ToString("D3");
             }
 
@@ -614,11 +624,15 @@ namespace DGScope
             DataBlock2.Text = DataBlock.Text;
             if (!fdb())
             {
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100; 
                 DataBlock.Text = (dbAlt / 100).ToString("D3");
                 DataBlock2.Text = field1;
             }
             else
             {
+                if (dbAlt % 100 > 50)
+                    dbAlt = ((dbAlt / 100) * 100) + 100; 
                 DataBlock.Text += (dbAlt / 100).ToString("D3") + vrchar + (dbSpeed / 10).ToString("D2");
                 DataBlock2.Text += field1 + vrchar + field2;
             }

@@ -149,6 +149,7 @@ namespace DGScope.Receivers.Asterix
                     double? latitude = null;
                     double? longitude = null;
                     bool? onground = null;
+                    bool alt_set = false;
                     DateTime? posTime = null;
                     DateTime velocityTime = DateTime.MinValue;
                     if (!fspec[10]) // no address.  this is useless to us
@@ -176,7 +177,23 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[5]) // I021/130 Position in WGS-84 co-ordinates
                     {
-                        p += 8;
+                        int lat = data[p] << 16;
+                        lat += data[p + 1] << 8;
+                        lat += data[p + 2];
+                        int lon = data[p + 3] << 16;
+                        lon += data[p + 4] << 8;
+                        lon += data[p + 5];
+                        if (lat >= 0x800000)
+                        {
+                            lat -= 0x1000000;
+                        }
+                        if (lon >= 0x800000)
+                        {
+                            lon -= 0x1000000;
+                        }
+                        latitude = lat * (180 / Math.Pow(2, 23));
+                        longitude = lon * (180 / Math.Pow(2, 23));
+                        p += 6;
                     }
                     if (fspec[6]) // I021/131 Position in WGS-84 co-ordinates, high res.
                     {
@@ -246,10 +263,13 @@ namespace DGScope.Receivers.Asterix
                     }
                     if (fspec[15]) // I021/140 Geometric Height
                     {
-                        double alt = ((data[p] << 8) + data[p + 1]) + 6.25;
+                        double alt = ((data[p] << 8) + data[p + 1]) * 6.25;
                         p += 2;
-                        if (alt <= 600000) 
+                        if (alt <= 150000 && alt >= -150 && !alt_set)
+                        {
                             plane.Altitude.TrueAltitude = (int)alt;
+                            alt_set = true;
+                        }
                     }
                     if (fspec[16]) // I021/090 Quality Indicators
                     {
@@ -271,8 +291,11 @@ namespace DGScope.Receivers.Asterix
                     {
                         int alt = ((data[p] << 8) + data[p + 1]) * 25;
                         p += 2;
-                        if (alt <= 600000)
+                        if (alt <= 150000 && alt >= -1500 && !alt_set)
+                        {
                             plane.Altitude.PressureAltitude = alt;
+                            alt_set = true;
+                        }
                     }
                     if (fspec[21]) // I021/152 Magnetic Heading
                     {
