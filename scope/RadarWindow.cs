@@ -406,27 +406,33 @@ namespace DGScope
             get => ATPA.RequiredSeparation;
             set => ATPA.RequiredSeparation = value;
         }
-        private string atpaVolumeFile = "";
-        [DisplayName("Volume File"), Category("ATPA")]
-        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
-        public string ATPAVolumeFile 
+        [DisplayName("Volumes"), Category("ATPA")]
+        public List<ATPAVolume> ATPAVolumes
         {
-            get => atpaVolumeFile;
-            set
-            {
-                if (string.IsNullOrEmpty(value))
-                    return;
-                try
-                {
-                    ATPA.DeserializeVolumesFromJsonFile(value);
-                    atpaVolumeFile = value;
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show("Unable to read ATPA Volume File \n" + ex.Message);
-                }
-            }
+            get => ATPA.Volumes;
+            set => ATPA.Volumes = value;
         }
+        //private string atpaVolumeFile = "";
+        //[DisplayName("Volume File"), Category("ATPA")]
+        //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        //public string ATPAVolumeFile 
+        //{
+        //    get => atpaVolumeFile;
+        //    set
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return;
+        //        try
+        //        {
+        //            ATPA.DeserializeVolumesFromJsonFile(value);
+        //            atpaVolumeFile = value;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            System.Windows.Forms.MessageBox.Show("Unable to read ATPA Volume File \n" + ex.Message);
+        //        }
+        //    }
+        //}
         [DisplayName("Display ATPA Monitor Cones"), Category("ATPA")]
         public bool DrawATPAMonitorCones { get; set; } = false;
         private string[] activeatpa = new string[0];

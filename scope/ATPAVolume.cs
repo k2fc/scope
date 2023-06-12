@@ -6,41 +6,78 @@ using System.Threading.Tasks;
 
 namespace DGScope
 {
-    public class ATPAVolume : Polygon
+    public class ATPAVolume
     {
-        public GeoPoint MergePoint { get; set; }
-        public double MinimumSeparation { get; set; } = 3;
-        public string Name { get; set; }
+        public string VolumeId { get; set; }
         public bool Active { get; set; }
-        public int MaxAltitude { get; set; }
-        public int MinAltitude { get; set; }
-        public string? Runway { get; set; }
-        public string? Destination { get; set; }
-        public int? LDRDirection { get; set; }
+        public string Name { get; set; }
+        public GeoPoint RunwayThreshold { get; set; } = new GeoPoint();
+        public int TrueHeading { get; set; }
+        public int MaxHeadingDeviation { get; set; }
+        public int Ceiling { get; set; }
+        public int Floor { get; set; }
+        public double Length { get; set; }
+        public int WidthLeft { get; set; }
+        public int WidthRight { get; set; }
+        public bool TwoPointFiveEnabled { get; set; }
+        public bool TwoPointFiveActive { get; set; }
+        //public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
+        public List<int> LeaderFilters { get; set; } = new List<int>();
+        public string Destination { get; set; }
+        public double TwoPointFiveDistance { get; set; }
+
 
         private List<Aircraft> order;
         private object orderlock = new object();
+
+        private int minHeading => TrueHeading - MaxHeadingDeviation;
+        private int maxHeading => TrueHeading + MaxHeadingDeviation;
+        private int minBearing => TrueHeading - 90;
+        private int maxBearing => TrueHeading + 90;
+        
         public bool IsInside (Aircraft aircraft, Radar radar)
         {
             if (aircraft == null)
                 return false;
-            if (aircraft.SweptLocation(radar) == null)
-                return false;
-            if (!aircraft.SweptLocation(radar).IsInsidePolygon(this))
-                return false;
-            if (aircraft.TrueAltitude > MaxAltitude || aircraft.TrueAltitude < MinAltitude)
-                return false;
-            if (Runway != null && Runway != aircraft.Runway)
+            if (aircraft.TrueAltitude > Ceiling || aircraft.TrueAltitude < Floor)
                 return false;
             if (Destination != null && Destination != aircraft.Destination)
                 return false;
-            if (LDRDirection != null && LDRDirection != (int?)aircraft.LDRDirection)
+            if (LeaderFilters.Count > 0 && !LeaderFilters.Contains((int)aircraft.LDRDirection))
                 return false;
-            double currentdistance = aircraft.SweptLocation(radar).DistanceTo(MergePoint);
-            double testdistance = aircraft.SweptLocation(radar).FromPoint(aircraft.GroundSpeed / 3600d, aircraft.ExtrapolateTrack()).DistanceTo(MergePoint);
-            if (testdistance >= currentdistance) // Plane is moving away from merge point
+            var acloc = aircraft.SweptLocation(radar);
+            if (acloc == null)
+                return false;
+            var acdistancetothreshold = acloc.DistanceTo(RunwayThreshold);
+            if (acdistancetothreshold > Length) 
+                return false;
+            var acbearingtothreshold = (acloc.BearingTo(RunwayThreshold) + 360) % 360;
+            if (!BearingIsBetween(acbearingtothreshold, minBearing, maxBearing))
+                return false;
+            if (!BearingIsBetween(aircraft.SweptTrack(radar), minHeading, maxHeading))
+                return false;
+            var angletothreshold = acbearingtothreshold - TrueHeading;
+            var disttocenterline = acdistancetothreshold * Math.Sin(Math.Abs(angletothreshold) * (Math.PI / 180));
+            if (angletothreshold > 0 && disttocenterline * 6076 > WidthLeft) // left
+                return false;
+            if (angletothreshold < 0 && disttocenterline * 6076 > WidthRight) // right
                 return false;
             return true;
+        }
+        private bool BearingIsBetween(double bearing, double az1, double az2)
+        {
+            if (az2 == az1)
+            {
+                return bearing == az1;
+            }
+            if (az2 > az1)
+            {
+                return bearing >= az1 && bearing <= az2;
+            }
+            else
+            {
+                return (bearing >= az1 && bearing <= 360) || bearing <= az2;
+            }
         }
 
         public void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
@@ -65,7 +102,7 @@ namespace DGScope
                     aircraft.Where(x => x.ATPAVolume == this).ToList().ForEach(x => ResetAircraftATPAValues(x));
                     return;
                 }
-                order = (aircraft.ToList().Where(x => IsInside(x, radar)).OrderBy(x => x.SweptLocation(radar).DistanceTo(MergePoint))).ToList();
+                order = (aircraft.ToList().Where(x => IsInside(x, radar)).OrderBy(x => x.SweptLocation(radar).DistanceTo(RunwayThreshold))).ToList();
                 aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
                 {
                     ResetAircraftATPAValues(x);
@@ -85,16 +122,19 @@ namespace DGScope
                             .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
                         follower.ATPAMileage45 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
                             .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
+                        double minsep = 3;
+                        if (TwoPointFiveEnabled && TwoPointFiveActive && follower.SweptLocation(radar).DistanceTo(RunwayThreshold) <= TwoPointFiveDistance)
+                            minsep = 2.5;
                         if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                         {
                             if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
                                 follower.ATPARequiredMileage = miles;
                             else
-                                follower.ATPARequiredMileage = MinimumSeparation;
+                                follower.ATPARequiredMileage = minsep;
                         }
                         else
                         {
-                            follower.ATPARequiredMileage = MinimumSeparation;
+                            follower.ATPARequiredMileage = minsep;
                         }
                         if (follower.ATPAMileageNow < follower.ATPARequiredMileage || follower.ATPAMileage24 < follower.ATPARequiredMileage)
                             follower.ATPAStatus = ATPAStatus.Alert;
