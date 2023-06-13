@@ -233,6 +233,7 @@
     <Compile Include="InputBox.cs" />
     <Compile Include="MapGeoJSON.cs" />
     <Compile Include="MinSep.cs" />
+    <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
     <Compile Include="TimeSync.cs" />
     <Compile Include="TPARing.cs" />

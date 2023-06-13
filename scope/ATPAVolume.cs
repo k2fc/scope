@@ -16,19 +16,33 @@ namespace DGScope
         public string Name { get; set; }
         [Description("Runway Threshold Location"), Category("Geometry")]
         public GeoPoint RunwayThreshold { get; set; } = new GeoPoint();
+        [Description("Runway True Heading"), Category("Geometry")] 
         public int TrueHeading { get; set; }
+        [Description("Maximum Heading Deviation"), Category("Geometry")] 
         public int MaxHeadingDeviation { get; set; }
+        [Category("Geometry")] 
         public int Ceiling { get; set; }
+        [Category("Geometry")]
         public int Floor { get; set; }
+        [Category("Geometry")]
         public double Length { get; set; }
+        [Category("Geometry")]
         public int WidthLeft { get; set; }
+        [Category("Geometry")]
         public int WidthRight { get; set; }
+        [DisplayName("Enabled"), Category("2.5nm Approach")]
         public bool TwoPointFiveEnabled { get; set; }
+        [DisplayName("Active"), Category("2.5nm Approach")]
         public bool TwoPointFiveActive { get; set; }
         //public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
+        [DisplayName("Leader Line Direction"), Category("Filters")]
         public List<int> LeaderFilters { get; set; } = new List<int>();
+        [DisplayName("Destination"), Category("Filters")]
         public string Destination { get; set; }
+        [DisplayName("Distance"), Category("2.5nm Approach")]
         public double TwoPointFiveDistance { get; set; }
+        [DisplayName("Scratchpad"), Category("Filters")]
+        public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
 
 
         private List<Aircraft> order;
@@ -65,6 +79,8 @@ namespace DGScope
             if (angletothreshold > 0 && disttocenterline * 6076 > WidthLeft) // left
                 return false;
             if (angletothreshold < 0 && disttocenterline * 6076 > WidthRight) // right
+                return false;
+            if (ScratchpadFilters.Where(x => x.Match(aircraft) && x.ScratchpadFilterType == ScratchpadFilterType.Exclusion).Count() > 0)
                 return false;
             return true;
         }
@@ -122,31 +138,35 @@ namespace DGScope
                         follower.ATPAVolume = this;
                         follower.ATPAFollowing = leader;
                         follower.ATPAMileageNow = follower.SweptLocation(radar).DistanceTo(leader.SweptLocation(radar));
-                        follower.ATPAMileage24 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 24 / 3600d, follower.ExtrapolateTrack())
-                            .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
-                        follower.ATPAMileage45 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
-                            .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
-                        double minsep = 3;
-                        if (TwoPointFiveEnabled && TwoPointFiveActive && follower.SweptLocation(radar).DistanceTo(RunwayThreshold) <= TwoPointFiveDistance)
-                            minsep = 2.5;
-                        if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
+                        if (ScratchpadFilters.Where(x => x.Match(follower) && x.ScratchpadFilterType == ScratchpadFilterType.Ineligible).Count() == 0)
                         {
-                            if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
-                                follower.ATPARequiredMileage = miles;
+                            follower.ATPAMileage24 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 24 / 3600d, follower.ExtrapolateTrack())
+                                .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 24 / 3600d, leader.ExtrapolateTrack()));
+                            follower.ATPAMileage45 = follower.SweptLocation(radar).FromPoint(follower.GroundSpeed * 45 / 3600d, follower.ExtrapolateTrack())
+                                .DistanceTo(leader.SweptLocation(radar).FromPoint(leader.GroundSpeed * 45 / 3600d, leader.ExtrapolateTrack()));
+                            double minsep = 3;
+                            if (TwoPointFiveEnabled && TwoPointFiveActive && follower.SweptLocation(radar).DistanceTo(RunwayThreshold) <= TwoPointFiveDistance)
+                                minsep = 2.5;
+                            if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
+                            {
+                                if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
+                                    follower.ATPARequiredMileage = miles;
+                                else
+                                    follower.ATPARequiredMileage = minsep;
+                            }
                             else
+                            {
                                 follower.ATPARequiredMileage = minsep;
+                            }
+
+                            if (follower.ATPAMileageNow < follower.ATPARequiredMileage || follower.ATPAMileage24 < follower.ATPARequiredMileage)
+                                follower.ATPAStatus = ATPAStatus.Alert;
+                            else if (follower.ATPAMileage45 < follower.ATPARequiredMileage)
+                                follower.ATPAStatus = ATPAStatus.Caution;
+                            else
+                                follower.ATPAStatus = ATPAStatus.Monitor;
+                            follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
                         }
-                        else
-                        {
-                            follower.ATPARequiredMileage = minsep;
-                        }
-                        if (follower.ATPAMileageNow < follower.ATPARequiredMileage || follower.ATPAMileage24 < follower.ATPARequiredMileage)
-                            follower.ATPAStatus = ATPAStatus.Alert;
-                        else if (follower.ATPAMileage45 < follower.ATPARequiredMileage)
-                            follower.ATPAStatus = ATPAStatus.Caution;
-                        else
-                            follower.ATPAStatus = ATPAStatus.Monitor;
-                        follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
                     }
                 }
                 else if (order.Count == 1)
