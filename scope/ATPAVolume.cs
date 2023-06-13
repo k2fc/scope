@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,9 +9,12 @@ namespace DGScope
 {
     public class ATPAVolume
     {
+        [Description("Volume ID"), Category("Identity")]
         public string VolumeId { get; set; }
         public bool Active { get; set; }
+        [Description("Volume Name"), Category("Identity")]
         public string Name { get; set; }
+        [Description("Runway Threshold Location"), Category("Geometry")]
         public GeoPoint RunwayThreshold { get; set; } = new GeoPoint();
         public int TrueHeading { get; set; }
         public int MaxHeadingDeviation { get; set; }
@@ -30,10 +34,10 @@ namespace DGScope
         private List<Aircraft> order;
         private object orderlock = new object();
 
-        private int minHeading => TrueHeading - MaxHeadingDeviation;
-        private int maxHeading => TrueHeading + MaxHeadingDeviation;
-        private int minBearing => TrueHeading - 90;
-        private int maxBearing => TrueHeading + 90;
+        private int minHeading => (TrueHeading - MaxHeadingDeviation) % 360;
+        private int maxHeading => (TrueHeading + MaxHeadingDeviation + 360) % 360;
+        private int minBearing => (TrueHeading + 270) % 360;
+        private int maxBearing => (TrueHeading + 450) % 360;
         
         public bool IsInside (Aircraft aircraft, Radar radar)
         {
