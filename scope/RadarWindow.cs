@@ -435,27 +435,15 @@ namespace DGScope
         //}
         [DisplayName("Display ATPA Monitor Cones"), Category("ATPA")]
         public bool DrawATPAMonitorCones { get; set; } = false;
-        private string[] activeatpa = new string[0];
-        [Browsable(false)]
-        public string[] ActiveATPA
-        {
-            get
-            {
-                if (ATPA.Volumes.Count > 0)
-                    return (ATPA.Volumes.Where(x => x.Active).Select(y => y.Name).ToArray());
-                else
-                    return activeatpa;
-            }
-            set
-            {
-                activeatpa = value;
-                if (VideoMaps.Count > 0)
-                    ATPA.Volumes.ForEach(x => x.Active = activeatpa.Contains(x.Name));
-            }
-        }
+
         [Editor(typeof(ATPAVolumeSelectorEditor), typeof(UITypeEditor))]
         [DisplayName("Active Volumes"), Category("ATPA")]
+        [XmlIgnore]
         public List<ATPAVolume> ActiveVolumes { get; set; } = new List<ATPAVolume>();
+        [Editor(typeof(ATPATwoPointFiveSelectorEditor), typeof(UITypeEditor))]
+        [DisplayName("Active 2.5 nm Approach Volumes"), Category("ATPA")]
+        [XmlIgnore]
+        public List<ATPAVolume> ActiveATPATwoPointFive { get; set; } = new List<ATPAVolume>();
         float scale => (float)(Range / Math.Sqrt(2));
         float pixelScale; 
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
