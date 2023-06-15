@@ -34,7 +34,8 @@ namespace DGScope
             E = 6,
             SW = 7,
             S = 8,
-            SE = 9
+            SE = 9,
+            Invalid = 0
         }
 
         public static LeaderDirection ParseLDR(string direction)
@@ -412,6 +413,8 @@ namespace DGScope
             get => ATPA.Volumes;
             set => ATPA.Volumes = value;
         }
+
+        public List<CRDA> CRDA { get; set; } = new List<CRDA>();
         //private string atpaVolumeFile = "";
         //[DisplayName("Volume File"), Category("ATPA")]
         //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]

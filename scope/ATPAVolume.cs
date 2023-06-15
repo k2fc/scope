@@ -36,7 +36,7 @@ namespace DGScope
         public bool TwoPointFiveActive { get; set; }
         //public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
         [DisplayName("Leader Line Direction"), Category("Filters")]
-        public List<int> LeaderFilters { get; set; } = new List<int>();
+        public List<RadarWindow.LeaderDirection> LeaderFilters { get; set; } = new List<RadarWindow.LeaderDirection>();
         [DisplayName("Destination"), Category("Filters")]
         public string Destination { get; set; }
         [DisplayName("Distance"), Category("2.5nm Approach")]
@@ -61,7 +61,7 @@ namespace DGScope
                 return false;
             if (Destination != null && Destination != aircraft.Destination)
                 return false;
-            if (LeaderFilters.Count > 0 && !LeaderFilters.Contains((int)aircraft.LDRDirection))
+            if (LeaderFilters.Count > 0 && (!aircraft.LDRDirection.HasValue || !LeaderFilters.Contains(aircraft.LDRDirection.Value)))
                 return false;
             var acloc = aircraft.SweptLocation(radar);
             if (acloc == null)
