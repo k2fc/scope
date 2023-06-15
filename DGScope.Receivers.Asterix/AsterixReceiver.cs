@@ -426,21 +426,24 @@ namespace DGScope.Receivers.Asterix
             bool[] fs = new bool[(data.Length - offset) * 8];
             int i = offset;
             int b = 0;
-            do
+            if (fs.Length < 7)
             {
-                fs[b + 0] = (data[i] & 0b10000000) != 0;
-                fs[b + 1] = (data[i] & 0b01000000) != 0;
-                fs[b + 2] = (data[i] & 0b00100000) != 0;
-                fs[b + 3] = (data[i] & 0b00010000) != 0;
-                fs[b + 4] = (data[i] & 0b00001000) != 0;
-                fs[b + 5] = (data[i] & 0b00000100) != 0;
-                fs[b + 6] = (data[i] & 0b00000010) != 0;
-                i++;
-                b += 7;
-            } while ((data[i - 1] & 0x1) != 0);
-            for (int j = 8 * (i - offset); j < fs.Length; j++)
-            {
-                fs[j] = false;
+                do
+                {
+                    fs[b + 0] = (data[i] & 0b10000000) != 0;
+                    fs[b + 1] = (data[i] & 0b01000000) != 0;
+                    fs[b + 2] = (data[i] & 0b00100000) != 0;
+                    fs[b + 3] = (data[i] & 0b00010000) != 0;
+                    fs[b + 4] = (data[i] & 0b00001000) != 0;
+                    fs[b + 5] = (data[i] & 0b00000100) != 0;
+                    fs[b + 6] = (data[i] & 0b00000010) != 0;
+                    i++;
+                    b += 7;
+                } while ((data[i - 1] & 0x1) != 0);
+                for (int j = 8 * (i - offset); j < fs.Length; j++)
+                {
+                    fs[j] = false;
+                }
             }
             offset = i;
             return fs;
