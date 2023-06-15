@@ -26,6 +26,10 @@ namespace DGScope
                     return false;
             }
         }
+        public override string ToString()
+        {
+            return ScratchpadValue;
+        }
     }
     public enum ScratchpadFilterType
     {
