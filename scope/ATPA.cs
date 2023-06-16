@@ -12,7 +12,6 @@ namespace DGScope
     {
         public SeparationTable RequiredSeparation { get; set; } = new SeparationTable();
         public List<ATPAVolume> Volumes { get; set; } = new List<ATPAVolume>();
-        public List<string> ActiveVolumeNames { get; set; } = new List<string>();
 
         public ATPA()
         {
