@@ -15,6 +15,8 @@ namespace DGScope.Receivers.Asterix
         public int Port { get; set; } = 30008;
         public string Address { get; set; } 
         public AsteriskReceiverMode Mode { get; set; }
+        public bool UseGeomAltitude { get; set; } = false;
+        public bool UseBaroAltitude { get; set; } = true;
         UdpClient udpclient;
         EventDrivenTCPClient tcpclient;
         public AsterixReceiver() { }
@@ -273,7 +275,7 @@ namespace DGScope.Receivers.Asterix
                     {
                         double alt = ((data[p] << 8) + data[p + 1]) * 6.25;
                         p += 2;
-                        if (alt <= 150000 && alt >= -150 && !alt_set)
+                        if (alt <= 150000 && alt >= -150 && !alt_set && UseGeomAltitude)
                         {
                             plane.Altitude.TrueAltitude = (int)alt;
                             alt_set = true;
@@ -299,7 +301,7 @@ namespace DGScope.Receivers.Asterix
                     {
                         int alt = ((data[p] << 8) + data[p + 1]) * 25;
                         p += 2;
-                        if (alt <= 150000 && alt >= -1500 && !alt_set)
+                        if (alt <= 150000 && alt >= -1500 && !alt_set && UseBaroAltitude)
                         {
                             plane.Altitude.PressureAltitude = alt;
                             alt_set = true;
