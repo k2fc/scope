@@ -414,7 +414,6 @@ namespace DGScope
             set => ATPA.Volumes = value;
         }
 
-        public List<CRDA> CRDA { get; set; } = new List<CRDA>();
         //private string atpaVolumeFile = "";
         //[DisplayName("Volume File"), Category("ATPA")]
         //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
