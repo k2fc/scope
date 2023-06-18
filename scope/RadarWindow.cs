@@ -4008,11 +4008,14 @@ namespace DGScope
 
         private void DrawTargets()
         {
+            List<Aircraft> aclist;
             lock (Aircraft)
             {
-                Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                Aircraft.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
-                foreach (var handoffPlane in Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
+                aclist = Aircraft.ToList();
+            }
+                aclist.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
+                aclist.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
+                foreach (var handoffPlane in aclist.Where(x => x.PendingHandoff == ThisPositionIndicator))
                 {
                     if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
                         continue;
@@ -4022,7 +4025,7 @@ namespace DGScope
                     //if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                         //GenerateDataBlock(handoffPlane);
                 }
-                foreach (var handedoffPlane in Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
+                foreach (var handedoffPlane in aclist.Where(x => x.PositionInd == x.PendingHandoff))
                 {
                     if (handedoffPlane.PendingHandoff != null)
                         handedoffPlane.PendingHandoff = null;
@@ -4035,7 +4038,7 @@ namespace DGScope
                             //GenerateDataBlock(handedoffPlane);
                     }
                 }
-                foreach (var flashingPlane in Aircraft.Where(x => x.DataBlock.Flashing))
+                foreach (var flashingPlane in aclist.Where(x => x.DataBlock.Flashing))
                 {
                     if (flashingPlane.PendingHandoff != ThisPositionIndicator)
                     {
@@ -4046,14 +4049,13 @@ namespace DGScope
                             //GenerateDataBlock(flashingPlane);
                     }
                 }
-                foreach (var beaconatorplane in Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
+                foreach (var beaconatorplane in aclist.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
                 {
                     beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
                     //GenerateDataBlock(beaconatorplane);
                     beaconatorplane.RedrawDataBlock(radar);
                 }
-            }
-            Aircraft.ToList().ForEach(x =>
+            aclist.ForEach(x =>
             {
                 if ((!x.PrimaryOnly || x.Associated))
                 {
@@ -4069,7 +4071,7 @@ namespace DGScope
                     }
                 }
             });
-            Aircraft.ToList().ForEach(x =>
+            aclist.ForEach(x =>
             {
                 if (x.TargetReturn.ParentAircraft == null)
                     x.TargetReturn.ParentAircraft = x;
