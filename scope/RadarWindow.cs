@@ -648,10 +648,10 @@ namespace DGScope
         public Font Font { get; set; } = new Font("Consolas", 10);
         [XmlElement("FontName")]
         [Browsable(false)]
-        public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size); } }
+        public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size, Font.Unit); } }
         [XmlElement("FontSize")]
         [Browsable(false)] 
-        public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
+        public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value, Font.Unit); } }
         [XmlElement("FontSizeUnit")]
         [Browsable(false)]
         public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
