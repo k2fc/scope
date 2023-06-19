@@ -652,6 +652,9 @@ namespace DGScope
         [XmlElement("FontSize")]
         [Browsable(false)] 
         public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
+        [XmlElement("FontSizeUnit")]
+        [Browsable(false)]
+        public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
         [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
         public bool AutoOffset { get; set; } = false;
         [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
