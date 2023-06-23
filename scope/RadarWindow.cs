@@ -279,7 +279,7 @@ namespace DGScope
             get
             {
                 if (dataBlockTimeshareTimer == null)
-                    return 1;
+                    return 1.5;
                 return timeshareinterval / 1000d;
             }
             set
@@ -750,7 +750,7 @@ namespace DGScope
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
         List<MinSep> minSeps = new List<MinSep>();
         Timer wxUpdateTimer;
-        int timeshareinterval = 1000;
+        int timeshareinterval = 1500;
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
