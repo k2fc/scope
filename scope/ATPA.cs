@@ -10,9 +10,32 @@ namespace DGScope
 {
     public class ATPA
     {
+        bool active = false;
         public SeparationTable RequiredSeparation { get; set; } = new SeparationTable();
         public List<ATPAVolume> Volumes { get; set; } = new List<ATPAVolume>();
         public List<string> ActiveVolumeNames { get; set; } = new List<string>();
+        public bool Active 
+        {
+            get => active;
+            set
+            {
+                if (value == active)
+                {
+                    return;
+                }
+                else
+                {
+                    active = value;
+                    if (!value)
+                    {
+                        lock (RadarWindow.Aircraft)
+                        {
+                            RadarWindow.Aircraft.ToList().ForEach(x => ATPAVolume.ResetAircraftATPAValues(x, true));
+                        }
+                    }
+                }
+            }
+        }
 
         public ATPA()
         {
@@ -108,80 +131,6 @@ namespace DGScope
             return Task.Run(() => volume.CalculateATPA(aircraft, requiredSeparation, radar));
         }
 
-        //public void DeserializeVolumesFromJsonFile(string filename)
-        //{
-        //    Volumes = DeserializeFromJsonFile(filename);
-        //}
-        //public static List<ATPAVolume> DeserializeFromJsonFile(string filename)
-        //{
-        //    string json = File.ReadAllText(filename);
-        //    return GeoJSONToVolumes(json);
-        //}
-        //public static List<ATPAVolume> DeserializeFromJson(string jsonString)
-        //{
-        //    return GeoJSONToVolumes(jsonString);
-        //}
-        //public static List<ATPAVolume> GeoJSONToVolumes(string json)
-        //{
-        //    List<ATPAVolume> volumes = new List<ATPAVolume>();
-        //    var data = GeoJson.FromJson(json);
-        //    switch (data.Type)
-        //    {
-        //        case GeoJsonType.FeatureCollection:
-        //            var featureCollection = data as FeatureCollection;
-        //            foreach (var feature in featureCollection.Features)
-        //            {
-        //                switch (feature.Geometry.Type)
-        //                {
-        //                    case GeoJsonType.Polygon:
-        //                        ATPAVolume volume = new ATPAVolume();
-        //                        if (feature.Properties.TryGetValue("name", out var name))
-        //                            volume.Name = name;
-        //                        else
-        //                            continue;
-        //                        if (feature.Properties.TryGetValue("mergepoint_lat", out var mplat))
-        //                            if (feature.Properties.TryGetValue("mergepoint_lon", out var mplon))
-        //                                volume.MergePoint = new GeoPoint(mplat, mplon);
-        //                            else
-        //                                continue;
-        //                        else
-        //                            continue;
-        //                        if (feature.Properties.TryGetValue("minalt", out var minalt))
-        //                            volume.MinAltitude = (int)minalt;
-        //                        else
-        //                            continue;
-        //                        if (feature.Properties.TryGetValue("maxalt", out var maxalt))
-        //                            volume.MaxAltitude = (int)maxalt;
-        //                        else
-        //                            continue;
-        //                        if (feature.Properties.TryGetValue("runway", out var runway))
-        //                            if (runway != "NULL" && runway != null)
-        //                                volume.Runway = runway;
-        //                        if (feature.Properties.TryGetValue("destination", out var dest))
-        //                            if (dest != "NULL" && dest != null)
-        //                                volume.Destination = dest;
-        //                        if (feature.Properties.TryGetValue("lld", out var lld))
-        //                            volume.LDRDirection = (int?)lld;
-        //                        if (feature.Properties.TryGetValue("minsep", out var minsep))
-        //                            volume.MinimumSeparation = minsep;
-        //                        var geometry = feature.Geometry as BAMCIS.GeoJSON.Polygon;
-        //                        foreach (var ring in geometry.Coordinates)
-        //                        {
-        //                            if (ring.Coordinates.Count() < 3)
-        //                                continue;
-        //                            foreach (var point in ring.Coordinates)
-        //                            {
-        //                                volume.Points.Add(new GeoPoint(point.Latitude, point.Longitude));
-        //                            }
-        //                        }
-        //                        volumes.Add(volume);
-        //                        break;
-        //                }
-        //            }
-        //            break;
-        //    }
-        //    return volumes;
-        //}
     }
 
     public class SeparationTable : SerializableDictionary<string, SerializableDictionary<string, double>> { }

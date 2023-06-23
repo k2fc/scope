@@ -100,7 +100,7 @@ namespace DGScope
             }
         }
 
-        public void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
+        public static void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
         {
             if (resetAcATPARef)
                 aircraft.ATPAVolume = null;
@@ -166,6 +166,10 @@ namespace DGScope
                             else
                                 follower.ATPAStatus = ATPAStatus.Monitor;
                             follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
+                        }
+                        else
+                        {
+                            follower.ATPAStatus = ATPAStatus.Monitor;
                         }
                     }
                 }

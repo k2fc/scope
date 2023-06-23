@@ -412,6 +412,12 @@ namespace DGScope
             get => ATPA.Volumes;
             set => ATPA.Volumes = value;
         }
+        [DisplayName("Active"), Description("ATPA active system-wide"), Category("ATPA")]
+        public bool ATPAActive
+        {
+            get => ATPA.Active;
+            set => ATPA.Active = value;
+        }
         //private string atpaVolumeFile = "";
         //[DisplayName("Volume File"), Category("ATPA")]
         //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
@@ -1601,6 +1607,166 @@ namespace DGScope
                             break;
                         switch (keys[0][1])
                         {
+                            case '2': //Multifunction 2
+                                if (KeysToString(keys[0], 2).Substring(0,4) == "ATPA") //ATPA Commands
+                                {
+                                    if (keys[0].Length == 7) // Enable system-wide
+                                    {
+                                        if ((char)keys[0][6] == 'E') // Enable
+                                        {
+                                            if (ATPA.Active)
+                                            {
+                                                DisplayPreviewMessage("NO CHANGE");
+                                            }
+                                            else if (ATPA.Volumes.Count == 0)
+                                            {
+                                                DisplayPreviewMessage("ILL FNCT");
+                                            }
+                                            else
+                                            {
+                                                ATPA.Active = true;
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else if ((char)keys[0][6] == 'I') //Inhibit
+                                        {
+                                            if (!ATPA.Active)
+                                            {
+                                                DisplayPreviewMessage("NO CHANGE");
+                                            }
+                                            else if (ATPA.Volumes.Count == 0)
+                                            {
+                                                DisplayPreviewMessage("ILL FNCT");
+                                            }
+                                            else
+                                            {
+                                                ATPA.Active = false;
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("FORMAT");
+                                        }
+                                    }
+                                    if (keys[0].Length >= 8 && keys[0].Length <= 12)
+                                    {
+                                        if (ATPA.Active)
+                                        {
+                                            var volnamefull = KeysToString(keys[0], 6);
+                                            var volname = volnamefull.Substring(0, volnamefull.Length - 1);
+                                            var volumes = ATPA.Volumes.Where(x => x.VolumeId == volname);
+                                            if (volumes.Count() == 1)
+                                            {
+                                                var volume = volumes.First();
+                                                if (volnamefull.Last() == 'E')
+                                                {
+                                                    if (volume.Active)
+                                                    {
+                                                        DisplayPreviewMessage("NO CHANGE");
+                                                    }
+                                                    else
+                                                    {
+                                                        volume.Active = true;
+                                                        Preview.Clear();
+                                                    }
+                                                }
+                                                else if (volnamefull.Last() == 'I')
+                                                {
+                                                    if (!volume.Active)
+                                                    {
+                                                        DisplayPreviewMessage("NO CHANGE");
+                                                    }
+                                                    else
+                                                    {
+                                                        volume.Active = false;
+                                                        Preview.Clear();
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    DisplayPreviewMessage("FORMAT");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("ILL VOL");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("ILL FNCT");
+                                        }
+                                    }
+                                }
+                                else if (KeysToString(keys[0], 1).Substring(0,3) == "2.5")
+                                {
+                                    if (keys[0].Length >= 6 && keys[0].Length <= 10)
+                                    {
+                                        if (ATPA.Active)
+                                        {
+                                            var volnamefull = KeysToString(keys[0], 4);
+                                            var volname = volnamefull.Substring(0, volnamefull.Length - 1);
+                                            var volumes = ATPA.Volumes.Where(x => x.VolumeId == volname && x.Active);
+                                            if (volumes.Count() == 1)
+                                            {
+                                                var volume = volumes.First();
+                                                if (volume.TwoPointFiveEnabled)
+                                                {
+                                                    if (volnamefull.Last() == 'E')
+                                                    {
+                                                        if (volume.TwoPointFiveActive)
+                                                        {
+                                                            DisplayPreviewMessage("NO CHANGE");
+                                                        }
+                                                        else
+                                                        {
+                                                            volume.TwoPointFiveActive = true;
+                                                            Preview.Clear();
+                                                        }
+                                                    }
+                                                    else if (volnamefull.Last() == 'I')
+                                                    {
+                                                        if (!volume.TwoPointFiveActive)
+                                                        {
+                                                            DisplayPreviewMessage("NO CHANGE");
+                                                        }
+                                                        else
+                                                        {
+                                                            volume.TwoPointFiveActive = false;
+                                                            Preview.Clear();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        DisplayPreviewMessage("FORMAT");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    DisplayPreviewMessage("ILL FNCT");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("ILL VOL");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("ILL FNCT");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("FORMAT");
+                                    }
+                                }
+                                else
+                                {
+                                    DisplayPreviewMessage("FORMAT");
+                                }
+                                break;
                             case 'B': //Mutlifunction B: Beacons
                                 if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
                                 {
@@ -2302,6 +2468,25 @@ namespace DGScope
             StatusArea.Text += (int)Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
             StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
                 + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
+            if (ATPA.Active)
+            {
+                StatusArea.Text += "INTRAIL ON: ";
+                ATPA.Volumes.ForEach(x =>
+                {
+                    if (x.Active)
+                    {
+                        StatusArea.Text += x.VolumeId + " ";
+                    }
+                });
+                StatusArea.Text += "\r\n";
+                var tpfv = ATPA.Volumes.Where(v => v.TwoPointFiveEnabled && v.TwoPointFiveActive);
+                if (tpfv.Count() > 0)
+                {
+                    StatusArea.Text += "INTRAIL 2.5 ON: ";
+                    tpfv.ToList().ForEach(v =>  StatusArea.Text += v.VolumeId + " ");
+                    StatusArea.Text += "\r\n";
+                }
+            }
             int metarnum = 0;
             foreach (var metar in wx.Metars.OrderBy(x=> x.Icao))
             {
@@ -2314,9 +2499,16 @@ namespace DGScope
                         if (station.Length == 4 && station[0] == 'K') //not really correct, but whatever
                             station = station.Substring(1);
                         if (metar.Pressure != null)
-                            StatusArea.Text += station + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        {
+                            StatusArea.Text += station;
+                            StatusArea.Text += (metar.Date - CurrentTime).Value.TotalHours > 1 ? "*" : " ";
+                            StatusArea.Text += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+
+                        }
                         else
+                        {
                             StatusArea.Text += station + " 00.00";
+                        }
                         if (WindInStatusArea)
                             StatusArea.Text += " " + metar.Wind.Raw;
                     }
@@ -2758,7 +2950,8 @@ namespace DGScope
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
             DrawRangeRings();
-            ATPA.Calculate(Aircraft, radar);
+            if (ATPA.Active)
+                ATPA.Calculate(Aircraft, radar);
             if(!hidewx)
                 DrawNexrad();
             DrawVideoMapLines();
