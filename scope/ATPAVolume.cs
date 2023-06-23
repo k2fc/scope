@@ -9,26 +9,26 @@ namespace DGScope
 {
     public class ATPAVolume
     {
-        [Description("Volume ID"), Category("Identity")]
+        [DisplayName("Volume ID"), Category("Identity")]
         public string VolumeId { get; set; }
         public bool Active { get; set; }
-        [Description("Volume Name"), Category("Identity")]
+        [DisplayName("Volume Name"), Category("Identity")]
         public string Name { get; set; }
-        [Description("Runway Threshold Location"), Category("Geometry")]
+        [DisplayName("Runway Threshold Location"), Category("Geometry")]
         public GeoPoint RunwayThreshold { get; set; } = new GeoPoint();
-        [Description("Runway True Heading"), Category("Geometry")] 
+        [DisplayName("Runway True Heading"), Category("Geometry")] 
         public int TrueHeading { get; set; }
-        [Description("Maximum Heading Deviation"), Category("Geometry")] 
+        [DisplayName("Maximum Heading Deviation (deg)"), Category("Geometry")] 
         public int MaxHeadingDeviation { get; set; }
-        [Category("Geometry")] 
+        [DisplayName("Ceiling (ft)"), Category("Geometry")] 
         public int Ceiling { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Floor (ft)"), Category("Geometry")]
         public int Floor { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Length (NM)"), Category("Geometry")]
         public double Length { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Width Left (ft)"), Category("Geometry")]
         public int WidthLeft { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Width Right (ft)"), Category("Geometry")]
         public int WidthRight { get; set; }
         [DisplayName("Enabled"), Category("2.5nm Approach")]
         public bool TwoPointFiveEnabled { get; set; }
