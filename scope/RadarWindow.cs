@@ -2483,7 +2483,7 @@ namespace DGScope
                     }
                 });
                 StatusArea.Text += "\r\n";
-                var tpfv = ATPA.Volumes.Where(v => v.TwoPointFiveEnabled && v.TwoPointFiveActive);
+                var tpfv = ATPA.Volumes.Where(v => v.TwoPointFiveEnabled && v.TwoPointFiveActive && v.Active);
                 if (tpfv.Count() > 0)
                 {
                     StatusArea.Text += "INTRAIL 2.5 ON: ";
