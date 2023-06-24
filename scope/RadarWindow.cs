@@ -1052,8 +1052,15 @@ namespace DGScope
             var clicked = ClickedObject(e.Position);
             if (e.Mouse.LeftButton == ButtonState.Pressed)
             {
-                if (tempLine == null) 
+                if ((Keyboard.GetState().IsKeyDown(Key.ControlLeft) || Keyboard.GetState().IsKeyDown(Key.ControlRight)) &&
+                    (Keyboard.GetState().IsKeyDown(Key.ShiftLeft) || Keyboard.GetState().IsKeyDown(Key.ShiftRight)))
+                {
+                    System.Windows.Forms.Clipboard.SetText(ScreenToGeoPoint(e.Position).ToString());
+                }
+                else if (tempLine == null)
+                {
                     ProcessCommand(Preview, clicked);
+                }
                 else if (clicked.GetType() == typeof(Aircraft))
                 {
                     tempLine.EndPlane = (Aircraft)clicked;
