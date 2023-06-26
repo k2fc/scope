@@ -25,7 +25,7 @@ namespace DGScope.STARS
         {
             var loc = aircraft.SweptLocation(radar);
             if (radar.RadarType != RadarType.SLANT_RANGE || PositionSymbolOffset == 0) return loc;
-            var bearing = loc.BearingTo(radar.Location);
+            var bearing = radar.Location.BearingTo(loc);
             return loc.FromPoint(PositionSymbolOffset / 32d, bearing);
         }
         public double TargetWidth(Aircraft aircraft, Radar radar, double scale, double pixelscale)
