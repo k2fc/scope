@@ -29,17 +29,13 @@ namespace DGScope
         public double UpdateRate { get; set; } = 1;
         [DisplayName("Inhibit Extrapolation"), Description("Inhibit extrapolation of aircraft positions")]
         public bool InhibitExtrapolation { get; set; } = false;
+        [DisplayName("Radar Type")]
+        public RadarType RadarType { get; set; } = RadarType.FUSED;
         public bool Rotating { get; set; } = false;
-        [DisplayName("Primary Target Shape"), Description("Shape of primary targets")]
-        public TargetShape TargetShape { get; set; } = TargetShape.Circle;
         [Category("Identity")]
         public string Name { get; set; }
         [Category("Identity")]
         public char Char { get; set; }
-        [XmlIgnore]
-        private Airports Airports { get; set; } = new Airports();
-        [XmlIgnore]
-        private Waypoints Waypoints { get; set; } = new Waypoints();
         [XmlIgnore]
         public Dictionary<Aircraft, DateTime> SweptTimes { get; set; } = new Dictionary<Aircraft, DateTime>();
 
@@ -210,6 +206,12 @@ namespace DGScope
         public Radar()
         {
         }
-
+        
+    }
+    public enum RadarType
+    {
+        SLANT_RANGE,
+        GROUND_RANGE,
+        FUSED
     }
 }

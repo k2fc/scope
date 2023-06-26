@@ -20,6 +20,7 @@ using System.Windows.Forms.Design;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Numerics;
+using DGScope.STARS;
 
 namespace DGScope
 {
@@ -81,6 +82,8 @@ namespace DGScope
         [XmlIgnore]
         [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
         public Color ReturnColor { get; set; } = Color.FromArgb(30, 120, 255);
+        [DisplayName("Beacon Target Color"), Description("Primary Radar Target color"), Category("Colors")]
+        public Color BeaconTargetColor { get; set; } = Color.FromArgb(0, 255, 0);
         [XmlIgnore]
         [DisplayName("FDB Color"), Description("Color of aircraft full data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
@@ -146,6 +149,13 @@ namespace DGScope
         {
             get { return ReturnColor.ToArgb(); }
             set { ReturnColor = Color.FromArgb(value); }
+        }
+        [XmlElement("BeaconColor")]
+        [Browsable(false)]
+        public int BeaconColorAsArgb
+        {
+            get { return BeaconTargetColor.ToArgb(); }
+            set { BeaconTargetColor = Color.FromArgb(value); }
         }
         [XmlElement("DataBlockColor")]
         [Browsable(false)]
@@ -627,19 +637,44 @@ namespace DGScope
                 window.VSync = value;
             }
         }
-        [DisplayName("Primary Target Width"), Description("Width of primary targets, in pixels"), Category("Display Properties")]
-        public float TargetWidth { get; set; } = 5;
-        [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
-        public float TargetHeight { get; set; } = 15;
+        [DisplayName("Target Extent Symbols"), Description("Parameters for display of targets"), Category("Display Properties")]
+        public TargetExtentSymbols TargetExtentSymbols { get; set; } = new TargetExtentSymbols()
+        {
+            SearchTargets = new TargetExtentSymbols.SearchTargetParams()
+            {
+                RangeExtent = 5,
+                AzimuthExtent = new TargetExtentSymbols.SearchTargetParams.AzimuthExtentValues()
+                {
+                    Ten = 6,
+                    Twenty = 1.6699,
+                    Thirty = 1.40625,
+                    Forty = 1.0547,
+                    Fifty = 0.9668,
+                    Sixty = 0.79101
+                },
+                AzimuthExtentMinimum = 75
+            },
+            FusedTracks = new TargetExtentSymbols.FusedTrackTargetSymbolParams()
+            {
+                MinimumPixelDimension = 12,
+                NormalSymbolDistanceDimension = 22,
+                SymbolOpacity = 100
+            },
+            BeaconTargets = new TargetExtentSymbols.BeaconTargetParams()
+            {
+                RangeExtent = 1,
+                AzimuthExtentFactor = 20,
+                RangeOffset = 3
+            },
+            PositionSymbolOffset = 8,
+            FMATargetSymbols = new TargetExtentSymbols.FMATargetSymbolParams()
+            {
+                Radius = 3
+            }
+        };
         [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
         public float TPAConeWidth { get; set; } = 10; 
         
-        [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
-        public TargetShape HistoryShape { get; set; } = TargetShape.Circle;
-        [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
-        public float HistoryWidth { get; set; } = 3;
-        [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
-        public float HistoryHeight { get; set; } = 15;
         [DisplayName("PTL Length"), Description("Length of Predicted Track Lines, in minutes"), Category("Predicted Track Lines")]
         public float PTLlength { get; set; } = 0;
         [DisplayName("PTL Own"), Description("Display Predicted Track Lines for Owned tracks"), Category("Predicted Track Lines")]
@@ -3619,9 +3654,9 @@ namespace DGScope
                 (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= HistoryInterval)
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
-                aircraft.TargetReturn.ShapeHeight = HistoryHeight;
-                aircraft.TargetReturn.ShapeWidth = HistoryWidth;
-                aircraft.TargetReturn.Shape = HistoryShape;
+                //aircraft.TargetReturn.ShapeHeight = HistoryHeight;
+                //aircraft.TargetReturn.ShapeWidth = HistoryWidth;
+                //aircraft.TargetReturn.Shape = HistoryShape;
                 if (!HistoryFade)
                 {
                     aircraft.TargetReturn.Fading = false;
@@ -3660,8 +3695,8 @@ namespace DGScope
                 newreturn.NewLocation = location;
                 newreturn.Intensity = 1;
                 newreturn.ForeColor = ReturnColor;
-                newreturn.ShapeHeight = TargetHeight;
-                newreturn.ShapeWidth = TargetWidth;
+                //newreturn.ShapeHeight = TargetHeight;
+                //newreturn.ShapeWidth = TargetWidth;
                 //newreturn.Shape = radar.TargetShape;
                 aircraft.LastHistoryTimes[radar] = CurrentTime;
             }
@@ -3685,7 +3720,8 @@ namespace DGScope
                 var realWidth = text_bmp.Width * pixelScale;
                 var realHeight = text_bmp.Height * pixelScale;
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
-                aircraft.PositionIndicator.CenterOnPoint(location);
+                var posindlocation = GeoToScreenPoint(TargetExtentSymbols.PositionSymbolLocation(aircraft, radar));
+                aircraft.PositionIndicator.CenterOnPoint(posindlocation);
                 if (aircraft.PositionInd != null)
                     aircraft.PositionIndicator.Text = aircraft.PositionInd.Last().ToString();
                 if (aircraft.Marked)
@@ -4157,21 +4193,25 @@ namespace DGScope
             }
             if (!target.ParentAircraft.PrimaryOnly)
             {
-                var shape = target == target.ParentAircraft.TargetReturn ? radar.TargetShape : HistoryShape;
+                var rt = radar.RadarType;
+                var history = target != target.ParentAircraft.TargetReturn;
+                if (history)
+                    rt = RadarType.FUSED;
                 var location = target.ParentAircraft.SweptLocation(radar);
                 if (location == null)
                     return;
-                switch (shape)
+                switch (rt)
                 {
-                    case TargetShape.Rectangle:
+                    case RadarType.SLANT_RANGE:
                         //float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
-                        float targetHeight = (float)((1 / scale) * .2 * Math.Sqrt(location.DistanceTo(radar.Location)));
-                        float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
-                        float atan = (float)Math.Atan(targetHeight / targetWidth);
+                        float targetWidth = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                        float targetHeight = (TargetExtentSymbols.SearchTargets.RangeExtent / 32f) / scale;    // (window.ClientRectangle.Width/2);
                         float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
-                        float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
-                        float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
-                        float circleradius = 4f * pixelScale;
+                        float beaconoffset = TargetExtentSymbols.BeaconTargets.RangeOffset / (32f * scale);
+                        float x1 = (float)(targetWidth / 2);
+                        float y1 = (float)(targetHeight / 2);
+                        float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10);
+                        float y2 = (TargetExtentSymbols.BeaconTargets.RangeExtent / 32f) / scale;
 
                         target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
@@ -4180,40 +4220,50 @@ namespace DGScope
                         GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                         GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
-                        GL.Begin(PrimitiveType.Polygon);
 
+                        GL.Begin(PrimitiveType.Polygon);
                         GL.Color4(target.ForeColor);
                         GL.Vertex2(x1, y1);
                         GL.Vertex2(-x1, y1);
                         GL.Vertex2(-x1, -y1);
                         GL.Vertex2(x1, -y1);
-
-
                         GL.End();
+                        if (!target.ParentAircraft.PrimaryOnly)
+                        {
+                            GL.Begin(PrimitiveType.Polygon);
+                            GL.Color4(BeaconTargetColor);
+                            GL.Vertex2(x2, y2 - beaconoffset);
+                            GL.Vertex2(-x2, y2 - beaconoffset);
+                            GL.Vertex2(-x2, -y2 - beaconoffset);
+                            GL.Vertex2(x2, -y2 - beaconoffset);
+                            GL.End();
+                        }
+
                         GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
 
 
                         GL.PopMatrix();
                         break;
-                    case TargetShape.Circle:
-                        float mileageSize = 0.2f / scale;
-                        float pixelSize = TargetWidth * pixelScale;
-                        if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
+                    case RadarType.FUSED:
+                        float size;
+                        if (!history)
                         {
-                            target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, 1, 30, target.ForeColor, true);
+                            size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                            target.SizeF = new SizeF(size, size);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, target.ForeColor, true);
                         }
                         else
                         {
-                            target.SizeF = new SizeF(target.ShapeWidth * 2 * pixelScale, target.ShapeWidth * 2 * pixelScale);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * pixelScale, 1, 30, target.ForeColor, true);
+                            size = (float)TargetExtentSymbols.FMATargetSymbols.Radius * pixelScale;
+                            target.SizeF = new SizeF(size, size);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, target.ForeColor, true);
                         }
                         break;
                 }
             }
             else
             {
-                float targetWidth = target.ShapeWidth * pixelScale;
+                float targetWidth = TargetExtentSymbols.MultiRadarTargets.UncorrSymbolPlotSize * pixelScale;
                 float targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
                 float x1 = (float)(Math.Sqrt(2) * targetHypotenuse);
                 target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2);

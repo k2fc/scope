@@ -235,6 +235,7 @@
     <Compile Include="MinSep.cs" />
     <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
+    <Compile Include="STARS\TargetExtentSymbols.cs" />
     <Compile Include="TimeSync.cs" />
     <Compile Include="TPARing.cs" />
     <Compile Include="LeaderLine.cs" />
