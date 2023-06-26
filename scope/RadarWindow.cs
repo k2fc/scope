@@ -2099,10 +2099,12 @@ namespace DGScope
                             var airports = Airports.Where(x => x.ID == airportcode);
                             if (airports.Count() == 1)
                             {
-                                var loc = airports.First().Location;
+                                var airport = airports.First();
+                                GeoPoint loc = new GeoPoint(airport.Location.Latitude, airport.Location.Longitude);
                                 ScreenCenterPoint = loc;
                                 HomeLocation = loc;
                                 RangeRingCenter = loc;
+                                ScreenRotation = (double)airport.MagVar;
                                 Preview.Clear();
                             }
                             else
@@ -3178,7 +3180,7 @@ namespace DGScope
             try
             {
                 settingsxml = XmlSerializer<RadarWindow>.Serialize(this);
-                if (settingsxml.Length == 0)
+                if (settingsxml == null || settingsxml.Length == 0)
                 {
                     System.Windows.Forms.MessageBox.Show("There was a problem serializing the settings"
                         , "Error writing settings file", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
