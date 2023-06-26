@@ -1125,7 +1125,8 @@ namespace DGScope
             FltData = 18,
             CA = 20,
             SignOn = 21,
-            RngRing = 201
+            RngRing = 201,
+            RecenterEverything = 500
         }
 
         public List<object> Preview = new List<object>();
@@ -2085,9 +2086,30 @@ namespace DGScope
                         else if (enter)
                         {
                             if (double.TryParse(KeysToString(Preview.ToArray()), out double interval))
+                            {
                                 RangeRingInterval = interval;
+                            }
                         }
                         Preview.Clear();
+                        break;
+                    case KeyCode.RecenterEverything:
+                        if (keys.Length == 2)
+                        {
+                            var airportcode = KeysToString(keys[1]);
+                            var airports = Airports.Where(x => x.ID == airportcode);
+                            if (airports.Count() == 1)
+                            {
+                                var loc = airports.First().Location;
+                                ScreenCenterPoint = loc;
+                                HomeLocation = loc;
+                                RangeRingCenter = loc;
+                                Preview.Clear();
+                            }
+                            else
+                            {
+                                DisplayPreviewMessage("NO AIRPORT");
+                            }
+                        }
                         break;
                     case Key.End:
                         //Min Sep
@@ -2734,6 +2756,9 @@ namespace DGScope
                         case (int)KeyCode.RngRing:
                             output += "RR";
                             break;
+                        case (int)KeyCode.RecenterEverything:
+                            output += "RECENTER";
+                            break;
                         default:
                             break;
                     }
@@ -2804,12 +2829,20 @@ namespace DGScope
                         QuickLook = !QuickLook; 
                         break;
                     case Key.F1:
-                        double bearing = ScreenCenterPoint.BearingTo(HomeLocation) - ScreenRotation;
-                        double distance = ScreenCenterPoint.DistanceTo(HomeLocation);
-                        float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                        float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
-                        ScreenCenterPoint = HomeLocation;
-                        MoveTargets(x, -y);
+                        if (!e.Shift)
+                        {
+                            double bearing = ScreenCenterPoint.BearingTo(HomeLocation) - ScreenRotation;
+                            double distance = ScreenCenterPoint.DistanceTo(HomeLocation);
+                            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+                            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+                            ScreenCenterPoint = HomeLocation;
+                            MoveTargets(x, -y);
+                        }
+                        else
+                        {
+                            Preview.Add(KeyCode.RecenterEverything);
+                            Preview.Add(' ');
+                        }
                         break;
                     case Key.F2:
                         VideoMapSelector selector = new VideoMapSelector(VideoMaps);
