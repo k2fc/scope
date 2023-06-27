@@ -683,6 +683,8 @@ namespace DGScope
         public bool PTLAll { get; set; } = false;
         [DisplayName("Nexrad Weather Radar")]
         public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
+        [Browsable(false)]
+        public List<NexradDisplay> Nexrads { get; set; }
         [DisplayName("Data Block Font")]
         [XmlIgnore]
         public Font Font { get; set; } = new Font("Consolas", 10);
@@ -3544,14 +3546,20 @@ namespace DGScope
 
         private void DrawNexrad()
         {
-            //foreach (var nexrad in Nexrads)
-            //{
-                var polygons = Nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
-                for (int i = 0; i < polygons.Length; i++)
-                {
-                    if(polygons[i].Color.A > 0)
-                        DrawPolygon(polygons[i]);
-                }
+            //convert old nexrads list to new nexrad object
+            if (Nexrads != null && Nexrads.Count > 0)
+            {
+                Nexrad = Nexrads[0];
+                Nexrad.ColorTable = new List<WXColor>();
+                Nexrads = null;
+            }
+        
+            var polygons = Nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
+            for (int i = 0; i < polygons.Length; i++)
+            {
+                if(polygons[i].Color.A > 0)
+                    DrawPolygon(polygons[i]);
+            }
             //}
         }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
