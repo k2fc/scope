@@ -25,7 +25,75 @@ namespace DGScope
             }
             return colors.Last();
         }
-        public WXColorTable() { }
+        public WXColorTable() 
+        {
+            var denseStipple = new List<byte>()
+            {
+                0, 0, 0, 0, 0, 0, 0, 0,
+                32, 32, 32, 32, 0, 0, 0, 0,
+                0, 0, 0, 0, 4, 4, 4, 4,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                32, 32, 32, 32, 0, 0, 0, 0,
+                0, 0, 0, 0, 4, 4, 4, 4,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                32, 32, 32, 32, 0, 0, 0, 0,
+                0, 0, 0, 0, 4, 4, 4, 4,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                32, 32, 32, 32, 0, 0, 0, 0,
+                0, 0, 0, 0, 4, 4, 4, 4,
+                0, 0, 0, 0, 0, 0, 0, 0
+            };
+            var lightStipple = new List<byte>()
+            {
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                32, 32, 32, 32,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                2, 2, 2, 2,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                32, 32, 32, 32,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                2, 2, 2, 2,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+
+
+            };
+            Colors = new List<WXColor>()
+            {
+
+                new WXColor(20, Color.FromArgb(38, 77, 77)),
+                new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, lightStipple),
+                new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, denseStipple),
+                new WXColor(45, Color.FromArgb(100, 100, 51)),
+                new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, lightStipple),
+                new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, denseStipple)
+            };
+        }
         public WXColorTable(List<WXColor> colors) { Colors = colors; }
     }
 
@@ -40,8 +108,15 @@ namespace DGScope
         {
             MinValue = minvalue;
             MinColor = mincolor;
-            StipplePatternList = null;
+            StipplePatternList = new List<byte>();
             StippleColor = Color.Transparent;
+        }
+        public WXColor(double minvalue, Color mincolor, Color stippleColor, List<byte> stipplePattern)
+        {
+            MinValue = minvalue;
+            MinColor = mincolor;
+            StipplePatternList = stipplePattern;
+            StippleColor = stippleColor;
         }
         public WXColor() { }
 

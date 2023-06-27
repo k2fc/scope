@@ -13,8 +13,72 @@ namespace DGScope
 {
     public class NexradDisplay
     {
+        static List<byte> denseStipple = new List<byte>()
+        {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
+        static List<byte> lightStipple = new List<byte>()
+        {
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            32, 32, 32, 32,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            2, 2, 2, 2,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            32, 32, 32, 32,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            2, 2, 2, 2,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0
+
+
+        };
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
-        public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
+        public List<WXColor> ColorTable { get; set; } = new List<WXColor>()
+        {
+            new WXColor(20, Color.FromArgb(38, 77, 77)),
+            new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, lightStipple),
+            new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, denseStipple),
+            new WXColor(45, Color.FromArgb(100, 100, 51)),
+            new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, lightStipple),
+            new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, denseStipple)
+        };
         double intensity = 1;
         [DisplayName("Color Intensity"), Description("Weather Radar Color intensity")]
         public int ColorIntensity {
@@ -32,7 +96,7 @@ namespace DGScope
                     intensity = value / 255d;
             }
         }
-        double alphafactor = .12156;
+        double alphafactor = .6;
         [DisplayName("Transparency"), Description("Weather Radar Transparency")]
         public int Transparency 
         { 
@@ -181,15 +245,17 @@ namespace DGScope
         public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
         {
             if (ColorTable.Count == 0)
-                ColorTable = new List<WXColor>()
-                    {
-                        new WXColor(30, Color.FromArgb(0, 255, 0)),
-                        new WXColor(40, Color.FromArgb(255, 255, 0)),
-                        new WXColor(50, Color.FromArgb(255, 0, 0)),
-                        new WXColor(60, Color.FromArgb(255, 0, 255)),
-                        new WXColor(70, Color.FromArgb(255, 255, 255)),
-                        new WXColor(80, Color.FromArgb(128, 128, 128)),
-                    };
+            {
+                ColorTable  = new List<WXColor>()
+                {
+                    new WXColor(20, Color.FromArgb(38, 77, 77)),
+                    new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, lightStipple),
+                    new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, denseStipple),
+                    new WXColor(45, Color.FromArgb(100, 100, 51)),
+                    new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, lightStipple),
+                    new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, denseStipple)
+                };
+            }
             var colortable = new WXColorTable(ColorTable);
             if (!gotdata)
                 return;
