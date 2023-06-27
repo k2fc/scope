@@ -11,76 +11,14 @@ using System.Xml.Serialization;
 
 namespace DGScope
 {
+    [TypeConverter(typeof(ExpandableObjectConverter))]
     public class NexradDisplay
     {
-        static List<byte> denseStipple = new List<byte>()
-        {
-            0, 0, 0, 0, 0, 0, 0, 0,
-            32, 32, 32, 32, 0, 0, 0, 0,
-            0, 0, 0, 0, 4, 4, 4, 4,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            32, 32, 32, 32, 0, 0, 0, 0,
-            0, 0, 0, 0, 4, 4, 4, 4,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            32, 32, 32, 32, 0, 0, 0, 0,
-            0, 0, 0, 0, 4, 4, 4, 4,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            32, 32, 32, 32, 0, 0, 0, 0,
-            0, 0, 0, 0, 4, 4, 4, 4,
-            0, 0, 0, 0, 0, 0, 0, 0
-        };
-        static List<byte> lightStipple = new List<byte>()
-        {
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            32, 32, 32, 32,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            2, 2, 2, 2,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            32, 32, 32, 32,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            2, 2, 2, 2,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0
 
-
-        };
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
-        public List<WXColor> ColorTable { get; set; } = new List<WXColor>()
-        {
-            new WXColor(20, Color.FromArgb(38, 77, 77)),
-            new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, lightStipple),
-            new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, denseStipple),
-            new WXColor(45, Color.FromArgb(100, 100, 51)),
-            new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, lightStipple),
-            new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, denseStipple)
-        };
+        public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
         double intensity = 1;
-        [DisplayName("Color Intensity"), Description("Weather Radar Color intensity")]
+        [DisplayName("Color Intensity"), Description("Weather Radar Color intensity (0-255)")]
         public int ColorIntensity {
             get
             {
@@ -97,7 +35,7 @@ namespace DGScope
             }
         }
         double alphafactor = .6;
-        [DisplayName("Transparency"), Description("Weather Radar Transparency")]
+        [DisplayName("Transparency"), Description("Weather Radar Transparency (0-255)")]
         public int Transparency 
         { 
             get
@@ -114,8 +52,9 @@ namespace DGScope
                     alphafactor = 1 - (value / 255d);
             }
         }
+        [Browsable(false)]
         public string Name { get; set; }
-        bool enabled = true;
+        bool enabled = false;
         public bool Enabled { 
             get
             {
@@ -130,9 +69,10 @@ namespace DGScope
                 enabled = value;
             }
         }
+        [Description("URL for NWS Radar Product File")]
         public string URL { get; set; }
+        [Description("Product Download Interval (sec.)")]
         public int DownloadInterval { get; set; } = 300;
-        public int Range { get; set; } = 248;
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
         DescriptionBlock description;
@@ -140,6 +80,8 @@ namespace DGScope
         void GetRadarData(string url)
         {
             if (!Enabled)
+                return;
+            if (string.IsNullOrEmpty(url))
                 return;
             using (var client = new WebClient())
             {
@@ -174,6 +116,8 @@ namespace DGScope
         {
             recomputeVerticesThread = new Thread(new ThreadStart(RecomputeVertices));
             recomputeVerticesThread.IsBackground = true;
+
+            
         }
         System.Threading.Timer timer;
         private void cbTimerElapsed(object state)
@@ -242,21 +186,25 @@ namespace DGScope
                     Thread.Sleep(100);
             }
         }
+        private static WXColorTable colortable;
         public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
         {
             if (ColorTable.Count == 0)
             {
-                ColorTable  = new List<WXColor>()
+                ColorTable = new List<WXColor>()
                 {
                     new WXColor(20, Color.FromArgb(38, 77, 77)),
-                    new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, lightStipple),
-                    new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, denseStipple),
+                    new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, WXColor.StippleType.LIGHT),
+                    new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, WXColor.StippleType.DENSE),
                     new WXColor(45, Color.FromArgb(100, 100, 51)),
-                    new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, lightStipple),
-                    new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, denseStipple)
+                    new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, WXColor.StippleType.LIGHT),
+                    new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, WXColor.StippleType.DENSE)
                 };
             }
-            var colortable = new WXColorTable(ColorTable);
+            if (colortable == null)
+            {
+                colortable = new WXColorTable(ColorTable);
+            }
             if (!gotdata)
                 return;
             _center = center;
@@ -265,7 +213,19 @@ namespace DGScope
             recompute = false;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
-            var scanrange = (double)Range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
+            int range = 0;
+            switch (description.Code)
+            {
+                case 94:
+                    range = 248;
+                    break;
+                case 180:
+                    range = 48;
+                    break;
+                default:
+                    return;
+            }
+            var scanrange = range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
             double resolution = scanrange / symbology.LayerNumberOfRangeBins;
             for (int i = 0; i < symbology.NumberOfRadials; i++)
             {

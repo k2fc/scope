@@ -681,8 +681,8 @@ namespace DGScope
         public bool PTLOwn { get; set; } = false;
         [DisplayName("PTL All"), Description("Display Predicted Track Lines for all FDBs"), Category("Predicted Track Lines")]
         public bool PTLAll { get; set; } = false;
-        [DisplayName("Nexrad Weather Radars")]
-        public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
+        [DisplayName("Nexrad Weather Radar")]
+        public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
         [DisplayName("Data Block Font")]
         [XmlIgnore]
         public Font Font { get; set; } = new Font("Consolas", 10);
@@ -3544,15 +3544,15 @@ namespace DGScope
 
         private void DrawNexrad()
         {
-            foreach (var nexrad in Nexrads)
-            {
-                var polygons = nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
+            //foreach (var nexrad in Nexrads)
+            //{
+                var polygons = Nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
                 for (int i = 0; i < polygons.Length; i++)
                 {
                     if(polygons[i].Color.A > 0)
                         DrawPolygon(polygons[i]);
                 }
-            }
+            //}
         }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
         {
