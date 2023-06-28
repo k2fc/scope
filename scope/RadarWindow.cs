@@ -284,24 +284,26 @@ namespace DGScope
         }
         [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
         public List<string> QuickLookList { get; set; } = new List<string>();
-        [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
-        public double TimeshareInterval
-        {
-            get
-            {
-                if (dataBlockTimeshareTimer == null)
-                    return 1.5;
-                return timeshareinterval / 1000d;
-            }
-            set
-            {
-                if (value != timeshareinterval && dataBlockTimeshareTimer != null)
-                {
-                    dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
-                }
-                timeshareinterval = (int)(value * 1000d);
-            }
-        }
+        [DisplayName("Clock Phase"), Description("Clock phase settings for data blocks"), Category("Display Properties")]
+        public ClockPhase ClockPhase { get; set; } = new ClockPhase();
+        //public double TimeshareInterval
+        //{
+        //    get
+        //    {
+        //        if (dataBlockTimeshareTimer == null)
+        //            return 1.5;
+        //        return timeshareinterval / 1000d;
+        //    }
+        //    set
+        //    {
+        //        if (value != timeshareinterval && dataBlockTimeshareTimer != null)
+        //        {
+        //            dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
+        //        }
+        //        timeshareinterval = (int)(value * 1000d);
+        //    }
+        //}
+
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
         public bool HistoryFade { get; set; } = false;
         [DisplayName("Primary Fade"), Description("Whether or not the primary returns fade out"), Category("Display Properties")]
@@ -801,7 +803,7 @@ namespace DGScope
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
-        byte timeshare = 0;
+        int timeshare => ClockPhase.Phase;
         WeatherService wx = new WeatherService();
         private void Initialize()
         {
@@ -824,7 +826,6 @@ namespace DGScope
                 radar = new Radar();
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
-            dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -949,11 +950,7 @@ namespace DGScope
             Task.Run(() => wx.GetWeather(true));
         }
 
-        private void cbTimeshareTimer(object state)
-        {
-            timeshare++;
-            timeshare %= 4;
-        }
+        
 
         private void cbAircraftGarbageCollectorTimer(object state)
         {
@@ -4384,11 +4381,11 @@ namespace DGScope
                     {
                         DrawLine(block.ParentAircraft.PTL, RBLColor);
                     }
-                    if (timeshare % 2 == 0)
+                    if (timeshare == 0)
                         DrawLabel(block);
-                    else if (timeshare % 4 == 1)
+                    else if (timeshare == 1)
                         DrawLabel(block.ParentAircraft.DataBlock2);
-                    else
+                    else if (timeshare == 2)
                         DrawLabel(block.ParentAircraft.DataBlock3);
                 }
             }
