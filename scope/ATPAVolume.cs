@@ -61,7 +61,7 @@ namespace DGScope
                 return false;
             if (Destination != null && Destination != aircraft.Destination)
                 return false;
-            if (LeaderFilters.Count > 0 && (!aircraft.LDRDirection.HasValue || !LeaderFilters.Contains(aircraft.LDRDirection.Value)))
+            if (LeaderFilters.Count > 0 && (!aircraft.OwnerLeaderDirection.HasValue || !LeaderFilters.Contains(aircraft.OwnerLeaderDirection.Value)))
                 return false;
             var acloc = aircraft.SweptLocation(radar);
             if (acloc == null)
