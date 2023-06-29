@@ -1069,7 +1069,7 @@ namespace DGScope
             object clicked;
             lock (Aircraft)
             {
-                clicked = Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
+                clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint) 
                 && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
@@ -3868,21 +3868,21 @@ namespace DGScope
             PointF blockLocation = new PointF();
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
-            var offsetScale = thisAircraft.DataBlock.SizeF.Height / 4;
+            var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
             float offset = LeaderLength * offsetScale + offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offsetScale + offset;
                     break;
                 case LeaderDirection.S:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.E:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
                     break;
                 case LeaderDirection.W:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3894,21 +3894,21 @@ namespace DGScope
                 case LeaderDirection.NE:
                     
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    if (offset > 0)
-                        blockLocation.X += offsetScale;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    //if (offset > 0)
+                    //    blockLocation.X += offsetScale;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.SE:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.NW:
                     offset *= (float)Math.Sqrt(2) / 2; 
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
-                    if (offset > 0)
-                        blockLocation.X -= offsetScale;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
+                    //if (offset > 0)
+                    //    blockLocation.X -= offsetScale;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3916,11 +3916,11 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom +  offset;
                     break;
                 case LeaderDirection.SW:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3928,7 +3928,7 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
             }
 
@@ -3969,32 +3969,32 @@ namespace DGScope
             switch (direction)
             {
                 case LeaderDirection.NE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.N:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
                     break;
                 case LeaderDirection.NW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.SE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.S:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
                     break;
                 case LeaderDirection.SW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.E:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.W:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 default:
                     Console.Write("wat");
