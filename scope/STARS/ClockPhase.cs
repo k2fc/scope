@@ -21,6 +21,7 @@ namespace DGScope.STARS
         public double Interval4 { get; set; } = 1.5;
         public double Interval5 { get; set; } = 0.0;
         public double Interval6 { get; set; } = 0.0;
+        [Browsable(false)]
         public int Phase 
         { 
             get

@@ -284,7 +284,7 @@ namespace DGScope
         }
         [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
         public List<string> QuickLookList { get; set; } = new List<string>();
-        [DisplayName("Clock Phase"), Description("Clock phase settings for data blocks"), Category("Display Properties")]
+        [DisplayName("Datablock Clock"), Description("Clock phase settings for data blocks"), Category("Data Blocks")]
         public ClockPhase ClockPhase { get; set; } = new ClockPhase();
         //public double TimeshareInterval
         //{
@@ -699,11 +699,11 @@ namespace DGScope
         [XmlElement("FontSizeUnit")]
         [Browsable(false)]
         public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
-        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
+        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
-        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
-        public float LeaderLength { get; set; } = 10;
-        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
+        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
+        public float LeaderLength { get; set; } = 1;
+        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data Blocks")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
         [DisplayName("Server Address"), Category("NTP")]
         public string NTPServerAddress
@@ -803,7 +803,6 @@ namespace DGScope
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
-        int timeshare => ClockPhase.Phase;
         WeatherService wx = new WeatherService();
         private void Initialize()
         {
@@ -4381,11 +4380,11 @@ namespace DGScope
                     {
                         DrawLine(block.ParentAircraft.PTL, RBLColor);
                     }
-                    if (timeshare == 0)
+                    if (ClockPhase.Phase == 0)
                         DrawLabel(block);
-                    else if (timeshare == 1)
+                    else if (ClockPhase.Phase == 1)
                         DrawLabel(block.ParentAircraft.DataBlock2);
-                    else if (timeshare == 2)
+                    else if (ClockPhase.Phase == 2)
                         DrawLabel(block.ParentAircraft.DataBlock3);
                 }
             }
