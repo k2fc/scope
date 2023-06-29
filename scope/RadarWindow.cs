@@ -3868,8 +3868,8 @@ namespace DGScope
             PointF blockLocation = new PointF();
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
-            float offsetScale = (float)(thisAircraft.DataBlock.SizeF.Height / 4);
-            float offset = (LeaderLength ) * (float)offsetScale;
+            var offsetScale = thisAircraft.DataBlock.SizeF.Height / 4;
+            float offset = LeaderLength * offsetScale + offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
