@@ -3873,7 +3873,7 @@ namespace DGScope
             switch (direction)
             {
                 case LeaderDirection.N:
-                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.S:
                     blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
