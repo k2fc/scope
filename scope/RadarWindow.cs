@@ -703,8 +703,13 @@ namespace DGScope
         public bool AutoOffset { get; set; } = false;
         [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
         public float LeaderLength { get; set; } = 1;
-        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data Blocks")]
+        [DisplayName("Owned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unowned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnownedLeaderDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unassociated Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnassociatedLeaderDirection { get; set; } = LeaderDirection.N;
+
         [DisplayName("Server Address"), Category("NTP")]
         public string NTPServerAddress
         {
@@ -3351,10 +3356,14 @@ namespace DGScope
             var circlesize = (float)plane.TPA.Miles / scale;
             double angle;
             LeaderDirection ldr;
-            if (plane.LDRDirection == null)
+            if (plane.LDRDirection != null)
+                ldr = plane.LDRDirection.Value;
+            else if (plane.PositionInd == ThisPositionIndicator) // owned LDR direction
                 ldr = LDRDirection;
+            else if (!plane.Associated) // Unowned LDR direction
+                ldr = UnownedLeaderDirection;
             else
-                ldr = (LeaderDirection)plane.LDRDirection;
+                ldr = UnassociatedLeaderDirection;
 
             switch (ldr)
             {
@@ -3869,7 +3878,7 @@ namespace DGScope
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
             var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
-            float offset = LeaderLength * offsetScale + offsetScale;
+            var offset = (1 + LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
@@ -3930,6 +3939,8 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
                     blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
+                default:
+                    throw new Exception("Invalid Direction");
             }
 
             /*
@@ -4023,13 +4034,29 @@ namespace DGScope
         }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
-            LeaderDirection newDirection = LDRDirection;
-            LeaderDirection oldDirection = LDRDirection;
+            LeaderDirection newDirection = UnassociatedLeaderDirection;
+            LeaderDirection oldDirection = UnassociatedLeaderDirection;
             if (thisAircraft.LDRDirection != null)
             {
-                oldDirection = (LeaderDirection)thisAircraft.LDRDirection;
-                newDirection = (LeaderDirection)thisAircraft.LDRDirection;
+                oldDirection = thisAircraft.LDRDirection.Value;
+                newDirection = thisAircraft.LDRDirection.Value;
             }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator && thisAircraft.OwnerLeaderDirection != null)
+            {
+                oldDirection = thisAircraft.OwnerLeaderDirection.Value;
+                newDirection = thisAircraft.OwnerLeaderDirection.Value;
+            }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator)
+            {
+                oldDirection = LDRDirection;
+                newDirection = LDRDirection;
+            }
+            else if (!thisAircraft.Associated)
+            {
+                oldDirection = UnownedLeaderDirection; 
+                newDirection = UnownedLeaderDirection;
+            }
+
 
             if (newDirection != oldDirection)
             {
@@ -4039,7 +4066,7 @@ namespace DGScope
             PointF blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
             
             
-            if (AutoOffset && inRange(thisAircraft) && thisAircraft.FDB)
+            if (AutoOffset &&  thisAircraft.FDB && thisAircraft.LDRDirection == null)
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
@@ -4051,10 +4078,33 @@ namespace DGScope
                     List<TransparentLabel> otherDataBlocks = new List<TransparentLabel>();
                     lock (dataBlocks)
                         otherDataBlocks.AddRange(dataBlocks);
-                    if (thisAircraft.LDRDirection != null)
-                        newDirection = (LeaderDirection)(((int)thisAircraft.LDRDirection + (i * 45)) % 360);
-                    else
-                        newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                    switch (newDirection)
+                    {
+                        case LeaderDirection.N:
+                            newDirection = LeaderDirection.NW;
+                            break;
+                        case LeaderDirection.NW:
+                            newDirection = LeaderDirection.W;
+                            break;
+                        case LeaderDirection.W:
+                            newDirection = LeaderDirection.SW;
+                            break;
+                        case LeaderDirection.SW:
+                            newDirection = LeaderDirection.S;
+                            break;
+                        case LeaderDirection.S:
+                            newDirection = LeaderDirection.SE;
+                            break;
+                        case LeaderDirection.SE:
+                            newDirection = LeaderDirection.E;
+                            break;
+                        case LeaderDirection.E:
+                            newDirection = LeaderDirection.NE;
+                            break;
+                        case LeaderDirection.NE:
+                            newDirection = LeaderDirection.N;
+                            break;
+                    }
                     blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
                     
                     bounds.Location = blockLocation;

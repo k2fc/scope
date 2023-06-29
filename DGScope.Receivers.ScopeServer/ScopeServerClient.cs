@@ -326,7 +326,7 @@ namespace DGScope.Receivers.ScopeServer
                 plane.Scratchpad = flightPlan.Scratchpad1;
                 plane.Scratchpad2 = flightPlan.Scratchpad2;
                 plane.AssignedSquawk = flightPlan.AssignedSquawk;
-                plane.LDRDirection = RadarWindow.ParseLDR(flightPlan.LDRDirection.ToString());
+                plane.OwnerLeaderDirection = RadarWindow.ParseLDR(flightPlan.LDRDirection.ToString());
                 plane.FlightPlanGuid = flightPlan.Guid;
             }
             if (track != null)
