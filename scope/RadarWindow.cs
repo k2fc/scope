@@ -284,24 +284,26 @@ namespace DGScope
         }
         [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
         public List<string> QuickLookList { get; set; } = new List<string>();
-        [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
-        public double TimeshareInterval
-        {
-            get
-            {
-                if (dataBlockTimeshareTimer == null)
-                    return 1.5;
-                return timeshareinterval / 1000d;
-            }
-            set
-            {
-                if (value != timeshareinterval && dataBlockTimeshareTimer != null)
-                {
-                    dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
-                }
-                timeshareinterval = (int)(value * 1000d);
-            }
-        }
+        [DisplayName("Datablock Clock"), Description("Clock phase settings for data blocks"), Category("Data Blocks")]
+        public ClockPhase ClockPhase { get; set; } = new ClockPhase();
+        //public double TimeshareInterval
+        //{
+        //    get
+        //    {
+        //        if (dataBlockTimeshareTimer == null)
+        //            return 1.5;
+        //        return timeshareinterval / 1000d;
+        //    }
+        //    set
+        //    {
+        //        if (value != timeshareinterval && dataBlockTimeshareTimer != null)
+        //        {
+        //            dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
+        //        }
+        //        timeshareinterval = (int)(value * 1000d);
+        //    }
+        //}
+
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
         public bool HistoryFade { get; set; } = false;
         [DisplayName("Primary Fade"), Description("Whether or not the primary returns fade out"), Category("Display Properties")]
@@ -681,8 +683,10 @@ namespace DGScope
         public bool PTLOwn { get; set; } = false;
         [DisplayName("PTL All"), Description("Display Predicted Track Lines for all FDBs"), Category("Predicted Track Lines")]
         public bool PTLAll { get; set; } = false;
-        [DisplayName("Nexrad Weather Radars")]
-        public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
+        [DisplayName("Nexrad Weather Radar")]
+        public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
+        [Browsable(false)]
+        public List<NexradDisplay> Nexrads { get; set; }
         [DisplayName("Data Block Font")]
         [XmlIgnore]
         public Font Font { get; set; } = new Font("Consolas", 10);
@@ -695,12 +699,17 @@ namespace DGScope
         [XmlElement("FontSizeUnit")]
         [Browsable(false)]
         public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
-        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
+        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
-        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
-        public float LeaderLength { get; set; } = 10;
-        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
+        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
+        public float LeaderLength { get; set; } = 1;
+        [DisplayName("Owned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unowned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnownedLeaderDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unassociated Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnassociatedLeaderDirection { get; set; } = LeaderDirection.N;
+
         [DisplayName("Server Address"), Category("NTP")]
         public string NTPServerAddress
         {
@@ -799,7 +808,6 @@ namespace DGScope
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
-        byte timeshare = 0;
         WeatherService wx = new WeatherService();
         private void Initialize()
         {
@@ -822,7 +830,6 @@ namespace DGScope
                 radar = new Radar();
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
-            dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
             GL.ClearColor(BackColor);
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
@@ -947,11 +954,7 @@ namespace DGScope
             Task.Run(() => wx.GetWeather(true));
         }
 
-        private void cbTimeshareTimer(object state)
-        {
-            timeshare++;
-            timeshare %= 4;
-        }
+        
 
         private void cbAircraftGarbageCollectorTimer(object state)
         {
@@ -1071,7 +1074,7 @@ namespace DGScope
             object clicked;
             lock (Aircraft)
             {
-                clicked = Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
+                clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint) 
                 && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
@@ -3353,10 +3356,14 @@ namespace DGScope
             var circlesize = (float)plane.TPA.Miles / scale;
             double angle;
             LeaderDirection ldr;
-            if (plane.LDRDirection == null)
+            if (plane.LDRDirection != null)
+                ldr = plane.LDRDirection.Value;
+            else if (plane.PositionInd == ThisPositionIndicator) // owned LDR direction
                 ldr = LDRDirection;
+            else if (!plane.Associated) // Unowned LDR direction
+                ldr = UnownedLeaderDirection;
             else
-                ldr = (LeaderDirection)plane.LDRDirection;
+                ldr = UnassociatedLeaderDirection;
 
             switch (ldr)
             {
@@ -3544,15 +3551,21 @@ namespace DGScope
 
         private void DrawNexrad()
         {
-            foreach (var nexrad in Nexrads)
+            //convert old nexrads list to new nexrad object
+            if (Nexrads != null && Nexrads.Count > 0)
             {
-                var polygons = nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
-                for (int i = 0; i < polygons.Length; i++)
-                {
-                    if(polygons[i].Color.A > 0)
-                        DrawPolygon(polygons[i]);
-                }
+                Nexrad = Nexrads[0];
+                Nexrad.ColorTable = new List<WXColor>();
+                Nexrads = null;
             }
+        
+            var polygons = Nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
+            for (int i = 0; i < polygons.Length; i++)
+            {
+                if(polygons[i].Color.A > 0)
+                    DrawPolygon(polygons[i]);
+            }
+            //}
         }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
         {
@@ -3864,21 +3877,21 @@ namespace DGScope
             PointF blockLocation = new PointF();
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
-            float offsetScale = (float)(thisAircraft.DataBlock.SizeF.Height / 4);
-            float offset = (LeaderLength ) * (float)offsetScale;
+            var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
+            var offset = (1 + LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.S:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.E:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
                     break;
                 case LeaderDirection.W:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3890,21 +3903,21 @@ namespace DGScope
                 case LeaderDirection.NE:
                     
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    if (offset > 0)
-                        blockLocation.X += offsetScale;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    //if (offset > 0)
+                    //    blockLocation.X += offsetScale;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.SE:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.NW:
                     offset *= (float)Math.Sqrt(2) / 2; 
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
-                    if (offset > 0)
-                        blockLocation.X -= offsetScale;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
+                    //if (offset > 0)
+                    //    blockLocation.X -= offsetScale;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3912,11 +3925,11 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom +  offset;
                     break;
                 case LeaderDirection.SW:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3924,8 +3937,10 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
+                default:
+                    throw new Exception("Invalid Direction");
             }
 
             /*
@@ -3965,32 +3980,32 @@ namespace DGScope
             switch (direction)
             {
                 case LeaderDirection.NE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.N:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
                     break;
                 case LeaderDirection.NW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.SE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.S:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
                     break;
                 case LeaderDirection.SW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.E:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.W:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 default:
                     Console.Write("wat");
@@ -4019,13 +4034,29 @@ namespace DGScope
         }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
-            LeaderDirection newDirection = LDRDirection;
-            LeaderDirection oldDirection = LDRDirection;
+            LeaderDirection newDirection = UnassociatedLeaderDirection;
+            LeaderDirection oldDirection = UnassociatedLeaderDirection;
             if (thisAircraft.LDRDirection != null)
             {
-                oldDirection = (LeaderDirection)thisAircraft.LDRDirection;
-                newDirection = (LeaderDirection)thisAircraft.LDRDirection;
+                oldDirection = thisAircraft.LDRDirection.Value;
+                newDirection = thisAircraft.LDRDirection.Value;
             }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator && thisAircraft.OwnerLeaderDirection != null)
+            {
+                oldDirection = thisAircraft.OwnerLeaderDirection.Value;
+                newDirection = thisAircraft.OwnerLeaderDirection.Value;
+            }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator)
+            {
+                oldDirection = LDRDirection;
+                newDirection = LDRDirection;
+            }
+            else if (!thisAircraft.Associated)
+            {
+                oldDirection = UnownedLeaderDirection; 
+                newDirection = UnownedLeaderDirection;
+            }
+
 
             if (newDirection != oldDirection)
             {
@@ -4035,7 +4066,7 @@ namespace DGScope
             PointF blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
             
             
-            if (AutoOffset && inRange(thisAircraft) && thisAircraft.FDB)
+            if (AutoOffset &&  thisAircraft.FDB && thisAircraft.LDRDirection == null)
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
@@ -4047,10 +4078,33 @@ namespace DGScope
                     List<TransparentLabel> otherDataBlocks = new List<TransparentLabel>();
                     lock (dataBlocks)
                         otherDataBlocks.AddRange(dataBlocks);
-                    if (thisAircraft.LDRDirection != null)
-                        newDirection = (LeaderDirection)(((int)thisAircraft.LDRDirection + (i * 45)) % 360);
-                    else
-                        newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                    switch (newDirection)
+                    {
+                        case LeaderDirection.N:
+                            newDirection = LeaderDirection.NW;
+                            break;
+                        case LeaderDirection.NW:
+                            newDirection = LeaderDirection.W;
+                            break;
+                        case LeaderDirection.W:
+                            newDirection = LeaderDirection.SW;
+                            break;
+                        case LeaderDirection.SW:
+                            newDirection = LeaderDirection.S;
+                            break;
+                        case LeaderDirection.S:
+                            newDirection = LeaderDirection.SE;
+                            break;
+                        case LeaderDirection.SE:
+                            newDirection = LeaderDirection.E;
+                            break;
+                        case LeaderDirection.E:
+                            newDirection = LeaderDirection.NE;
+                            break;
+                        case LeaderDirection.NE:
+                            newDirection = LeaderDirection.N;
+                            break;
+                    }
                     blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
                     
                     bounds.Location = blockLocation;
@@ -4376,11 +4430,11 @@ namespace DGScope
                     {
                         DrawLine(block.ParentAircraft.PTL, RBLColor);
                     }
-                    if (timeshare % 2 == 0)
+                    if (ClockPhase.Phase == 0)
                         DrawLabel(block);
-                    else if (timeshare % 4 == 1)
+                    else if (ClockPhase.Phase == 1)
                         DrawLabel(block.ParentAircraft.DataBlock2);
-                    else
+                    else if (ClockPhase.Phase == 2)
                         DrawLabel(block.ParentAircraft.DataBlock3);
                 }
             }

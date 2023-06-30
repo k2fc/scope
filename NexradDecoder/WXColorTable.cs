@@ -8,6 +8,7 @@ namespace DGScope
 {
     public class WXColorTable
     {
+        
         public List<WXColor> Colors { get; set; } = new List<WXColor>();
         public WXColor GetWXColor(double value)
         {
@@ -25,12 +26,52 @@ namespace DGScope
             }
             return colors.Last();
         }
-        public WXColorTable() { }
+        public WXColorTable() 
+        {
+        }
         public WXColorTable(List<WXColor> colors) { Colors = colors; }
     }
 
     public class WXColor
     {
+        private static byte[] denseStipple = new byte[]
+        {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 4, 4, 4, 4,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
+        private static byte[] lightStipple = new byte[]
+        {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            2, 2, 2, 2, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            32, 32, 32, 32, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            2, 2, 2, 2, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
         public double MinValue { get; set; }
         [XmlIgnore]
         public Color MinColor { get; set; }
@@ -40,8 +81,14 @@ namespace DGScope
         {
             MinValue = minvalue;
             MinColor = mincolor;
-            StipplePatternList = null;
             StippleColor = Color.Transparent;
+        }
+        public WXColor(double minvalue, Color mincolor, Color stippleColor, StippleType stippleType)
+        {
+            MinValue = minvalue;
+            MinColor = mincolor;
+            StippleColor = stippleColor;
+            Stipple = stippleType;
         }
         public WXColor() { }
 
@@ -73,22 +120,32 @@ namespace DGScope
             }
         }
         [XmlIgnore]
+        [Browsable(false)]
         public byte[] StipplePattern 
         {
             get
             {
-                if (StipplePatternList == null)
-                    return null;
-                return StipplePatternList.ToArray();
+                switch (Stipple)
+                {
+                    case StippleType.LIGHT:
+                        return lightStipple;
+                    case StippleType.DENSE:
+                        return denseStipple;
+                }
+                return new byte[256];
             }
         }
-        public List<byte> StipplePatternList { get; set; }
-        
+        public StippleType Stipple { get; set; } = StippleType.NONE;
 
         public override string ToString()
         {
             return ">="+MinValue;
         }
-
+        public enum StippleType
+        {
+            NONE = 0,
+            LIGHT = 1,
+            DENSE = 2
+        }
     }
 }
