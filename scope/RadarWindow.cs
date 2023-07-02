@@ -4247,7 +4247,7 @@ namespace DGScope
                         float beaconoffset = TargetExtentSymbols.BeaconTargets.RangeOffset / (32f * scale);
                         float x1 = (float)(targetWidth / 2);
                         float y1 = (float)(targetHeight / 2);
-                        float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10);
+                        float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10f);
                         float y2 = (TargetExtentSymbols.BeaconTargets.RangeExtent / 32f) / scale;
 
                         target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
