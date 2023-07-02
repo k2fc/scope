@@ -3939,8 +3939,6 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
                     blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
-                default:
-                    throw new Exception("Invalid Direction");
             }
 
             /*
@@ -4072,53 +4070,38 @@ namespace DGScope
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
                 int minconflicts = int.MaxValue;
                 LeaderDirection bestDirection = newDirection;
+                int[] sequence = new int[] {0, 2, 6, 7, 1, 3, 5, 4};
                 for (int i = 0; i < 8; i++)
                 {
                     int conflictcount = 0;
                     List<TransparentLabel> otherDataBlocks = new List<TransparentLabel>();
                     lock (dataBlocks)
                         otherDataBlocks.AddRange(dataBlocks);
-                    switch (newDirection)
+                    var d = (int)newDirection;
+                    if (d >= 5)
                     {
-                        case LeaderDirection.N:
-                            newDirection = LeaderDirection.NW;
-                            break;
-                        case LeaderDirection.NW:
-                            newDirection = LeaderDirection.W;
-                            break;
-                        case LeaderDirection.W:
-                            newDirection = LeaderDirection.SW;
-                            break;
-                        case LeaderDirection.SW:
-                            newDirection = LeaderDirection.S;
-                            break;
-                        case LeaderDirection.S:
-                            newDirection = LeaderDirection.SE;
-                            break;
-                        case LeaderDirection.SE:
-                            newDirection = LeaderDirection.E;
-                            break;
-                        case LeaderDirection.E:
-                            newDirection = LeaderDirection.NE;
-                            break;
-                        case LeaderDirection.NE:
-                            newDirection = LeaderDirection.N;
-                            break;
+                        d--;
                     }
+                    d = (d + sequence[i]) % 8;
+                    if (d >= 5)
+                    {
+                        d++;
+                    }
+                    newDirection = (LeaderDirection)d;
                     blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
                     
                     bounds.Location = blockLocation;
 
                     foreach (var otherDataBlock in otherDataBlocks)
                     {
-                        if (!otherDataBlock.ParentAircraft.FDB)
-                            continue; //both must be fdbs
+                        //if (!otherDataBlock.ParentAircraft.FDB)
+                            //continue; //both must be fdbs
                         var otherPlane = otherDataBlock.ParentAircraft;
-                        if (thisAircraft.ModeSCode != otherPlane.ModeSCode)
+                        if (thisAircraft != otherPlane)
                         {
                             RectangleF otherBounds = new RectangleF(otherPlane.DataBlock.LocationF, otherPlane.DataBlock.SizeF);
                             
-                            if (bounds.IntersectsWith(otherBounds))
+                            if (bounds.IntersectsWith(otherBounds) && otherPlane.FDB)
                             {
                                 conflictcount+=2;
                             }
@@ -4127,7 +4110,7 @@ namespace DGScope
                                 conflictcount++;
                             }
                             if (thisAircraft.ConnectingLine.IntersectsWith(otherPlane.ConnectingLine) ||
-                                thisAircraft.ConnectingLine.IntersectsWith(otherPlane.TargetReturn.BoundsF) ||
+                                thisAircraft.ConnectingLine.IntersectsWith(otherPlane.PositionIndicator.BoundsF) ||
                                 thisAircraft.ConnectingLine.IntersectsWith(otherBounds))
                             {
                                 conflictcount+=2;
