@@ -3035,9 +3035,14 @@ namespace DGScope
             }
             DrawRangeRings();
             if (ATPA.Active)
+            {
                 ATPA.Calculate(Aircraft, radar);
-            if(!hidewx)
+                DrawATPAVolumes();
+            }
+            if (!hidewx)
+            {
                 DrawNexrad();
+            }
             DrawVideoMapLines();
             GenerateTargets();
             DrawTargets();
@@ -3076,6 +3081,26 @@ namespace DGScope
         private GeoPoint ScreenToGeoPoint(Point Point)
         {
             return ScreenToGeoPoint(LocationFromScreenPoint(Point));
+        }
+        private void DrawATPAVolumes()
+        {
+            foreach (var volume in ATPA.Volumes.Where(v => v.Draw))
+            {
+                GeoPoint one, two, three, four;
+                one = volume.RunwayThreshold.FromPoint(volume.WidthLeft / 6076d, volume.TrueHeading - 90);
+                two = one.FromPoint(volume.Length, volume.TrueHeading + 180);
+                three = two.FromPoint((volume.WidthLeft / 6076d) + (volume.WidthRight / 6076d), volume.TrueHeading + 90);
+                four = volume.RunwayThreshold.FromPoint(volume.WidthRight / 6076d, volume.TrueHeading + 90);
+                Line l1, l2, l3, l4;
+                l1 = new Line(one, two);
+                l2 = new Line(two, three);
+                l3 = new Line(three, four);
+                l4 = new Line(four, one);
+                DrawLine(l1, Color.Aqua);
+                DrawLine(l2 , Color.Aqua);
+                DrawLine(l3, Color.Aqua);
+                DrawLine(l4, Color.Aqua);
+            }
         }
         private void DrawMinSeps()
         {

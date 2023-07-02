@@ -12,6 +12,8 @@ namespace DGScope
         [DisplayName("Volume ID"), Category("Identity")]
         public string VolumeId { get; set; }
         public bool Active { get; set; }
+        [Description("Draw the volume on the scope, for testing purposes.")]
+        public bool Draw { get; set; }
         [DisplayName("Volume Name"), Category("Identity")]
         public string Name { get; set; }
         [DisplayName("Runway Threshold Location"), Category("Geometry")]
