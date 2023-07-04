@@ -3528,25 +3528,20 @@ namespace DGScope
         }
         private void DrawLine(Line line, Color color)
         {
-            /*double scale = Range / Math.Sqrt(2);
-            double yscale = 1;
-            double bearing1 = radar.Location.BearingTo(line.End1) - ScreenRotation;
-            double distance1 = radar.Location.DistanceTo(line.End1);
-            float x1 = (float)(Math.Sin(bearing1 * (Math.PI / 180)) * (distance1 / scale));
-            float y1 = (float)(Math.Cos(bearing1 * (Math.PI / 180)) * (distance1 / scale) * yscale);
 
-            double bearing2 = radar.Location.BearingTo(line.End2) - ScreenRotation;
-            double distance2 = radar.Location.DistanceTo(line.End2);
-            float x2 = (float)(Math.Sin(bearing2 * (Math.PI / 180)) * (distance2 / scale));
-            float y2 = (float)(Math.Cos(bearing2 * (Math.PI / 180)) * (distance2 / scale) * yscale);
-            */
-            var end1 = GeoToScreenPoint(line.End1);
+            /*var end1 = GeoToScreenPoint(line.End1);
             var end2 = GeoToScreenPoint(line.End2);
             float x1 = end1.X;
             float x2 = end2.X;
             float y1 = end1.Y;
-            float y2 = end2.Y;
-            DrawLine(x1, y1, x2, y2, color);
+            float y2 = end2.Y;*/
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            DrawLine((float)line.End1.Longitude, (float)line.End1.Latitude, (float)line.End2.Longitude, (float)line.End2.Latitude, color);
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawPolygon (Polygon polygon)
@@ -3600,10 +3595,10 @@ namespace DGScope
         }
         private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
         {
-            x1 = RoundUpToNearest(x1, pixelScale);
-            x2 = RoundUpToNearest(x2, pixelScale);
-            y1 = RoundUpToNearest(y1, pixelScale);
-            y2 = RoundUpToNearest(y2, pixelScale);
+            //x1 = RoundUpToNearest(x1, pixelScale);
+            //x2 = RoundUpToNearest(x2, pixelScale);
+            //y1 = RoundUpToNearest(y1, pixelScale);
+            //y2 = RoundUpToNearest(y2, pixelScale);
             GL.Begin(PrimitiveType.Lines);
             GL.LineWidth(width);
             GL.Color4(color);
