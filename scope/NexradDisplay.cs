@@ -104,18 +104,11 @@ namespace DGScope
             }
             //decoder.setFileResource("e:\\users\\dennis\\downloads\\KOKX_SDUS51_N0ROKX_202009292354");
 
-            //RecomputeVertices(_center, _scale, _rotation);
-            if (!recomputeVerticesThread.IsAlive)
-            {
-                recomputeVerticesThread.Start();
-            }
-            recompute = true;
+            RecomputeVertices();
+            
         }
-        Thread recomputeVerticesThread;
         public NexradDisplay() 
         {
-            recomputeVerticesThread = new Thread(new ThreadStart(RecomputeVertices));
-            recomputeVerticesThread.IsBackground = true;
 
             
         }
@@ -142,52 +135,15 @@ namespace DGScope
             return polygons;
         }
         
-        public void RescalePolygons(float scalechange, float ar_change)
-        {
-            if (polygons == null)
-                return;
-            for (int i = 0; i < polygons.Length; i++)
-            {
-                for (int j = 0; j < polygons[i].vertices.Length; j++)
-                {
-                    polygons[i].vertices[0].X *= scalechange;
-                    polygons[i].vertices[0].Y *= scalechange / ar_change;
-                }
-            }
-        }
-        public void MovePolygons(float xChange, float yChange)
-        {
-            if (polygons == null)
-                return;
-            for (int i = 0; i < polygons.Length; i++)
-            {
-                for (int j = 0; j < polygons[i].vertices.Length; j++)
-                {
-                    polygons[i].vertices[0].X += xChange;
-                    polygons[i].vertices[0].Y -= yChange;
-                }
-            }
-        }
         Polygon[] polygons;
         
         GeoPoint _center = new GeoPoint();
         double _scale;
         double _rotation;
 
-        public void RecomputeVertices()
-        {
-            while(true) 
-            {
-                if (recompute)
-                {
-                    RecomputeVertices(_center, _scale, _rotation);
-                }
-                else
-                    Thread.Sleep(100);
-            }
-        }
+        
         private static WXColorTable colortable;
-        public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
+        public void RecomputeVertices()
         {
             if (ColorTable.Count == 0)
             {
@@ -207,13 +163,9 @@ namespace DGScope
             }
             if (!gotdata)
                 return;
-            _center = center;
-            _scale = scale;
-            _rotation = rotation;
-            recompute = false;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
-            int range = 0;
+            int range;
             switch (description.Code)
             {
                 case 94:
@@ -249,7 +201,7 @@ namespace DGScope
                                     (int)(color.StippleColor.G * intensity), (int)(color.StippleColor.B * intensity));
                             if (color.StipplePattern != null)
                                 polygon.StipplePattern = color.StipplePattern;
-                            polygon.ComputeVertices(center, scale, rotation);
+                            polygon.ComputeVertices();
                             polygons.Add(polygon);
                         }
                     }
@@ -275,7 +227,7 @@ namespace DGScope
         public Color StippleColor { get; set; }
         public byte[] StipplePattern { get; set; }
 
-        public void ComputeVertices(GeoPoint center, double scale, double ScreenRotation = 0)
+        public void ComputeVertices()
         {
             GeoPoint[] points;
             lock (Points)
@@ -285,10 +237,8 @@ namespace DGScope
             vertices = new PointF[points.Length];
             for (int i = 0; i < points.Length; i++)
             {
-                double bearing = center.BearingTo(points[i]) - ScreenRotation;
-                double distance = center.DistanceTo(points[i]);
-                vertices[i].X = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                vertices[i].Y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].X = (float)points[i].Longitude; // (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].Y = (float)points[i].Latitude; // (Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             }
         }
     }

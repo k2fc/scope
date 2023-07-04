@@ -3551,6 +3551,11 @@ namespace DGScope
 
         private void DrawPolygon (Polygon polygon)
         {
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI/180)), (60d / scale)  , 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            //GL.Scale(aspect_ratio, 1.0f, 1.0f);
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(polygon.Color);
             for (int i = 0; i < polygon.vertices.Length; i++)
@@ -3571,7 +3576,8 @@ namespace DGScope
                 GL.End();
                 GL.Disable(EnableCap.PolygonStipple);
             }
-            
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawNexrad()
