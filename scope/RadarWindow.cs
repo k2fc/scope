@@ -1288,6 +1288,14 @@ namespace DGScope
                             Preview.Clear();
                         }
                         break;
+                    case '5' when keys[0].Length == 1:
+                        if (clickedplane)
+                        {
+                            ((Aircraft)clicked).LDRDirection = null;
+                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            Preview.Clear();
+                        }
+                        break;
                     case '6' when keys[0].Length == 1:
                         if (clickedplane)
                         {
