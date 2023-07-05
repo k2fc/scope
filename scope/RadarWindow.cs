@@ -1666,7 +1666,7 @@ namespace DGScope
                         switch (keys[0][1])
                         {
                             case '2': //Multifunction 2
-                                if (KeysToString(keys[0], 2).Substring(0,4) == "ATPA") //ATPA Commands
+                                if (keys[0].Length >=6 && KeysToString(keys[0], 2).Substring(0,4) == "ATPA") //ATPA Commands
                                 {
                                     if (keys[0].Length == 7) // Enable system-wide
                                     {
@@ -1757,7 +1757,7 @@ namespace DGScope
                                         }
                                     }
                                 }
-                                else if (KeysToString(keys[0], 1).Substring(0,3) == "2.5")
+                                else if (keys[0].Length >= 4 && KeysToString(keys[0], 1).Substring(0,3) == "2.5")
                                 {
                                     if (keys[0].Length >= 6 && keys[0].Length <= 10)
                                     {
