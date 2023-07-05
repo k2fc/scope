@@ -4073,8 +4073,7 @@ namespace DGScope
                 thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
             }
             thisAircraft.ConnectingLine.Start = leaderStart;
-            if ((direction != thisAircraft.LDRDirection && thisAircraft.LDRDirection != null) ||
-                (direction != LDRDirection && thisAircraft.LDRDirection == null))
+            if (direction != thisAircraft.LastDrawnDirection)
                 thisAircraft.RedrawDataBlock(radar, direction);
 
             return blockLocation;

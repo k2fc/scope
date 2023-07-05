@@ -297,6 +297,7 @@ namespace DGScope
         }
 
         private int dbAlt, dbSpeed = 0;
+        public RadarWindow.LeaderDirection LastDrawnDirection;
 
         public void RedrawDataBlock(Radar radar, RadarWindow.LeaderDirection? leaderDirection = null)
         {
@@ -313,6 +314,10 @@ namespace DGScope
             else if (OwnerLeaderDirection != null && Owned)
             {
                 leaderDirection = OwnerLeaderDirection.Value;
+            }
+            if (leaderDirection != null)
+            {
+                LastDrawnDirection = leaderDirection.Value;
             }
             string oldtext = DataBlock.Text;
             string oldtext2 = DataBlock2.Text;
@@ -446,7 +451,7 @@ namespace DGScope
                     {
                         DataBlock.Text = FlightPlanCallsign.PadLeft(9);
                         DataBlock2.Text = FlightPlanCallsign.PadLeft(9); 
-                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9); 
+                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9);
                     }
                     else
                     {
