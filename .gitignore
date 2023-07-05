@@ -342,3 +342,4 @@ healthchecksdb
 /scope/version.txt
 /ScopeServer/version.txt
 /ScopeServer/receivers.json
+/NexradDecoder/NexradDecoder.dll
