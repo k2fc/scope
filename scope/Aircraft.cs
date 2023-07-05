@@ -302,8 +302,18 @@ namespace DGScope
         {
             if (Callsign == null)
                 Callsign = string.Empty;
-            if (leaderDirection == null)
-                leaderDirection = LDRDirection;
+            if (leaderDirection != null)
+            {
+
+            }
+            else if (LDRDirection != null)
+            {
+                leaderDirection = LDRDirection.Value;
+            }
+            else if (OwnerLeaderDirection != null && Owned)
+            {
+                leaderDirection = OwnerLeaderDirection.Value;
+            }
             string oldtext = DataBlock.Text;
             string oldtext2 = DataBlock2.Text;
             string oldtext3 = DataBlock3.Text;
