@@ -118,15 +118,8 @@ namespace DGScope
             GetRadarData(URL);
         }
         bool recompute = true;
-        public Polygon[] Polygons(GeoPoint center, double scale, double rotation = 0)
+        public Polygon[] Polygons()
         {
-            if (_center != center || _scale != scale || _rotation != rotation)
-            {
-                _center = center;
-                _scale = scale;
-                _rotation = rotation;
-                recompute = true;
-            }
             if (timer == null)
                 timer = new Timer(new TimerCallback(cbTimerElapsed), null,0,DownloadInterval * 1000);
             

@@ -3522,7 +3522,7 @@ namespace DGScope
             GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
             foreach (Line line in lines)
             {
-                DrawLine((float)line.End1.Longitude, (float)line.End1.Latitude, (float)line.End2.Longitude, (float)line.End2.Latitude, color);
+                DrawLine(line.End1.Longitude, line.End1.Latitude, line.End2.Longitude, line.End2.Latitude, color);
             }
             GL.PopMatrix();
             GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
@@ -3585,7 +3585,7 @@ namespace DGScope
                 Nexrads = null;
             }
         
-            var polygons = Nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
+            var polygons = Nexrad.Polygons();
             GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
             GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
@@ -3601,7 +3601,7 @@ namespace DGScope
             GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
             //}
         }
-        private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
+        private void DrawLine (double x1, double y1, double x2, double y2, Color color, float width = 1)
         {
             //x1 = RoundUpToNearest(x1, pixelScale);
             //x2 = RoundUpToNearest(x2, pixelScale);
