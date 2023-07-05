@@ -3279,25 +3279,32 @@ namespace DGScope
             */
             double distance = ScreenCenterPoint.DistanceTo(RangeRingCenter);
             var rrr = (aspect_ratio > 1 ? Range * aspect_ratio : Range / aspect_ratio) + distance;
-            var center = GeoToScreenPoint(RangeRingCenter);
-            var x = center.X;
-            var y = center.Y;
+            var x = RangeRingCenter.Longitude;
+            var y = RangeRingCenter.Latitude;
+            var latfactor = Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180));
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * latfactor, (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+
             for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(x,y, (float)(i / scale), 1, 1000, RangeRingColor);
+                DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, RangeRingColor);
             }
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
 
-        private void DrawCircle (float cx, float cy, float r, double aspect_ratio, int num_segments, Color color, bool fill = false)
+        private void DrawCircle (double cx, double cy, double r, double aspect_ratio, int num_segments, Color color, bool fill = false)
         {
             GL.Begin(fill ? PrimitiveType.Polygon : PrimitiveType.LineLoop);
             GL.Color4(color);
             for (int ii = 0; ii < num_segments; ii++)
             {
                 float theta = 2.0f * (float)Math.PI * ii / num_segments;
-                float x = r * (float)Math.Cos(theta);
-                float y = r * (float)Math.Sin(theta) * (float)aspect_ratio;
+                var x = r * Math.Cos(theta);
+                var y = r * Math.Sin(theta) * aspect_ratio;
 
                 GL.Vertex2(x + cx, y + cy);
             }
