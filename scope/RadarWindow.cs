@@ -3069,10 +3069,10 @@ namespace DGScope
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
-            double bearing = ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation;
+            double bearing = (ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation) * (Math.PI / 180);
             double distance = ScreenCenterPoint.DistanceTo(geoPoint);
-            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+            float x = (float)(Math.Sin(bearing) * (distance / scale));
+            float y = (float)(Math.Cos(bearing) * (distance / scale));
             return new PointF(x, y);
         }
 
