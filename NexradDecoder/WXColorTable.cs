@@ -17,14 +17,14 @@ namespace DGScope
                 return null;
             if (value < colors[0].MinValue)
                 return null;
-            for (int i = 0; i < colors.Length - 1; i++)
+            for (int i = colors.Length - 1; i >= 0; i--)
             {
-                if (value < colors[i + 1].MinValue && colors[i + 1].MinValue > colors[i].MinValue)
+                if (value > colors[i].MinValue)
                 {
                     return colors[i];
                 }
             }
-            return colors.Last();
+            return null;
         }
         public WXColorTable() 
         {
