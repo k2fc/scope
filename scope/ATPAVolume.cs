@@ -55,9 +55,13 @@ namespace DGScope
         private int minBearing => (TrueHeading + 270) % 360;
         private int maxBearing => (TrueHeading + 450) % 360;
         
-        public bool IsInside (Aircraft aircraft, Radar radar)
+        public bool IsInside (Aircraft aircraft, Radar radar, ATPA atpa)
         {
             if (aircraft == null)
+                return false;
+            if (atpa.ExcludedACIDs.Any(x => aircraft.FlightPlanCallsign != null && x.Trim() == aircraft.FlightPlanCallsign.Trim()))
+                return false;
+            if (atpa.ExcludedSSRCodes.Any(x => aircraft.Squawk != null && x.IsInRange(aircraft.Squawk)))
                 return false;
             if (aircraft.TrueAltitude > Ceiling || aircraft.TrueAltitude < Floor)
                 return false;
@@ -115,7 +119,7 @@ namespace DGScope
             aircraft.ATPACone = null;
         }
 
-        public void CalculateATPA(List<Aircraft> aircraft, SeparationTable separationtable, Radar radar)
+        public void CalculateATPA(List<Aircraft> aircraft, ATPA atpa, Radar radar)
         {
             lock (orderlock) 
             {
@@ -124,7 +128,7 @@ namespace DGScope
                     aircraft.Where(x => x.ATPAVolume == this).ToList().ForEach(x => ResetAircraftATPAValues(x));
                     return;
                 }
-                order = (aircraft.ToList().Where(x => IsInside(x, radar)).OrderBy(x => x.SweptLocation(radar).DistanceTo(RunwayThreshold))).ToList();
+                order = (aircraft.ToList().Where(x => IsInside(x, radar, atpa)).OrderBy(x => x.SweptLocation(radar).DistanceTo(RunwayThreshold))).ToList();
                 aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
                 {
                     ResetAircraftATPAValues(x);
@@ -149,7 +153,7 @@ namespace DGScope
                             double minsep = 3;
                             if (TwoPointFiveEnabled && TwoPointFiveActive && follower.SweptLocation(radar).DistanceTo(RunwayThreshold) <= TwoPointFiveDistance)
                                 minsep = 2.5;
-                            if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
+                            if (follower.Category != null && atpa.RequiredSeparation.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                             {
                                 if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
                                     follower.ATPARequiredMileage = miles;

@@ -13,7 +13,8 @@ namespace DGScope
         bool active = false;
         public SeparationTable RequiredSeparation { get; set; } = new SeparationTable();
         public List<ATPAVolume> Volumes { get; set; } = new List<ATPAVolume>();
-        public List<string> ActiveVolumeNames { get; set; } = new List<string>();
+        public List<string> ExcludedACIDs { get; set; } = new List<string>();
+        public List<BeaconCodeRange> ExcludedSSRCodes { get; set; } = new List<BeaconCodeRange>();
         public bool Active 
         {
             get => active;
@@ -41,82 +42,28 @@ namespace DGScope
         {
             // Set up 7110.126B CWT table
             // B Following
-            var bbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 5 },
-                { "B", 3 },
-                { "D", 3 }
-            };
-            RequiredSeparation.Add("B", bbehind);
+            RequiredSeparation.Add("B", new SerializableDictionary<string, double> {{ "A", 5 },{ "B", 3 },{ "D", 3 }});
 
             // C Following
-            var cbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 6 },
-                { "B", 4 },
-                { "D", 4 }
-            };
-            RequiredSeparation.Add("C", cbehind);
+            RequiredSeparation.Add("C", new SerializableDictionary<string, double> {{ "A", 6 },{ "B", 4 },{ "D", 4 }});
 
             // D Following
-            var dbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 6 },
-                { "B", 4 },
-                { "D", 4 }
-            };
-            RequiredSeparation.Add("D", dbehind);
+            RequiredSeparation.Add("D", new SerializableDictionary<string, double> {{ "A", 6 },{ "B", 4 },{ "D", 4 }});
 
             // E Following
-            var ebehind = new SerializableDictionary<string, double>
-            {
-                { "A", 7 },
-                { "B", 5 },
-                { "C", 3.5 },
-                { "D", 5 }
-            };
-            RequiredSeparation.Add("E", ebehind);
+            RequiredSeparation.Add("E", new SerializableDictionary<string, double> {{ "A", 7 },{ "B", 5 },{ "C", 3.5 },{ "D", 5 }});
 
             // F Following
-            var fbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 7 },
-                { "B", 5 },
-                { "C", 3.5 },
-                { "D", 5 }
-            };
-            RequiredSeparation.Add("F", fbehind);
+            RequiredSeparation.Add("F", new SerializableDictionary<string, double> {{ "A", 7 },{ "B", 5 },{ "C", 3.5 },{ "D", 5 }});
 
             // G Following
-            var gbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 7 },
-                { "B", 5 },
-                { "C", 3.5 },
-                { "D", 5 }
-            };
-            RequiredSeparation.Add("G", gbehind);
+            RequiredSeparation.Add("G", new SerializableDictionary<string, double> {{ "A", 7 },{ "B", 5 },{ "C", 3.5 },{ "D", 5 }});
 
-            // G Following
-            var hbehind = new SerializableDictionary<string, double>
-            {
-                { "A", 8 },
-                { "B", 5 },
-                { "C", 5 },
-                { "D", 5 }
-            };
-            RequiredSeparation.Add("H", hbehind);
+            // H Following
+            RequiredSeparation.Add("H", new SerializableDictionary<string, double> {{ "A", 8 },{ "B", 5 },{ "C", 5 },{ "D", 5 }});
 
             // I Following
-            var ibehind = new SerializableDictionary<string, double>
-            {
-                { "A", 8 },
-                { "B", 5 },
-                { "C", 5 },
-                { "D", 5 },
-                { "E", 4 }
-            };
-            RequiredSeparation.Add("I", ibehind);
+            RequiredSeparation.Add("I", new SerializableDictionary<string, double> {{ "A", 8 },{ "B", 5 },{ "C", 5 },{ "D", 5 },{ "E", 4 }});
         }
         private bool calculating = false;
         public async Task Calculate(ICollection<Aircraft> aircraftList, Radar radar)
@@ -133,7 +80,7 @@ namespace DGScope
                     List<Task> tasklist = new List<Task>();
                     foreach (var volume in Volumes)
                     {
-                        tasklist.Add(CalculateATPA(volume, aircraft, RequiredSeparation, radar));
+                        tasklist.Add(CalculateATPA(volume, aircraft, this, radar));
                     }
                     tasks = tasklist.ToArray();
                 }
@@ -142,9 +89,9 @@ namespace DGScope
             }
         }
 
-        private static Task CalculateATPA(ATPAVolume volume, List<Aircraft> aircraft, SeparationTable requiredSeparation, Radar radar)
+        private static Task CalculateATPA(ATPAVolume volume, List<Aircraft> aircraft, ATPA atpa, Radar radar)
         {
-            return Task.Run(() => volume.CalculateATPA(aircraft, requiredSeparation, radar));
+            return Task.Run(() => volume.CalculateATPA(aircraft, atpa, radar));
         }
 
     }

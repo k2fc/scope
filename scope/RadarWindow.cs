@@ -434,27 +434,21 @@ namespace DGScope
             get => ATPA.Active;
             set => ATPA.Active = value;
         }
-        //private string atpaVolumeFile = "";
-        //[DisplayName("Volume File"), Category("ATPA")]
-        //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
-        //public string ATPAVolumeFile 
-        //{
-        //    get => atpaVolumeFile;
-        //    set
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return;
-        //        try
-        //        {
-        //            ATPA.DeserializeVolumesFromJsonFile(value);
-        //            atpaVolumeFile = value;
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            System.Windows.Forms.MessageBox.Show("Unable to read ATPA Volume File \n" + ex.Message);
-        //        }
-        //    }
-        //}
+        [DisplayName("Excluded ACIDs"), Description("Excluded ACIDs"), Category("ATPA")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
+        public List<string> ATPAExcludedACIDs
+        {
+            get => ATPA.ExcludedACIDs;
+            set => ATPA.ExcludedACIDs = value.ToList();
+        }
+        [DisplayName("Excluded SSR"), Description("Excluded Secondary Surveillance Radar Beacon Codes"), Category("ATPA")]
+        public List<BeaconCodeRange> ATPAExcludedSSR
+        {
+            get => ATPA.ExcludedSSRCodes;
+            set => ATPA.ExcludedSSRCodes = value;
+        }
         [DisplayName("Display ATPA Monitor Cones"), Category("ATPA")]
         public bool DrawATPAMonitorCones { get; set; } = false;
 
