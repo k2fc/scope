@@ -283,6 +283,9 @@ namespace DGScope
             }
         }
         [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
         public List<string> QuickLookList { get; set; } = new List<string>();
         [DisplayName("Datablock Clock"), Description("Clock phase settings for data blocks"), Category("Data Blocks")]
         public ClockPhase ClockPhase { get; set; } = new ClockPhase();
@@ -470,6 +473,9 @@ namespace DGScope
         float aspect_ratio;// => 1.0f;//(float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
         public List<string> SelectedBeaconCodes { get; set; } = new List<string>();
         [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
         public char SelectedBeaconCodeChar { get; set; } = '□';
