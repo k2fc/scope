@@ -3465,6 +3465,10 @@ namespace DGScope
         }
         private void DrawPCone(TPACone cone)
         {
+            if (cone == null || cone.ParentAircraft == null)
+            {
+                return;
+            }
             Aircraft plane = cone.ParentAircraft;
             double track = 0;
             if (cone.Track == null)
