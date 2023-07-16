@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,8 +46,13 @@ namespace DGScope
         public double TwoPointFiveDistance { get; set; }
         [DisplayName("Scratchpad"), Category("Filters")]
         public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
-        [DisplayName("TCP Display")]
+        [DisplayName("TCP Display"), Category("Filters")]
         public List<ATPATCPDisplay> TcpDisplay { get; set; } = new List<ATPATCPDisplay>();
+        [DisplayName("TCP Exclusions"), Category("Filters")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
+        public List<string> TcpExclusion { get; set; } = new List<string>();
 
 
         private List<Aircraft> order;
@@ -60,6 +66,8 @@ namespace DGScope
         public bool IsInside (Aircraft aircraft, Radar radar, ATPA atpa)
         {
             if (aircraft == null)
+                return false;
+            if (TcpExclusion.Contains(aircraft.PositionInd))
                 return false;
             if (atpa.ExcludedACIDs.Any(x => aircraft.FlightPlanCallsign != null && x.Trim() == aircraft.FlightPlanCallsign.Trim()))
                 return false;
