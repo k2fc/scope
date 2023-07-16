@@ -227,6 +227,7 @@
     <Compile Include="AirportsXml.cs" />
     <Compile Include="Altitude.cs" />
     <Compile Include="ATPA.cs" />
+    <Compile Include="ATPATcpDisplay.cs" />
     <Compile Include="ATPAVolume.cs" />
     <Compile Include="BeaconCodeRange.cs" />
     <Compile Include="FAAMapDATFileParser.cs" />

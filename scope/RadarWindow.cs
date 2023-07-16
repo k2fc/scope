@@ -3322,11 +3322,11 @@ namespace DGScope
         {
             if (plane.Location == null)
                 return;
-            if (plane.PositionInd == ThisPositionIndicator && (plane.ATPAStatus == ATPAStatus.Caution || plane.ATPAStatus == ATPAStatus.Alert))
+            if (plane.ATPAStatus == ATPAStatus.Caution || plane.ATPAStatus == ATPAStatus.Alert)
             {
                 switch (plane.ATPAStatus)
                 {
-                    case ATPAStatus.Caution:
+                    case ATPAStatus.Caution when plane.PositionInd == ThisPositionIndicator || plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator):
                         if(plane.ATPACone == null)
                             plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPACautionColor, Font, true, plane.ATPATrackToLeader);
                         else
@@ -3336,7 +3336,7 @@ namespace DGScope
                             plane.ATPACone.Track = plane.ATPATrackToLeader;
                         }
                         break;
-                    case ATPAStatus.Alert:
+                    case ATPAStatus.Alert when plane.PositionInd == ThisPositionIndicator || plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator):
                         if (plane.ATPACone == null)
                             plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPAAlertColor, Font, true, plane.ATPATrackToLeader);
                         else
@@ -3351,7 +3351,9 @@ namespace DGScope
             }
             if (plane.TPA == null)
             {
-                if (plane.PositionInd == ThisPositionIndicator && plane.ATPAStatus == ATPAStatus.Monitor && DrawATPAMonitorCones)
+                if (((plane.PositionInd == ThisPositionIndicator && DrawATPAMonitorCones) ||
+                    plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator && x.ConeType == ATPAStatus.Monitor))
+                    && plane.ATPAStatus == ATPAStatus.Monitor)
                 {
                     if (plane.ATPACone == null)
                         plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, TPAColor, Font, true, plane.ATPATrackToLeader);

@@ -45,6 +45,8 @@ namespace DGScope
         public double TwoPointFiveDistance { get; set; }
         [DisplayName("Scratchpad"), Category("Filters")]
         public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
+        [DisplayName("TCP Display")]
+        public List<ATPATCPDisplay> TcpDisplay { get; set; } = new List<ATPATCPDisplay>();
 
 
         private List<Aircraft> order;
