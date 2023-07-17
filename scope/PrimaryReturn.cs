@@ -126,7 +126,10 @@ namespace DGScope
 
         public double FadeTime { get; set; }
 
-
+        public GeoPoint LastDrawnScreenCenter { get; set; }
+        public int LastDrawnRange { get; set; }
+        public double LastDrawnScreenRotation { get; set; }
+        public GeoPoint GeoLocation { get; set; }
 
         private void PrimaryReturn_LocationChanged(object sender, EventArgs e)
         {

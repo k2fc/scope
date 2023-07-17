@@ -3715,9 +3715,9 @@ namespace DGScope
             */
             if (extrapolatedpos == null)
                 return;
-            var location = GeoToScreenPoint(extrapolatedpos);
-            if (location.X == 0 || location.Y == 0)
-                return;
+            //var location = GeoToScreenPoint(extrapolatedpos);
+            //if (location.X == 0 || location.Y == 0)
+             //   return;
             if (aircraft.LastHistoryTimes.ContainsKey(radar) && 
                 (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= HistoryInterval)
             {
@@ -3750,17 +3750,14 @@ namespace DGScope
                 {
                     aircraft.TargetReturn.Fading = true;
                 }
-                if (HistoryDirectionAngle)
-                {
-                    aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
-                }
                 PrimaryReturn newreturn = new PrimaryReturn();
                 aircraft.History[0] = aircraft.TargetReturn;
                 aircraft.TargetReturn = newreturn;
                 newreturn.ParentAircraft = aircraft;
                 newreturn.Fading = PrimaryFade;
                 newreturn.FadeTime = FadeTime;
-                newreturn.NewLocation = location;
+                //newreturn.NewLocation = location;
+                newreturn.GeoLocation = extrapolatedpos;
                 newreturn.Intensity = 1;
                 newreturn.ForeColor = ReturnColor;
                 //newreturn.ShapeHeight = TargetHeight;
@@ -3771,7 +3768,7 @@ namespace DGScope
 
             if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
             {
-                aircraft.RedrawTarget(location, radar);
+                aircraft.RedrawTarget(extrapolatedpos, radar);
                 aircraft.PTL.End1 = aircraft.SweptLocation(radar);
                 double ptldistance = (aircraft.SweptSpeed(radar) / 60) * PTLlength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
@@ -4233,7 +4230,7 @@ namespace DGScope
         }
         private void MoveTargets(float xChange, float yChange)
         {
-            
+            return;
             foreach (TransparentLabel block in dataBlocks.ToList())
             {
                 if (block.LocationF.X == 0 && block.LocationF.Y == 0)
@@ -4273,6 +4270,17 @@ namespace DGScope
                 return;
             if (target.ParentAircraft.Location == null)
                 return;
+            if ((target.LastDrawnScreenCenter != ScreenCenterPoint || target.LastDrawnRange != Range || target.LastDrawnScreenRotation != ScreenRotation) && target.GeoLocation != null)
+            {
+                target.LocationF = GeoToScreenPoint(target.GeoLocation);
+                target.LastDrawnScreenRotation = ScreenRotation;
+                target.LastDrawnScreenCenter = ScreenCenterPoint;
+                target.LastDrawnRange = Range;
+                if (target.ParentAircraft != null && target == target.ParentAircraft.TargetReturn)
+                {
+                    target.ParentAircraft.LocationF = target.LocationF;
+                }
+            }
             if (target.LocationF.X == 0 || target.LocationF.Y == 0)
                 return;
             if (target != target.ParentAircraft.TargetReturn) // history

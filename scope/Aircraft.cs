@@ -698,19 +698,19 @@ namespace DGScope
             */
             FpDeleted?.Invoke(this, new EventArgs());
         }
-        public void RedrawTarget(PointF LocationF, Radar radar)
+        public void RedrawTarget(GeoPoint Location, Radar radar)
         {
-            this.LocationF = LocationF;
-            if (LocationF.X != 0 || LocationF.Y != 0)
-            {
+            TargetReturn.GeoLocation = Location;
+            TargetReturn.LastDrawnRange = 0;
+            //if (LocationF.X != 0 || LocationF.Y != 0)
+            //{
                 //TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
-                TargetReturn.LocationF = LocationF;
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(radar);
                 TargetReturn.Intensity = 1;
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
-            }
+            //}
         }
 
         public GeoPoint SweptLocation(Radar radar)
