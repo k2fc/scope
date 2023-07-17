@@ -252,7 +252,7 @@ namespace DGScope
         [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
         public double HistoryInterval { get; set; } = 4.5;
         [DisplayName("History Number"), Description("The number of histories to draw."), Category("Display Properties")]
-        public int NumHistory { get; set; } = 10;
+        public int NumHistory { get; set; } = 5;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
