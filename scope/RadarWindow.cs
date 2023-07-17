@@ -252,7 +252,7 @@ namespace DGScope
         [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
         public double HistoryInterval { get; set; } = 4.5;
         [DisplayName("History Number"), Description("The number of histories to draw."), Category("Display Properties")]
-        public int NumHistory { get; set; } = 5;
+        public int NumHistory { get; set; } = 10;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
@@ -1063,7 +1063,6 @@ namespace DGScope
                 double yMove = e.YDelta * pixelScale;
                 ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
                 ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
-                MoveTargets((float)xMove, (float)yMove);
             }
 
         }
@@ -1148,7 +1147,6 @@ namespace DGScope
                 Range -= 5;
             else if (e.Delta < 0)
                 Range += 5;
-            RescaleTargets(oldscale / scale);
             
         }
 
@@ -2879,12 +2877,7 @@ namespace DGScope
                     case Key.F1:
                         if (!e.Shift)
                         {
-                            double bearing = ScreenCenterPoint.BearingTo(HomeLocation) - ScreenRotation;
-                            double distance = ScreenCenterPoint.DistanceTo(HomeLocation);
-                            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
                             ScreenCenterPoint = HomeLocation;
-                            MoveTargets(x, -y);
                         }
                         else
                         {
@@ -3005,7 +2998,6 @@ namespace DGScope
             
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
-            RescaleTargets(oldscale / scale);
             lock (dataBlocks)
             {
                 dataBlocks.ForEach(x => x.Redraw = true);
@@ -4195,67 +4187,8 @@ namespace DGScope
         }
 
         Timer aircraftGCTimer;
-        private void RescaleTarget(PrimaryReturn target, float scalechange)
-        {
-            if (target == null)
-                return;
-            PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
-            target.LocationF = newLocation;
-        }
-        private void RescaleTargets(float scalechange)
-        {
-            lock (Aircraft)
-            {
-                foreach (Aircraft plane in Aircraft)
-                {
-                    RescaleTarget(plane.TargetReturn, scalechange);
-                    plane.History.ToList().ForEach(x => RescaleTarget(x, scalechange));
-                    PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange));
-                    plane.LocationF = newLocation;
-                    plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
-                    plane.DataBlock2.LocationF = plane.DataBlock.LocationF;
-                    plane.DataBlock3.LocationF = plane.DataBlock.LocationF;
-                    plane.PositionIndicator.CenterOnPoint(newLocation);
-                    //plane.RedrawDataBlock();
-                }
-            }
-        }
-        private void MoveTarget(PrimaryReturn target, float xChange, float yChange)
-        {
-            if (target == null)
-                return;
-            if (target.LocationF.X == 0 && target.LocationF.Y == 0)
-                return;
-            target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
-        }
-        private void MoveTargets(float xChange, float yChange)
-        {
-            return;
-            foreach (TransparentLabel block in dataBlocks.ToList())
-            {
-                if (block.LocationF.X == 0 && block.LocationF.Y == 0)
-                    continue;
-                block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
-                block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X + xChange, block.ParentAircraft.ConnectingLine.Start.Y - yChange);
-                block.ParentAircraft.ConnectingLine.End = new PointF(block.ParentAircraft.ConnectingLine.End.X + xChange, block.ParentAircraft.ConnectingLine.End.Y - yChange);
-                block.NewLocation = block.LocationF;
-                block.ParentAircraft.DataBlock2.LocationF = block.LocationF;
-                block.ParentAircraft.DataBlock3.LocationF = block.LocationF;
-            }
-            lock (posIndicators)
-                posIndicators.ForEach(x => x.LocationF = new PointF(x.LocationF.X + xChange, x.LocationF.Y - yChange));
-            lock (Aircraft)
-            {
-                foreach (Aircraft plane in Aircraft)
-                {
-                    if (plane.LocationF.X == 0 && plane.LocationF.Y == 0)
-                        continue;
-                    MoveTarget(plane.TargetReturn, xChange, yChange);
-                    plane.History.ToList().ForEach(x => MoveTarget(x, xChange, yChange));
-                    plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
-                }
-            }
-        }
+        
+        
 
         private bool InFilter(Aircraft aircraft)
         {
