@@ -146,7 +146,7 @@ namespace DGScope
         {
             get
             {
-                return Squawk == null && ModeSCode == 0 && ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown));
+                return string.IsNullOrEmpty(Squawk) && ModeSCode == 0 && ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown));
                 return ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown) && !Associated);
             }
         }
