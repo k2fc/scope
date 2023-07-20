@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using DGScope.STARS;
+using System.Reflection.Emit;
 
 namespace DGScope
 {
@@ -775,6 +776,8 @@ namespace DGScope
         public bool UseADSBCallsignsAssociated { get; set; } = false;
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
+        [DisplayName("Pref Set"), Category("Display Properties")]
+        public PrefSet CurrentPrefSet { get; set; } = new PrefSet();
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
         private GameWindow window;
@@ -809,6 +812,20 @@ namespace DGScope
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
         WeatherService wx = new WeatherService();
+
+        public static Color AdjustedColor(Color color, int brightness)
+        {
+            double brightnesslevel = brightness / 100d;
+            var a = (int)(color.A * 1);
+            if (brightnesslevel == 0)
+            {
+                a = 0;
+            }
+            var r = (int)(color.R * brightnesslevel);
+            var g = (int)(color.G * brightnesslevel);
+            var b = (int)(color.B * brightnesslevel);
+            return Color.FromArgb(a, r, g, b);
+        }
         private void Initialize()
         {
             window.Title = "DGScope";
@@ -830,7 +847,7 @@ namespace DGScope
                 radar = new Radar();
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
-            GL.ClearColor(BackColor);
+            GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
             {
@@ -1544,7 +1561,7 @@ namespace DGScope
                                             {
                                                 if (miles > 0 && (double)miles <= 30)
                                                 {
-                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font, TPASize);
+                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles,  TPAColor, Font, TPASize);
                                                 }
                                                 else
                                                 {
@@ -2506,7 +2523,7 @@ namespace DGScope
             else
                 PreviewArea.Text = GeneratePreviewString(Preview);
             PreviewArea.Redraw = oldtext != PreviewArea.Text;
-            PreviewArea.ForeColor = DataBlockColor;
+            PreviewArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.FullDataBlocks);
             DrawLabel(PreviewArea);
         }
         string previewmessage = null;
@@ -2520,7 +2537,7 @@ namespace DGScope
         }
         private void RenderStatus()
         {
-            StatusArea.ForeColor = DataBlockColor;
+            StatusArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.Lists);
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             var timesyncind = timesync.Synchronized ? " " : "*";
@@ -3019,9 +3036,10 @@ namespace DGScope
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
             pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
-            GL.ClearColor(BackColor);
+            GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.LoadIdentity();
             GL.PushMatrix();
@@ -3033,17 +3051,17 @@ namespace DGScope
             {
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
+            if (!hidewx)
+            {
+                DrawNexrad();
+            }
             DrawRangeRings();
+            DrawVideoMapLines();
             if (ATPA.Active)
             {
                 ATPA.Calculate(Aircraft, radar);
                 DrawATPAVolumes();
             }
-            if (!hidewx)
-            {
-                DrawNexrad();
-            }
-            DrawVideoMapLines();
             GenerateTargets();
             DrawTargets();
             DrawMinSeps();
@@ -3112,16 +3130,16 @@ namespace DGScope
                 if (minsep.Line1.End1 != null && minsep.Line2.End1 != null && 
                     minsep.Line1.End2 != null && minsep.Line2.End2 != null)
                 {
-                    DrawLine(minsep.Line1, RBLColor);
-                    DrawLine(minsep.Line2, RBLColor);
+                    DrawLine(minsep.Line1, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
+                    DrawLine(minsep.Line2, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                     var point1 = GeoToScreenPoint(minsep.Line1.End2);
                     var point2 = GeoToScreenPoint(minsep.Line2.End2);
-                    DrawCircle(point1.X, point1.Y, 4 * pixelScale, 1, 3, RBLColor, true);
-                    DrawCircle(point2.X, point2.Y, 4 * pixelScale, 1, 3, RBLColor, true);
+                    DrawCircle(point1.X, point1.Y, 4 * pixelScale, 1, 3, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools), true);
+                    DrawCircle(point2.X, point2.Y, 4 * pixelScale, 1, 3, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools), true);
                 }
                 if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
                 {
-                    DrawLine(minsep.SepLine, RBLColor);
+                    DrawLine(minsep.SepLine, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                 }
                 else
                     continue;
@@ -3132,7 +3150,7 @@ namespace DGScope
                     minsep.Label.Text = ((double)(minsep.MinSepDistance)).ToString("0.00") + " NM";
                 if (minsep.NoXing == true)
                     minsep.Label.Text += "\r\nNO XING";
-                minsep.Label.ForeColor = RBLColor;
+                minsep.Label.ForeColor = AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools);
                 minsep.Label.Font = this.Font;
                 minsep.Label.CenterOnPoint(labelloc);
                 DrawLabel(minsep.Label);
@@ -3176,8 +3194,8 @@ namespace DGScope
                     line.Line.End2 = line.EndGeo;
                 }
                 
-                DrawLine(line.Start, line.End, RBLColor);
-                line.Label.ForeColor = RBLColor;
+                DrawLine(line.Start, line.End, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
+                line.Label.ForeColor = AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools);
                 line.Label.LocationF = line.End;
                 int bearing = 0;
                 double range = 0;
@@ -3281,7 +3299,7 @@ namespace DGScope
 
             for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, RangeRingColor);
+                DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, AdjustedColor(RangeRingColor, CurrentPrefSet.Brightness.RangeRings));
             }
             GL.PopMatrix();
             GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
@@ -3496,11 +3514,12 @@ namespace DGScope
                 var x4 = -x3;
                 var x5 = (y2 / y1) * x3;
                 var x6 = -x5;
-                DrawLine(0, 0, x3, y1, cone.Color);
-                DrawLine(0, 0, x4, y1, cone.Color);
-                DrawLine(x5, y2, x1, y, cone.Color);
-                DrawLine(x6, y2, x2, y, cone.Color);
-                DrawLine(x1, y, x2, y, cone.Color);
+                var color = AdjustedColor(cone.Color, CurrentPrefSet.Brightness.Tools);
+                DrawLine(0, 0, x3, y1, color);
+                DrawLine(0, 0, x4, y1, color);
+                DrawLine(x5, y2, x1, y, color);
+                DrawLine(x6, y2, x2, y, color);
+                DrawLine(x1, y, x2, y, color);
                 GL.PopMatrix();
                 GL.Translate(-location.X, -location.Y, 0.0);
                 cone.Label.ForeColor = cone.Color;
@@ -3517,14 +3536,16 @@ namespace DGScope
                 if (map.Visible)
                     lines.AddRange(map.Lines);
             }
-            DrawLines(lines, VideoMapLineColor);
+            var colora = AdjustedColor(VideoMapLineColor, CurrentPrefSet.Brightness.MapA);
+            DrawLines(lines, colora);
             lines.Clear();
             foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.B))
             {
                 if (map.Visible)
                     lines.AddRange(map.Lines);
             }
-            DrawLines(lines, VideoMapBLineColor);
+            var colorb = AdjustedColor(VideoMapBLineColor, CurrentPrefSet.Brightness.MapB);
+            DrawLines(lines, colorb);
         }
 
         private void DrawLines (List<Line> lines, Color color)
@@ -3567,7 +3588,8 @@ namespace DGScope
         {
             //GL.Scale(aspect_ratio, 1.0f, 1.0f);
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(polygon.Color);
+            var color = AdjustedColor(polygon.Color, CurrentPrefSet.Brightness.Weather);
+            GL.Color4(color);
             for (int i = 0; i < polygon.vertices.Length; i++)
             {
                 GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
@@ -3578,7 +3600,8 @@ namespace DGScope
                 GL.Enable(EnableCap.PolygonStipple);
                 GL.PolygonStipple(polygon.StipplePattern);
                 GL.Begin(PrimitiveType.Polygon);
-                GL.Color4(polygon.StippleColor);
+                var scolor = AdjustedColor(polygon.StippleColor, CurrentPrefSet.Brightness.WeatherContrast);
+                GL.Color4(scolor);
                 for (int i = 0; i < polygon.vertices.Length; i++)
                 {
                     GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
@@ -4223,6 +4246,8 @@ namespace DGScope
                 if (Array.IndexOf(target.ParentAircraft.History, target) >= NumHistory)
                     return;
             }
+            var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
+            var beaconcolor = AdjustedColor(BeaconTargetColor, CurrentPrefSet.Brightness.BeaconTargets);
             if (!target.ParentAircraft.PrimaryOnly)
             {
                 var rt = radar.RadarType;
@@ -4254,7 +4279,8 @@ namespace DGScope
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
 
                         GL.Begin(PrimitiveType.Polygon);
-                        GL.Color4(target.ForeColor);
+                        
+                        GL.Color4(primarycolor);
                         GL.Vertex2(x1, y1);
                         GL.Vertex2(-x1, y1);
                         GL.Vertex2(-x1, -y1);
@@ -4263,7 +4289,7 @@ namespace DGScope
                         if (!target.ParentAircraft.PrimaryOnly)
                         {
                             GL.Begin(PrimitiveType.Polygon);
-                            GL.Color4(BeaconTargetColor);
+                            GL.Color4(beaconcolor);
                             GL.Vertex2(x2, y2 - beaconoffset);
                             GL.Vertex2(-x2, y2 - beaconoffset);
                             GL.Vertex2(-x2, -y2 - beaconoffset);
@@ -4282,13 +4308,13 @@ namespace DGScope
                         {
                             size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
                             target.SizeF = new SizeF(size, size);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, target.ForeColor, true);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, primarycolor, true);
                         }
                         else
                         {
                             size = (float)TargetExtentSymbols.FMATargetSymbols.Radius * pixelScale;
                             target.SizeF = new SizeF(size, size);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, target.ForeColor, true);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.History), true);
                         }
                         break;
                 }
@@ -4307,7 +4333,7 @@ namespace DGScope
                 GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                 GL.Begin(PrimitiveType.Polygon);
 
-                GL.Color4(target.ForeColor);
+                GL.Color4(primarycolor);
                 GL.Vertex2(x1, x1);
                 GL.Vertex2(-x1, x1);
                 GL.Vertex2(-x1, -x1);
@@ -4406,7 +4432,7 @@ namespace DGScope
                         debugPlane = null; 
                     if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                     {
-                        DrawLine(block.ParentAircraft.PTL, RBLColor);
+                        DrawLine(block.ParentAircraft.PTL, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                     }
                     if (ClockPhase.Phase == 0)
                         DrawLabel(block);
@@ -4431,6 +4457,8 @@ namespace DGScope
                 if (Label.TextureID == 0)
                     Label.TextureID = GL.GenTexture();
                 var text_texture = Label.TextureID;
+                Color color = Label.DrawColor;
+
                 if (Label.Redraw)
                 {
                     Label.Font = Font;
@@ -4453,6 +4481,22 @@ namespace DGScope
                 }
                 if (Label.ParentAircraft != null)
                 {
+                    if (Label.ParentAircraft.Owned && Label == Label.ParentAircraft.PositionIndicator)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.PositionSymbols);
+                    }
+                    else if (Label.ParentAircraft.Owned)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.FullDataBlocks);
+                    }
+                    else if (Label.ParentAircraft.FDB)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.OtherFDBs);
+                    }
+                    else
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.LimitedDataBlocks);
+                    }
                     if (Label.ParentAircraft.LocationF.X != 0 || Label.ParentAircraft.LocationF.Y != 0)
                     {
                         if (Label == Label.ParentAircraft.DataBlock)
@@ -4479,7 +4523,7 @@ namespace DGScope
             
                 GL.BindTexture(TextureTarget.Texture2D, text_texture);
                 GL.Begin(PrimitiveType.Quads);
-                GL.Color4(Label.DrawColor);
+                GL.Color4(color);
             
                 var Location = Label.LocationF;
                 var x = RoundUpToNearest(Location.X, pixelScale);
@@ -4500,7 +4544,7 @@ namespace DGScope
 
             
                 GL.Begin(PrimitiveType.Lines);
-                GL.Color4(Label.ForeColor);
+                GL.Color4(color);
             }
             if (Label.ParentAircraft != null && LeaderLength > 0)
             {

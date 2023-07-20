@@ -17,41 +17,7 @@ namespace DGScope
 
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
         public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
-        double intensity = 1;
-        [DisplayName("Color Intensity"), Description("Weather Radar Color intensity (0-255)")]
-        public int ColorIntensity {
-            get
-            {
-                return (int)(255 * intensity);
-            }
-            set
-            {
-                if (value > 255)
-                    intensity = 1;
-                else if (value < 0)
-                    intensity = 0;
-                else
-                    intensity = value / 255d;
-            }
-        }
-        double alphafactor = .6;
-        [DisplayName("Transparency"), Description("Weather Radar Transparency (0-255)")]
-        public int Transparency 
-        { 
-            get
-            {
-                return (int)(255 * (1 - alphafactor));
-            }
-            set
-            {
-                if (value > 255)
-                    alphafactor = 0;
-                else if (value < 0)
-                    alphafactor = 1;
-                else
-                    alphafactor = 1 - (value / 255d);
-            }
-        }
+        
         [Browsable(false)]
         public string Name { get; set; }
         bool enabled = false;
@@ -187,11 +153,9 @@ namespace DGScope
                         var color = colortable.GetWXColor(symbology.Radials[i].Values[j]);
                         if (color != null)
                         {
-                            polygon.Color = Color.FromArgb((int)(color.MinColor.A * alphafactor), (int)(color.MinColor.R * intensity), (int)(color.MinColor.G * intensity),
-                                (int)(color.MinColor.B * intensity));
+                            polygon.Color = color.MinColor;
                             if (color.StippleColor != null)
-                                polygon.StippleColor = Color.FromArgb((int)(color.StippleColor.A * alphafactor), (int)(color.StippleColor.R * intensity),
-                                    (int)(color.StippleColor.G * intensity), (int)(color.StippleColor.B * intensity));
+                                polygon.StippleColor = color.StippleColor;
                             if (color.StipplePattern != null)
                                 polygon.StipplePattern = color.StipplePattern;
                             polygon.ComputeVertices();
