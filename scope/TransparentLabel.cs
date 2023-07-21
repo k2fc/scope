@@ -177,7 +177,7 @@ namespace DGScope
             }
         }
         public bool Redraw { get; set; } = true;
-        public Bitmap TextBitmap()
+        public Bitmap TextBitmap(bool outline)
         {
             SizeF size;
             using (Graphics graphics = CreateGraphics())
@@ -245,7 +245,8 @@ namespace DGScope
                     GraphicsPath p = new GraphicsPath();
                     var emSize = graphics.DpiY * (Font.SizeInPoints / 72);
                     p.AddString(text, Font.FontFamily, (int)Font.Style, emSize, new Point(0, 0), new StringFormat());
-                    graphics.DrawPath(Pens.Black, p);
+                    if (outline)
+                        graphics.DrawPath(Pens.Black, p);
                     graphics.DrawString(Text, Font, brush, left, top);
                     //graphics.FillPath(brush, p);
                 }

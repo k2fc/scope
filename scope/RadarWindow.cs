@@ -3697,7 +3697,7 @@ namespace DGScope
                 if (oldcolor != aircraft.DataBlock.ForeColor)
                     aircraft.DataBlock.Redraw = true;
                 aircraft.RedrawDataBlock(radar);
-                Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
+                Bitmap text_bmp = aircraft.DataBlock.TextBitmap(false);
                 var realWidth = text_bmp.Width * pixelScale;
                 var realHeight = text_bmp.Height * pixelScale;
                 aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
@@ -3796,7 +3796,7 @@ namespace DGScope
                         dataBlocks.Remove(aircraft.DataBlock);
 
 
-                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
+                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap(true);
                 var realWidth = text_bmp.Width * pixelScale;
                 var realHeight = text_bmp.Height * pixelScale;
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
@@ -4452,7 +4452,12 @@ namespace DGScope
                 return;*/
             lock (Label)
             {
+                bool outline = false;
+                if (Label.ParentAircraft != null && Label == Label.ParentAircraft.PositionIndicator) 
+                {
+                    outline = true;
 
+                }
                 GL.Enable(EnableCap.Texture2D);
                 if (Label.TextureID == 0)
                     Label.TextureID = GL.GenTexture();
@@ -4462,7 +4467,7 @@ namespace DGScope
                 if (Label.Redraw)
                 {
                     Label.Font = Font;
-                    Bitmap text_bmp = Label.TextBitmap();
+                    Bitmap text_bmp = Label.TextBitmap(outline);
                     var realWidth = (float)text_bmp.Width * pixelScale;
                     var realHeight = (float)text_bmp.Height * pixelScale;
                     Label.SizeF = new SizeF(realWidth, realHeight);
