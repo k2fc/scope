@@ -3063,10 +3063,10 @@ namespace DGScope
                 DrawATPAVolumes();
             }
             GenerateTargets();
+            DrawStatic();
             DrawTargets();
             DrawMinSeps();
             DrawRBLs();
-            DrawStatic();
             GL.PopMatrix();
             GL.Flush();
             window.SwapBuffers();
@@ -4522,14 +4522,31 @@ namespace DGScope
                 }
             
                 GL.BindTexture(TextureTarget.Texture2D, text_texture);
-                GL.Begin(PrimitiveType.Quads);
-                GL.Color4(color);
             
                 var Location = Label.LocationF;
                 var x = RoundUpToNearest(Location.X, pixelScale);
                 var y = RoundUpToNearest(Location.Y, pixelScale);
                 var width = Label.SizeF.Width;
                 var height = Label.SizeF.Height;
+                var w1 = Label.SizeF.Width + (4 * pixelScale);
+                var h1 = Label.SizeF.Height + (4 * pixelScale);
+                var x1 = x - (2 * pixelScale);
+                var y1 = y - (2 * pixelScale);
+                
+                /*GL.Begin(PrimitiveType.Quads);
+                GL.Color4(Color.Black);
+                GL.TexCoord2(0, 0);
+                GL.Vertex2(x1, h1 + y1);
+                GL.TexCoord2(1, 0);
+                GL.Vertex2(w1 + x1, h1 + y1);
+                GL.TexCoord2(1, 1);
+                GL.Vertex2(w1 + x1, y1);
+                GL.TexCoord2(0, 1);
+                GL.Vertex2(x1, y1);
+                GL.End();*/
+
+                GL.Begin(PrimitiveType.Quads);
+                GL.Color3(color);
                 GL.TexCoord2(0,0);
                 GL.Vertex2(x, height + y);
                 GL.TexCoord2(1, 0); 
@@ -4539,6 +4556,7 @@ namespace DGScope
                 GL.TexCoord2(0, 1); 
                 GL.Vertex2(x, y);
                 GL.End();
+
                 GL.BindTexture(TextureTarget.Texture2D, 0);
                 GL.Disable(EnableCap.Texture2D);
 
