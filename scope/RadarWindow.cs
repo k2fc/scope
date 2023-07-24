@@ -4475,7 +4475,7 @@ namespace DGScope
                     BitmapData data = text_bmp.LockBits(new Rectangle(0, 0, text_bmp.Width, text_bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                     GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
                         OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
                     text_bmp.UnlockBits(data);
                     Label.Redraw = false;
@@ -4623,6 +4623,7 @@ namespace DGScope
 
         public static float RoundUpToNearest(float passednumber, float roundto)
         {
+            return passednumber;
             // 105.5 up to nearest 1 = 106
             // 105.5 up to nearest 10 = 110
             // 105.5 up to nearest 7 = 112
