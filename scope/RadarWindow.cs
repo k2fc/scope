@@ -2541,7 +2541,7 @@ namespace DGScope
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             var timesyncind = timesync.Synchronized ? " " : "*";
-            StatusArea.Text = CurrentTime.ToString("HHmm-ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            StatusArea.Text = CurrentTime.ToString("HHmm/ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
             for (int i = 0; i < 10; i++)
             {
                 if (atises[i] != null)
