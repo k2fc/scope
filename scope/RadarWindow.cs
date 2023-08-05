@@ -20,6 +20,8 @@ using System.Windows.Forms.Design;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Numerics;
+using DGScope.STARS;
+using System.Reflection.Emit;
 
 namespace DGScope
 {
@@ -81,6 +83,8 @@ namespace DGScope
         [XmlIgnore]
         [DisplayName("Primary Target Color"), Description("Primary Radar Target color"), Category("Colors")]
         public Color ReturnColor { get; set; } = Color.FromArgb(30, 120, 255);
+        [DisplayName("Beacon Target Color"), Description("Primary Radar Target color"), Category("Colors")]
+        public Color BeaconTargetColor { get; set; } = Color.FromArgb(0, 255, 0);
         [XmlIgnore]
         [DisplayName("FDB Color"), Description("Color of aircraft full data blocks"), Category("Colors")]
         public Color DataBlockColor { get; set; } = Color.Lime;
@@ -146,6 +150,13 @@ namespace DGScope
         {
             get { return ReturnColor.ToArgb(); }
             set { ReturnColor = Color.FromArgb(value); }
+        }
+        [XmlElement("BeaconColor")]
+        [Browsable(false)]
+        public int BeaconColorAsArgb
+        {
+            get { return BeaconTargetColor.ToArgb(); }
+            set { BeaconTargetColor = Color.FromArgb(value); }
         }
         [XmlElement("DataBlockColor")]
         [Browsable(false)]
@@ -242,7 +253,7 @@ namespace DGScope
         [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
         public double HistoryInterval { get; set; } = 4.5;
         [DisplayName("History Number"), Description("The number of histories to draw."), Category("Display Properties")]
-        public int NumHistory { get; set; } = 10;
+        public int NumHistory { get; set; } = 5;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
@@ -273,25 +284,30 @@ namespace DGScope
             }
         }
         [DisplayName("Quick Look Position List"), Description("Show FDB on these positions"), Category("Display Properties")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
         public List<string> QuickLookList { get; set; } = new List<string>();
-        [DisplayName("Timeshare Interval"), Description("Interval at which to rotate text in data blocks"), Category("Display Properties")]
-        public double TimeshareInterval
-        {
-            get
-            {
-                if (dataBlockTimeshareTimer == null)
-                    return 1;
-                return timeshareinterval / 1000d;
-            }
-            set
-            {
-                if (value != timeshareinterval && dataBlockTimeshareTimer != null)
-                {
-                    dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
-                }
-                timeshareinterval = (int)(value * 1000d);
-            }
-        }
+        [DisplayName("Datablock Clock"), Description("Clock phase settings for data blocks"), Category("Data Blocks")]
+        public ClockPhase ClockPhase { get; set; } = new ClockPhase();
+        //public double TimeshareInterval
+        //{
+        //    get
+        //    {
+        //        if (dataBlockTimeshareTimer == null)
+        //            return 1.5;
+        //        return timeshareinterval / 1000d;
+        //    }
+        //    set
+        //    {
+        //        if (value != timeshareinterval && dataBlockTimeshareTimer != null)
+        //        {
+        //            dataBlockTimeshareTimer.Change(0, (int)(value * 1000));
+        //        }
+        //        timeshareinterval = (int)(value * 1000d);
+        //    }
+        //}
+
         [DisplayName("History Fade"), Description("Whether or not the history returns fade out"), Category("Display Properties")]
         public bool HistoryFade { get; set; } = false;
         [DisplayName("Primary Fade"), Description("Whether or not the primary returns fade out"), Category("Display Properties")]
@@ -413,29 +429,27 @@ namespace DGScope
             get => ATPA.Volumes;
             set => ATPA.Volumes = value;
         }
-
-        //public List<CRDA> CRDA { get; set; } = new List<CRDA>();
-        //private string atpaVolumeFile = "";
-        //[DisplayName("Volume File"), Category("ATPA")]
-        //[Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
-        //public string ATPAVolumeFile 
-        //{
-        //    get => atpaVolumeFile;
-        //    set
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return;
-        //        try
-        //        {
-        //            ATPA.DeserializeVolumesFromJsonFile(value);
-        //            atpaVolumeFile = value;
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            System.Windows.Forms.MessageBox.Show("Unable to read ATPA Volume File \n" + ex.Message);
-        //        }
-        //    }
-        //}
+        [DisplayName("Active"), Description("ATPA active system-wide"), Category("ATPA")]
+        public bool ATPAActive
+        {
+            get => ATPA.Active;
+            set => ATPA.Active = value;
+        }
+        [DisplayName("Excluded ACIDs"), Description("Excluded ACIDs"), Category("ATPA")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
+        public List<string> ATPAExcludedACIDs
+        {
+            get => ATPA.ExcludedACIDs;
+            set => ATPA.ExcludedACIDs = value.ToList();
+        }
+        [DisplayName("Excluded SSR"), Description("Excluded Secondary Surveillance Radar Beacon Codes"), Category("ATPA")]
+        public List<BeaconCodeRange> ATPAExcludedSSR
+        {
+            get => ATPA.ExcludedSSRCodes;
+            set => ATPA.ExcludedSSRCodes = value;
+        }
         [DisplayName("Display ATPA Monitor Cones"), Category("ATPA")]
         public bool DrawATPAMonitorCones { get; set; } = false;
 
@@ -454,6 +468,9 @@ namespace DGScope
         float aspect_ratio;// => 1.0f;//(float)window.ClientSize.Width / (float)window.ClientSize.Height;
         float oldar;
         [DisplayName("Selected Beacon Codes"), Category("Display Properties")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
         public List<string> SelectedBeaconCodes { get; set; } = new List<string>();
         [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
         public char SelectedBeaconCodeChar { get; set; } = '□';
@@ -623,42 +640,77 @@ namespace DGScope
                 window.VSync = value;
             }
         }
-        [DisplayName("Primary Target Width"), Description("Width of primary targets, in pixels"), Category("Display Properties")]
-        public float TargetWidth { get; set; } = 5;
-        [DisplayName("Primary Target Height"), Description("Height of primary targets, in pixels"), Category("Display Properties")]
-        public float TargetHeight { get; set; } = 15;
+        [DisplayName("Target Extent Symbols"), Description("Parameters for display of targets"), Category("Display Properties")]
+        public TargetExtentSymbols TargetExtentSymbols { get; set; } = new TargetExtentSymbols()
+        {
+            SearchTargets = new TargetExtentSymbols.SearchTargetParams()
+            {
+                RangeExtent = 5,
+                AzimuthExtent = new TargetExtentSymbols.SearchTargetParams.AzimuthExtentValues()
+                {
+                    Ten = 6,
+                    Twenty = 1.6699,
+                    Thirty = 1.40625,
+                    Forty = 1.0547,
+                    Fifty = 0.9668,
+                    Sixty = 0.79101
+                },
+                AzimuthExtentMinimum = 75
+            },
+            FusedTracks = new TargetExtentSymbols.FusedTrackTargetSymbolParams()
+            {
+                MinimumPixelDimension = 12,
+                NormalSymbolDistanceDimension = 22,
+                SymbolOpacity = 100
+            },
+            BeaconTargets = new TargetExtentSymbols.BeaconTargetParams()
+            {
+                RangeExtent = 1,
+                AzimuthExtentFactor = 20,
+                RangeOffset = 3
+            },
+            PositionSymbolOffset = 8,
+            FMATargetSymbols = new TargetExtentSymbols.FMATargetSymbolParams()
+            {
+                Radius = 3
+            }
+        };
         [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
         public float TPAConeWidth { get; set; } = 10; 
         
-        [DisplayName("History Shape"), Description("Shape of history Trails"), Category("Display Properties")]
-        public TargetShape HistoryShape { get; set; } = TargetShape.Circle;
-        [DisplayName("History Target Width"), Description("Width of history targets, in pixels"), Category("Display Properties")]
-        public float HistoryWidth { get; set; } = 3;
-        [DisplayName("History Target Height"), Description("Height of history targets, in pixels"), Category("Display Properties")]
-        public float HistoryHeight { get; set; } = 15;
         [DisplayName("PTL Length"), Description("Length of Predicted Track Lines, in minutes"), Category("Predicted Track Lines")]
         public float PTLlength { get; set; } = 0;
         [DisplayName("PTL Own"), Description("Display Predicted Track Lines for Owned tracks"), Category("Predicted Track Lines")]
         public bool PTLOwn { get; set; } = false;
         [DisplayName("PTL All"), Description("Display Predicted Track Lines for all FDBs"), Category("Predicted Track Lines")]
         public bool PTLAll { get; set; } = false;
-        [DisplayName("Nexrad Weather Radars")]
-        public List<NexradDisplay> Nexrads { get; set; } = new List<NexradDisplay>();
+        [DisplayName("Nexrad Weather Radar")]
+        public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
+        [Browsable(false)]
+        public List<NexradDisplay> Nexrads { get; set; }
         [DisplayName("Data Block Font")]
         [XmlIgnore]
         public Font Font { get; set; } = new Font("Consolas", 10);
         [XmlElement("FontName")]
         [Browsable(false)]
-        public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size); } }
+        public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size, Font.Unit); } }
         [XmlElement("FontSize")]
         [Browsable(false)] 
-        public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value); } }
-        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data block deconflicting")]
+        public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value, Font.Unit); } }
+        [XmlElement("FontSizeUnit")]
+        [Browsable(false)]
+        public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
+        [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
-        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data block deconflicting")]
-        public float LeaderLength { get; set; } = 10;
-        [DisplayName("Leader Direction"), Description("The angle to offset the data block from the target"), Category("Data block deconflicting")]
+        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
+        public float LeaderLength { get; set; } = 1;
+        [DisplayName("Owned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unowned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnownedLeaderDirection { get; set; } = LeaderDirection.N;
+        [DisplayName("Unassociated Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
+        public LeaderDirection UnassociatedLeaderDirection { get; set; } = LeaderDirection.N;
+
         [DisplayName("Server Address"), Category("NTP")]
         public string NTPServerAddress
         {
@@ -724,6 +776,8 @@ namespace DGScope
         public bool UseADSBCallsignsAssociated { get; set; } = false;
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
+        [DisplayName("Pref Set"), Category("Display Properties")]
+        public PrefSet CurrentPrefSet { get; set; } = new PrefSet();
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
         private GameWindow window;
@@ -753,12 +807,25 @@ namespace DGScope
         List<RangeBearingLine> rangeBearingLines = new List<RangeBearingLine>();
         List<MinSep> minSeps = new List<MinSep>();
         Timer wxUpdateTimer;
-        int timeshareinterval = 1000;
+        int timeshareinterval = 1500;
         Timer dataBlockTimeshareTimer;
         List<WaypointsWaypoint> Waypoints = new Waypoints().Waypoint.ToList();
         List<Airport> Airports = new Airports().Airport.ToList();
-        byte timeshare = 0;
         WeatherService wx = new WeatherService();
+
+        public static Color AdjustedColor(Color color, int brightness)
+        {
+            double brightnesslevel = brightness / 100d;
+            var a = (int)(color.A * 1);
+            if (brightnesslevel == 0)
+            {
+                a = 0;
+            }
+            var r = (int)(color.R * brightnesslevel);
+            var g = (int)(color.G * brightnesslevel);
+            var b = (int)(color.B * brightnesslevel);
+            return Color.FromArgb(a, r, g, b);
+        }
         private void Initialize()
         {
             window.Title = "DGScope";
@@ -780,8 +847,7 @@ namespace DGScope
                 radar = new Radar();
             aircraftGCTimer = new Timer(new TimerCallback(cbAircraftGarbageCollectorTimer), null, AircraftGCInterval * 1000, AircraftGCInterval * 1000);
             wxUpdateTimer = new Timer(new TimerCallback(cbWxUpdateTimer), null, 0, 180000);
-            dataBlockTimeshareTimer = new Timer(new TimerCallback(cbTimeshareTimer), null, 0, timeshareinterval);
-            GL.ClearColor(BackColor);
+            GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             string settingsstring = XmlSerializer<RadarWindow>.Serialize(this);
             if (settingsstring != null)
             {
@@ -905,11 +971,7 @@ namespace DGScope
             Task.Run(() => wx.GetWeather(true));
         }
 
-        private void cbTimeshareTimer(object state)
-        {
-            timeshare++;
-            timeshare %= 4;
-        }
+        
 
         private void cbAircraftGarbageCollectorTimer(object state)
         {
@@ -1018,7 +1080,6 @@ namespace DGScope
                 double yMove = e.YDelta * pixelScale;
                 ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
                 ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
-                MoveTargets((float)xMove, (float)yMove);
             }
 
         }
@@ -1029,7 +1090,7 @@ namespace DGScope
             object clicked;
             lock (Aircraft)
             {
-                clicked = Aircraft.Where(x => x.TargetReturn.BoundsF.Contains(clickpoint) 
+                clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint) 
                 && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
@@ -1045,8 +1106,15 @@ namespace DGScope
             var clicked = ClickedObject(e.Position);
             if (e.Mouse.LeftButton == ButtonState.Pressed)
             {
-                if (tempLine == null) 
+                if ((Keyboard.GetState().IsKeyDown(Key.ControlLeft) || Keyboard.GetState().IsKeyDown(Key.ControlRight)) &&
+                    (Keyboard.GetState().IsKeyDown(Key.ShiftLeft) || Keyboard.GetState().IsKeyDown(Key.ShiftRight)))
+                {
+                    System.Windows.Forms.Clipboard.SetText(ScreenToGeoPoint(e.Position).ToString());
+                }
+                else if (tempLine == null)
+                {
                     ProcessCommand(Preview, clicked);
+                }
                 else if (clicked.GetType() == typeof(Aircraft))
                 {
                     tempLine.EndPlane = (Aircraft)clicked;
@@ -1096,7 +1164,6 @@ namespace DGScope
                 Range -= 5;
             else if (e.Delta < 0)
                 Range += 5;
-            RescaleTargets(oldscale / scale);
             
         }
 
@@ -1111,7 +1178,8 @@ namespace DGScope
             FltData = 18,
             CA = 20,
             SignOn = 21,
-            RngRing = 201
+            RngRing = 201,
+            RecenterEverything = 500
         }
 
         public List<object> Preview = new List<object>();
@@ -1231,6 +1299,14 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
+                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            Preview.Clear();
+                        }
+                        break;
+                    case '5' when keys[0].Length == 1:
+                        if (clickedplane)
+                        {
+                            ((Aircraft)clicked).LDRDirection = null;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1485,7 +1561,7 @@ namespace DGScope
                                             {
                                                 if (miles > 0 && (double)miles <= 30)
                                                 {
-                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font, TPASize);
+                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles,  TPAColor, Font, TPASize);
                                                 }
                                                 else
                                                 {
@@ -1604,6 +1680,166 @@ namespace DGScope
                             break;
                         switch (keys[0][1])
                         {
+                            case '2': //Multifunction 2
+                                if (keys[0].Length >=6 && KeysToString(keys[0], 2).Substring(0,4) == "ATPA") //ATPA Commands
+                                {
+                                    if (keys[0].Length == 7) // Enable system-wide
+                                    {
+                                        if ((char)keys[0][6] == 'E') // Enable
+                                        {
+                                            if (ATPA.Active)
+                                            {
+                                                DisplayPreviewMessage("NO CHANGE");
+                                            }
+                                            else if (ATPA.Volumes.Count == 0)
+                                            {
+                                                DisplayPreviewMessage("ILL FNCT");
+                                            }
+                                            else
+                                            {
+                                                ATPA.Active = true;
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else if ((char)keys[0][6] == 'I') //Inhibit
+                                        {
+                                            if (!ATPA.Active)
+                                            {
+                                                DisplayPreviewMessage("NO CHANGE");
+                                            }
+                                            else if (ATPA.Volumes.Count == 0)
+                                            {
+                                                DisplayPreviewMessage("ILL FNCT");
+                                            }
+                                            else
+                                            {
+                                                ATPA.Active = false;
+                                                Preview.Clear();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("FORMAT");
+                                        }
+                                    }
+                                    if (keys[0].Length >= 8 && keys[0].Length <= 12)
+                                    {
+                                        if (ATPA.Active)
+                                        {
+                                            var volnamefull = KeysToString(keys[0], 6);
+                                            var volname = volnamefull.Substring(0, volnamefull.Length - 1);
+                                            var volumes = ATPA.Volumes.Where(x => x.VolumeId == volname);
+                                            if (volumes.Count() == 1)
+                                            {
+                                                var volume = volumes.First();
+                                                if (volnamefull.Last() == 'E')
+                                                {
+                                                    if (volume.Active)
+                                                    {
+                                                        DisplayPreviewMessage("NO CHANGE");
+                                                    }
+                                                    else
+                                                    {
+                                                        volume.Active = true;
+                                                        Preview.Clear();
+                                                    }
+                                                }
+                                                else if (volnamefull.Last() == 'I')
+                                                {
+                                                    if (!volume.Active)
+                                                    {
+                                                        DisplayPreviewMessage("NO CHANGE");
+                                                    }
+                                                    else
+                                                    {
+                                                        volume.Active = false;
+                                                        Preview.Clear();
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    DisplayPreviewMessage("FORMAT");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("ILL VOL");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("ILL FNCT");
+                                        }
+                                    }
+                                }
+                                else if (keys[0].Length >= 4 && KeysToString(keys[0], 1).Substring(0,3) == "2.5")
+                                {
+                                    if (keys[0].Length >= 6 && keys[0].Length <= 10)
+                                    {
+                                        if (ATPA.Active)
+                                        {
+                                            var volnamefull = KeysToString(keys[0], 4);
+                                            var volname = volnamefull.Substring(0, volnamefull.Length - 1);
+                                            var volumes = ATPA.Volumes.Where(x => x.VolumeId == volname && x.Active);
+                                            if (volumes.Count() == 1)
+                                            {
+                                                var volume = volumes.First();
+                                                if (volume.TwoPointFiveEnabled)
+                                                {
+                                                    if (volnamefull.Last() == 'E')
+                                                    {
+                                                        if (volume.TwoPointFiveActive)
+                                                        {
+                                                            DisplayPreviewMessage("NO CHANGE");
+                                                        }
+                                                        else
+                                                        {
+                                                            volume.TwoPointFiveActive = true;
+                                                            Preview.Clear();
+                                                        }
+                                                    }
+                                                    else if (volnamefull.Last() == 'I')
+                                                    {
+                                                        if (!volume.TwoPointFiveActive)
+                                                        {
+                                                            DisplayPreviewMessage("NO CHANGE");
+                                                        }
+                                                        else
+                                                        {
+                                                            volume.TwoPointFiveActive = false;
+                                                            Preview.Clear();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        DisplayPreviewMessage("FORMAT");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    DisplayPreviewMessage("ILL FNCT");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                DisplayPreviewMessage("ILL VOL");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            DisplayPreviewMessage("ILL FNCT");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DisplayPreviewMessage("FORMAT");
+                                    }
+                                }
+                                else
+                                {
+                                    DisplayPreviewMessage("FORMAT");
+                                }
+                                break;
                             case 'B': //Mutlifunction B: Beacons
                                 if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
                                 {
@@ -1911,9 +2147,32 @@ namespace DGScope
                         else if (enter)
                         {
                             if (double.TryParse(KeysToString(Preview.ToArray()), out double interval))
+                            {
                                 RangeRingInterval = interval;
+                            }
                         }
                         Preview.Clear();
+                        break;
+                    case KeyCode.RecenterEverything:
+                        if (keys.Length == 2)
+                        {
+                            var airportcode = KeysToString(keys[1]);
+                            var airports = Airports.Where(x => x.ID == airportcode);
+                            if (airports.Count() == 1)
+                            {
+                                var airport = airports.First();
+                                GeoPoint loc = new GeoPoint(airport.Location.Latitude, airport.Location.Longitude);
+                                ScreenCenterPoint = loc;
+                                HomeLocation = loc;
+                                RangeRingCenter = loc;
+                                ScreenRotation = (double)airport.MagVar;
+                                Preview.Clear();
+                            }
+                            else
+                            {
+                                DisplayPreviewMessage("NO AIRPORT");
+                            }
+                        }
                         break;
                     case Key.End:
                         //Min Sep
@@ -2264,7 +2523,7 @@ namespace DGScope
             else
                 PreviewArea.Text = GeneratePreviewString(Preview);
             PreviewArea.Redraw = oldtext != PreviewArea.Text;
-            PreviewArea.ForeColor = DataBlockColor;
+            PreviewArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.FullDataBlocks);
             DrawLabel(PreviewArea);
         }
         string previewmessage = null;
@@ -2278,11 +2537,11 @@ namespace DGScope
         }
         private void RenderStatus()
         {
-            StatusArea.ForeColor = DataBlockColor;
+            StatusArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.Lists);
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             var timesyncind = timesync.Synchronized ? " " : "*";
-            StatusArea.Text = CurrentTime.ToString("HHmm-ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            StatusArea.Text = CurrentTime.ToString("HHmm/ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
             for (int i = 0; i < 10; i++)
             {
                 if (atises[i] != null)
@@ -2305,6 +2564,25 @@ namespace DGScope
             StatusArea.Text += (int)Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
             StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
                 + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
+            if (ATPA.Active)
+            {
+                StatusArea.Text += "INTRAIL ON: ";
+                ATPA.Volumes.ForEach(x =>
+                {
+                    if (x.Active)
+                    {
+                        StatusArea.Text += x.VolumeId + " ";
+                    }
+                });
+                StatusArea.Text += "\r\n";
+                var tpfv = ATPA.Volumes.Where(v => v.TwoPointFiveEnabled && v.TwoPointFiveActive && v.Active);
+                if (tpfv.Count() > 0)
+                {
+                    StatusArea.Text += "INTRAIL 2.5 ON: ";
+                    tpfv.ToList().ForEach(v =>  StatusArea.Text += v.VolumeId + " ");
+                    StatusArea.Text += "\r\n";
+                }
+            }
             int metarnum = 0;
             foreach (var metar in wx.Metars.OrderBy(x=> x.Icao))
             {
@@ -2317,9 +2595,16 @@ namespace DGScope
                         if (station.Length == 4 && station[0] == 'K') //not really correct, but whatever
                             station = station.Substring(1);
                         if (metar.Pressure != null)
-                            StatusArea.Text += station + " " + Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                        {
+                            StatusArea.Text += station;
+                            StatusArea.Text += (metar.Date - CurrentTime).Value.TotalHours > 1 ? "*" : " ";
+                            StatusArea.Text += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+
+                        }
                         else
+                        {
                             StatusArea.Text += station + " 00.00";
+                        }
                         if (WindInStatusArea)
                             StatusArea.Text += " " + metar.Wind.Raw;
                     }
@@ -2534,6 +2819,9 @@ namespace DGScope
                         case (int)KeyCode.RngRing:
                             output += "RR";
                             break;
+                        case (int)KeyCode.RecenterEverything:
+                            output += "RECENTER";
+                            break;
                         default:
                             break;
                     }
@@ -2604,12 +2892,15 @@ namespace DGScope
                         QuickLook = !QuickLook; 
                         break;
                     case Key.F1:
-                        double bearing = ScreenCenterPoint.BearingTo(HomeLocation) - ScreenRotation;
-                        double distance = ScreenCenterPoint.DistanceTo(HomeLocation);
-                        float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                        float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
-                        ScreenCenterPoint = HomeLocation;
-                        MoveTargets(x, -y);
+                        if (!e.Shift)
+                        {
+                            ScreenCenterPoint = HomeLocation;
+                        }
+                        else
+                        {
+                            Preview.Add(KeyCode.RecenterEverything);
+                            Preview.Add(' ');
+                        }
                         break;
                     case Key.F2:
                         VideoMapSelector selector = new VideoMapSelector(VideoMaps);
@@ -2724,7 +3015,6 @@ namespace DGScope
             
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
-            RescaleTargets(oldscale / scale);
             lock (dataBlocks)
             {
                 dataBlocks.ForEach(x => x.Redraw = true);
@@ -2746,9 +3036,10 @@ namespace DGScope
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
             pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
-            GL.ClearColor(BackColor);
+            GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.LoadIdentity();
             GL.PushMatrix();
@@ -2760,16 +3051,22 @@ namespace DGScope
             {
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
             }
-            DrawRangeRings();
-            ATPA.Calculate(Aircraft, radar);
-            if(!hidewx)
+            if (!hidewx)
+            {
                 DrawNexrad();
+            }
+            DrawRangeRings();
             DrawVideoMapLines();
+            if (ATPA.Active)
+            {
+                ATPA.Calculate(Aircraft, radar);
+                DrawATPAVolumes();
+            }
             GenerateTargets();
+            DrawStatic();
             DrawTargets();
             DrawMinSeps();
             DrawRBLs();
-            DrawStatic();
             GL.PopMatrix();
             GL.Flush();
             window.SwapBuffers();
@@ -2782,10 +3079,10 @@ namespace DGScope
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
-            double bearing = ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation;
+            double bearing = (ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation) * (Math.PI / 180);
             double distance = ScreenCenterPoint.DistanceTo(geoPoint);
-            float x = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-            float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+            float x = (float)(Math.Sin(bearing) * (distance / scale));
+            float y = (float)(Math.Cos(bearing) * (distance / scale));
             return new PointF(x, y);
         }
 
@@ -2803,6 +3100,26 @@ namespace DGScope
         {
             return ScreenToGeoPoint(LocationFromScreenPoint(Point));
         }
+        private void DrawATPAVolumes()
+        {
+            foreach (var volume in ATPA.Volumes.Where(v => v.Draw))
+            {
+                GeoPoint one, two, three, four;
+                one = volume.RunwayThreshold.FromPoint(volume.WidthLeft / 6076d, volume.TrueHeading - 90);
+                two = one.FromPoint(volume.Length, volume.TrueHeading + 180);
+                three = two.FromPoint((volume.WidthLeft / 6076d) + (volume.WidthRight / 6076d), volume.TrueHeading + 90);
+                four = volume.RunwayThreshold.FromPoint(volume.WidthRight / 6076d, volume.TrueHeading + 90);
+                Line l1, l2, l3, l4;
+                l1 = new Line(one, two);
+                l2 = new Line(two, three);
+                l3 = new Line(three, four);
+                l4 = new Line(four, one);
+                DrawLine(l1, Color.Aqua);
+                DrawLine(l2 , Color.Aqua);
+                DrawLine(l3, Color.Aqua);
+                DrawLine(l4, Color.Aqua);
+            }
+        }
         private void DrawMinSeps()
         {
             List<MinSep> seps;
@@ -2813,16 +3130,16 @@ namespace DGScope
                 if (minsep.Line1.End1 != null && minsep.Line2.End1 != null && 
                     minsep.Line1.End2 != null && minsep.Line2.End2 != null)
                 {
-                    DrawLine(minsep.Line1, RBLColor);
-                    DrawLine(minsep.Line2, RBLColor);
+                    DrawLine(minsep.Line1, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
+                    DrawLine(minsep.Line2, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                     var point1 = GeoToScreenPoint(minsep.Line1.End2);
                     var point2 = GeoToScreenPoint(minsep.Line2.End2);
-                    DrawCircle(point1.X, point1.Y, 4 * pixelScale, 1, 3, RBLColor, true);
-                    DrawCircle(point2.X, point2.Y, 4 * pixelScale, 1, 3, RBLColor, true);
+                    DrawCircle(point1.X, point1.Y, 4 * pixelScale, 1, 3, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools), true);
+                    DrawCircle(point2.X, point2.Y, 4 * pixelScale, 1, 3, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools), true);
                 }
                 if (minsep.SepLine.End1 != null && minsep.SepLine.End2 != null)
                 {
-                    DrawLine(minsep.SepLine, RBLColor);
+                    DrawLine(minsep.SepLine, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                 }
                 else
                     continue;
@@ -2833,7 +3150,7 @@ namespace DGScope
                     minsep.Label.Text = ((double)(minsep.MinSepDistance)).ToString("0.00") + " NM";
                 if (minsep.NoXing == true)
                     minsep.Label.Text += "\r\nNO XING";
-                minsep.Label.ForeColor = RBLColor;
+                minsep.Label.ForeColor = AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools);
                 minsep.Label.Font = this.Font;
                 minsep.Label.CenterOnPoint(labelloc);
                 DrawLabel(minsep.Label);
@@ -2877,8 +3194,8 @@ namespace DGScope
                     line.Line.End2 = line.EndGeo;
                 }
                 
-                DrawLine(line.Start, line.End, RBLColor);
-                line.Label.ForeColor = RBLColor;
+                DrawLine(line.Start, line.End, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
+                line.Label.ForeColor = AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools);
                 line.Label.LocationF = line.End;
                 int bearing = 0;
                 double range = 0;
@@ -2944,7 +3261,7 @@ namespace DGScope
             try
             {
                 settingsxml = XmlSerializer<RadarWindow>.Serialize(this);
-                if (settingsxml.Length == 0)
+                if (settingsxml == null || settingsxml.Length == 0)
                 {
                     System.Windows.Forms.MessageBox.Show("There was a problem serializing the settings"
                         , "Error writing settings file", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
@@ -2972,25 +3289,32 @@ namespace DGScope
             */
             double distance = ScreenCenterPoint.DistanceTo(RangeRingCenter);
             var rrr = (aspect_ratio > 1 ? Range * aspect_ratio : Range / aspect_ratio) + distance;
-            var center = GeoToScreenPoint(RangeRingCenter);
-            var x = center.X;
-            var y = center.Y;
+            var x = RangeRingCenter.Longitude;
+            var y = RangeRingCenter.Latitude;
+            var latfactor = Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180));
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * latfactor, (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+
             for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
-                DrawCircle(x,y, (float)(i / scale), 1, 1000, RangeRingColor);
+                DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, AdjustedColor(RangeRingColor, CurrentPrefSet.Brightness.RangeRings));
             }
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
 
-        private void DrawCircle (float cx, float cy, float r, double aspect_ratio, int num_segments, Color color, bool fill = false)
+        private void DrawCircle (double cx, double cy, double r, double aspect_ratio, int num_segments, Color color, bool fill = false)
         {
             GL.Begin(fill ? PrimitiveType.Polygon : PrimitiveType.LineLoop);
             GL.Color4(color);
             for (int ii = 0; ii < num_segments; ii++)
             {
                 float theta = 2.0f * (float)Math.PI * ii / num_segments;
-                float x = r * (float)Math.Cos(theta);
-                float y = r * (float)Math.Sin(theta) * (float)aspect_ratio;
+                var x = r * Math.Cos(theta);
+                var y = r * Math.Sin(theta) * aspect_ratio;
 
                 GL.Vertex2(x + cx, y + cy);
             }
@@ -3008,11 +3332,11 @@ namespace DGScope
         {
             if (plane.Location == null)
                 return;
-            if (plane.PositionInd == ThisPositionIndicator && (plane.ATPAStatus == ATPAStatus.Caution || plane.ATPAStatus == ATPAStatus.Alert))
+            if (plane.ATPAStatus == ATPAStatus.Caution || plane.ATPAStatus == ATPAStatus.Alert)
             {
                 switch (plane.ATPAStatus)
                 {
-                    case ATPAStatus.Caution:
+                    case ATPAStatus.Caution when plane.PositionInd == ThisPositionIndicator || plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator):
                         if(plane.ATPACone == null)
                             plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPACautionColor, Font, true, plane.ATPATrackToLeader);
                         else
@@ -3022,7 +3346,7 @@ namespace DGScope
                             plane.ATPACone.Track = plane.ATPATrackToLeader;
                         }
                         break;
-                    case ATPAStatus.Alert:
+                    case ATPAStatus.Alert when plane.PositionInd == ThisPositionIndicator || plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator):
                         if (plane.ATPACone == null)
                             plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, ATPAAlertColor, Font, true, plane.ATPATrackToLeader);
                         else
@@ -3037,7 +3361,9 @@ namespace DGScope
             }
             if (plane.TPA == null)
             {
-                if (plane.PositionInd == ThisPositionIndicator && plane.ATPAStatus == ATPAStatus.Monitor && DrawATPAMonitorCones)
+                if (((plane.PositionInd == ThisPositionIndicator && DrawATPAMonitorCones) ||
+                    plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator && x.ConeType == ATPAStatus.Monitor))
+                    && plane.ATPAStatus == ATPAStatus.Monitor)
                 {
                     if (plane.ATPACone == null)
                         plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, TPAColor, Font, true, plane.ATPATrackToLeader);
@@ -3082,10 +3408,14 @@ namespace DGScope
             var circlesize = (float)plane.TPA.Miles / scale;
             double angle;
             LeaderDirection ldr;
-            if (plane.LDRDirection == null)
+            if (plane.LDRDirection != null)
+                ldr = plane.LDRDirection.Value;
+            else if (plane.PositionInd == ThisPositionIndicator) // owned LDR direction
                 ldr = LDRDirection;
+            else if (!plane.Associated) // Unowned LDR direction
+                ldr = UnownedLeaderDirection;
             else
-                ldr = (LeaderDirection)plane.LDRDirection;
+                ldr = UnassociatedLeaderDirection;
 
             switch (ldr)
             {
@@ -3145,6 +3475,10 @@ namespace DGScope
         }
         private void DrawPCone(TPACone cone)
         {
+            if (cone == null || cone.ParentAircraft == null)
+            {
+                return;
+            }
             Aircraft plane = cone.ParentAircraft;
             double track = 0;
             if (cone.Track == null)
@@ -3180,11 +3514,12 @@ namespace DGScope
                 var x4 = -x3;
                 var x5 = (y2 / y1) * x3;
                 var x6 = -x5;
-                DrawLine(0, 0, x3, y1, cone.Color);
-                DrawLine(0, 0, x4, y1, cone.Color);
-                DrawLine(x5, y2, x1, y, cone.Color);
-                DrawLine(x6, y2, x2, y, cone.Color);
-                DrawLine(x1, y, x2, y, cone.Color);
+                var color = AdjustedColor(cone.Color, CurrentPrefSet.Brightness.Tools);
+                DrawLine(0, 0, x3, y1, color);
+                DrawLine(0, 0, x4, y1, color);
+                DrawLine(x5, y2, x1, y, color);
+                DrawLine(x6, y2, x2, y, color);
+                DrawLine(x1, y, x2, y, color);
                 GL.PopMatrix();
                 GL.Translate(-location.X, -location.Y, 0.0);
                 cone.Label.ForeColor = cone.Color;
@@ -3201,22 +3536,30 @@ namespace DGScope
                 if (map.Visible)
                     lines.AddRange(map.Lines);
             }
-            DrawLines(lines, VideoMapLineColor);
+            var colora = AdjustedColor(VideoMapLineColor, CurrentPrefSet.Brightness.MapA);
+            DrawLines(lines, colora);
             lines.Clear();
             foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.B))
             {
                 if (map.Visible)
                     lines.AddRange(map.Lines);
             }
-            DrawLines(lines, VideoMapBLineColor);
+            var colorb = AdjustedColor(VideoMapBLineColor, CurrentPrefSet.Brightness.MapB);
+            DrawLines(lines, colorb);
         }
 
         private void DrawLines (List<Line> lines, Color color)
         {
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
             foreach (Line line in lines)
             {
-                DrawLine(line, color);
+                DrawLine(line.End1.Longitude, line.End1.Latitude, line.End2.Longitude, line.End2.Latitude, color);
             }
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawLine(PointF Point1, PointF Point2, Color color)
@@ -3225,31 +3568,28 @@ namespace DGScope
         }
         private void DrawLine(Line line, Color color)
         {
-            /*double scale = Range / Math.Sqrt(2);
-            double yscale = 1;
-            double bearing1 = radar.Location.BearingTo(line.End1) - ScreenRotation;
-            double distance1 = radar.Location.DistanceTo(line.End1);
-            float x1 = (float)(Math.Sin(bearing1 * (Math.PI / 180)) * (distance1 / scale));
-            float y1 = (float)(Math.Cos(bearing1 * (Math.PI / 180)) * (distance1 / scale) * yscale);
 
-            double bearing2 = radar.Location.BearingTo(line.End2) - ScreenRotation;
-            double distance2 = radar.Location.DistanceTo(line.End2);
-            float x2 = (float)(Math.Sin(bearing2 * (Math.PI / 180)) * (distance2 / scale));
-            float y2 = (float)(Math.Cos(bearing2 * (Math.PI / 180)) * (distance2 / scale) * yscale);
-            */
-            var end1 = GeoToScreenPoint(line.End1);
+            /*var end1 = GeoToScreenPoint(line.End1);
             var end2 = GeoToScreenPoint(line.End2);
             float x1 = end1.X;
             float x2 = end2.X;
             float y1 = end1.Y;
-            float y2 = end2.Y;
-            DrawLine(x1, y1, x2, y2, color);
+            float y2 = end2.Y;*/
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            DrawLine((float)line.End1.Longitude, (float)line.End1.Latitude, (float)line.End2.Longitude, (float)line.End2.Latitude, color);
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawPolygon (Polygon polygon)
         {
+            //GL.Scale(aspect_ratio, 1.0f, 1.0f);
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(polygon.Color);
+            var color = AdjustedColor(polygon.Color, CurrentPrefSet.Brightness.Weather);
+            GL.Color4(color);
             for (int i = 0; i < polygon.vertices.Length; i++)
             {
                 GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
@@ -3260,7 +3600,8 @@ namespace DGScope
                 GL.Enable(EnableCap.PolygonStipple);
                 GL.PolygonStipple(polygon.StipplePattern);
                 GL.Begin(PrimitiveType.Polygon);
-                GL.Color4(polygon.StippleColor);
+                var scolor = AdjustedColor(polygon.StippleColor, CurrentPrefSet.Brightness.WeatherContrast);
+                GL.Color4(scolor);
                 for (int i = 0; i < polygon.vertices.Length; i++)
                 {
                     GL.Vertex2(polygon.vertices[i].X, polygon.vertices[i].Y);
@@ -3268,27 +3609,40 @@ namespace DGScope
                 GL.End();
                 GL.Disable(EnableCap.PolygonStipple);
             }
-            
         }
 
         private void DrawNexrad()
         {
-            foreach (var nexrad in Nexrads)
+            //convert old nexrads list to new nexrad object
+            if (Nexrads != null && Nexrads.Count > 0)
             {
-                var polygons = nexrad.Polygons(ScreenCenterPoint, scale, ScreenRotation);
-                for (int i = 0; i < polygons.Length; i++)
-                {
-                    if(polygons[i].Color.A > 0)
-                        DrawPolygon(polygons[i]);
-                }
+                Nexrad = Nexrads[0];
+                Nexrad.ColorTable = new List<WXColor>();
+                Nexrads = null;
             }
+        
+            var polygons = Nexrad.Polygons();
+            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
+            GL.PushMatrix();
+            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+
+            for (int i = 0; i < polygons.Length; i++)
+            {
+                if(polygons[i].Color.A > 0)
+                    DrawPolygon(polygons[i]);
+            }
+
+            GL.PopMatrix();
+            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
+            //}
         }
-        private void DrawLine (float x1, float y1, float x2, float y2, Color color, float width = 1)
+        private void DrawLine (double x1, double y1, double x2, double y2, Color color, float width = 1)
         {
-            x1 = RoundUpToNearest(x1, pixelScale);
-            x2 = RoundUpToNearest(x2, pixelScale);
-            y1 = RoundUpToNearest(y1, pixelScale);
-            y2 = RoundUpToNearest(y2, pixelScale);
+            //x1 = RoundUpToNearest(x1, pixelScale);
+            //x2 = RoundUpToNearest(x2, pixelScale);
+            //y1 = RoundUpToNearest(y1, pixelScale);
+            //y2 = RoundUpToNearest(y2, pixelScale);
             GL.Begin(PrimitiveType.Lines);
             GL.LineWidth(width);
             GL.Color4(color);
@@ -3343,7 +3697,7 @@ namespace DGScope
                 if (oldcolor != aircraft.DataBlock.ForeColor)
                     aircraft.DataBlock.Redraw = true;
                 aircraft.RedrawDataBlock(radar);
-                Bitmap text_bmp = aircraft.DataBlock.TextBitmap();
+                Bitmap text_bmp = aircraft.DataBlock.TextBitmap(false);
                 var realWidth = text_bmp.Width * pixelScale;
                 var realHeight = text_bmp.Height * pixelScale;
                 aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
@@ -3376,16 +3730,16 @@ namespace DGScope
             */
             if (extrapolatedpos == null)
                 return;
-            var location = GeoToScreenPoint(extrapolatedpos);
-            if (location.X == 0 || location.Y == 0)
-                return;
+            //var location = GeoToScreenPoint(extrapolatedpos);
+            //if (location.X == 0 || location.Y == 0)
+             //   return;
             if (aircraft.LastHistoryTimes.ContainsKey(radar) && 
                 (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= HistoryInterval)
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
-                aircraft.TargetReturn.ShapeHeight = HistoryHeight;
-                aircraft.TargetReturn.ShapeWidth = HistoryWidth;
-                aircraft.TargetReturn.Shape = HistoryShape;
+                //aircraft.TargetReturn.ShapeHeight = HistoryHeight;
+                //aircraft.TargetReturn.ShapeWidth = HistoryWidth;
+                //aircraft.TargetReturn.Shape = HistoryShape;
                 if (!HistoryFade)
                 {
                     aircraft.TargetReturn.Fading = false;
@@ -3411,28 +3765,25 @@ namespace DGScope
                 {
                     aircraft.TargetReturn.Fading = true;
                 }
-                if (HistoryDirectionAngle)
-                {
-                    aircraft.TargetReturn.Angle = (Math.Atan((location.X - aircraft.TargetReturn.LocationF.X) / (location.Y - aircraft.TargetReturn.LocationF.Y)) * (180 / Math.PI));
-                }
                 PrimaryReturn newreturn = new PrimaryReturn();
                 aircraft.History[0] = aircraft.TargetReturn;
                 aircraft.TargetReturn = newreturn;
                 newreturn.ParentAircraft = aircraft;
                 newreturn.Fading = PrimaryFade;
                 newreturn.FadeTime = FadeTime;
-                newreturn.NewLocation = location;
+                //newreturn.NewLocation = location;
+                newreturn.GeoLocation = extrapolatedpos;
                 newreturn.Intensity = 1;
                 newreturn.ForeColor = ReturnColor;
-                newreturn.ShapeHeight = TargetHeight;
-                newreturn.ShapeWidth = TargetWidth;
+                //newreturn.ShapeHeight = TargetHeight;
+                //newreturn.ShapeWidth = TargetWidth;
                 //newreturn.Shape = radar.TargetShape;
                 aircraft.LastHistoryTimes[radar] = CurrentTime;
             }
 
             if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
             {
-                aircraft.RedrawTarget(location, radar);
+                aircraft.RedrawTarget(extrapolatedpos, radar);
                 aircraft.PTL.End1 = aircraft.SweptLocation(radar);
                 double ptldistance = (aircraft.SweptSpeed(radar) / 60) * PTLlength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
@@ -3445,11 +3796,12 @@ namespace DGScope
                         dataBlocks.Remove(aircraft.DataBlock);
 
 
-                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap();
+                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap(true);
                 var realWidth = text_bmp.Width * pixelScale;
                 var realHeight = text_bmp.Height * pixelScale;
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
-                aircraft.PositionIndicator.CenterOnPoint(location);
+                var posindlocation = GeoToScreenPoint(TargetExtentSymbols.PositionSymbolLocation(aircraft, radar));
+                aircraft.PositionIndicator.CenterOnPoint(posindlocation);
                 if (aircraft.PositionInd != null)
                     aircraft.PositionIndicator.Text = aircraft.PositionInd.Last().ToString();
                 if (aircraft.Marked)
@@ -3592,21 +3944,21 @@ namespace DGScope
             PointF blockLocation = new PointF();
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
-            float offsetScale = (float)(thisAircraft.DataBlock.SizeF.Height / 4);
-            float offset = (LeaderLength ) * (float)offsetScale;
+            var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
+            var offset = (1 + LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.S:
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.E:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
                     break;
                 case LeaderDirection.W:
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3618,21 +3970,21 @@ namespace DGScope
                 case LeaderDirection.NE:
                     
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    if (offset > 0)
-                        blockLocation.X += offsetScale;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    //if (offset > 0)
+                    //    blockLocation.X += offsetScale;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
                     break;
                 case LeaderDirection.SE:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Right + offset;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
                 case LeaderDirection.NW:
                     offset *= (float)Math.Sqrt(2) / 2; 
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
-                    if (offset > 0)
-                        blockLocation.X -= offsetScale;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
+                    //if (offset > 0)
+                    //    blockLocation.X -= offsetScale;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3640,11 +3992,11 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Bottom + offsetScale + offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom +  offset;
                     break;
                 case LeaderDirection.SW:
                     offset *= (float)Math.Sqrt(2) / 2;
-                    blockLocation.X = thisAircraft.TargetReturn.BoundsF.Left - offset;
+                    blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Left - offset;
                     if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width &&
                         thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock3.SizeF.Width)
                         blockLocation.X -= thisAircraft.DataBlock.SizeF.Width;
@@ -3652,7 +4004,7 @@ namespace DGScope
                         blockLocation.X -= thisAircraft.DataBlock2.SizeF.Width;
                     else
                         blockLocation.X -= thisAircraft.DataBlock3.SizeF.Width;
-                    blockLocation.Y = thisAircraft.TargetReturn.BoundsF.Top - offset;
+                    blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
                     break;
             }
 
@@ -3693,32 +4045,32 @@ namespace DGScope
             switch (direction)
             {
                 case LeaderDirection.NE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.N:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
                     break;
                 case LeaderDirection.NW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Bottom;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Bottom;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.SE:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.S:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
                     break;
                 case LeaderDirection.SW:
-                    leaderStart.Y = thisAircraft.TargetReturn.BoundsF.Top;
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.Y = thisAircraft.PositionIndicator.BoundsF.Top;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 case LeaderDirection.E:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Right;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.W:
-                    leaderStart.X = thisAircraft.TargetReturn.BoundsF.Left;
+                    leaderStart.X = thisAircraft.PositionIndicator.BoundsF.Left;
                     break;
                 default:
                     Console.Write("wat");
@@ -3739,21 +4091,36 @@ namespace DGScope
                 thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
             }
             thisAircraft.ConnectingLine.Start = leaderStart;
-            if ((direction != thisAircraft.LDRDirection && thisAircraft.LDRDirection != null) ||
-                (direction != LDRDirection && thisAircraft.LDRDirection == null))
+            if (direction != thisAircraft.LastDrawnDirection)
                 thisAircraft.RedrawDataBlock(radar, direction);
 
             return blockLocation;
         }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
-            LeaderDirection newDirection = LDRDirection;
-            LeaderDirection oldDirection = LDRDirection;
+            LeaderDirection newDirection = UnassociatedLeaderDirection;
+            LeaderDirection oldDirection = UnassociatedLeaderDirection;
             if (thisAircraft.LDRDirection != null)
             {
-                oldDirection = (LeaderDirection)thisAircraft.LDRDirection;
-                newDirection = (LeaderDirection)thisAircraft.LDRDirection;
+                oldDirection = thisAircraft.LDRDirection.Value;
+                newDirection = thisAircraft.LDRDirection.Value;
             }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator && thisAircraft.OwnerLeaderDirection != null)
+            {
+                oldDirection = thisAircraft.OwnerLeaderDirection.Value;
+                newDirection = thisAircraft.OwnerLeaderDirection.Value;
+            }
+            else if (thisAircraft.PositionInd == ThisPositionIndicator)
+            {
+                oldDirection = LDRDirection;
+                newDirection = LDRDirection;
+            }
+            else if (!thisAircraft.Associated)
+            {
+                oldDirection = UnownedLeaderDirection; 
+                newDirection = UnownedLeaderDirection;
+            }
+
 
             if (newDirection != oldDirection)
             {
@@ -3763,36 +4130,44 @@ namespace DGScope
             PointF blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
             
             
-            if (AutoOffset && inRange(thisAircraft) && thisAircraft.FDB)
+            if (AutoOffset &&  thisAircraft.FDB && thisAircraft.LDRDirection == null)
             {
                 
                 RectangleF bounds = new RectangleF(blockLocation, thisAircraft.DataBlock.SizeF);
                 int minconflicts = int.MaxValue;
                 LeaderDirection bestDirection = newDirection;
+                int[] sequence = new int[] {0, 2, 6, 7, 1, 3, 5, 4};
                 for (int i = 0; i < 8; i++)
                 {
                     int conflictcount = 0;
                     List<TransparentLabel> otherDataBlocks = new List<TransparentLabel>();
                     lock (dataBlocks)
                         otherDataBlocks.AddRange(dataBlocks);
-                    if (thisAircraft.LDRDirection != null)
-                        newDirection = (LeaderDirection)(((int)thisAircraft.LDRDirection + (i * 45)) % 360);
-                    else
-                        newDirection = (LeaderDirection)(((int)LDRDirection + (i * 45)) % 360);
+                    var d = (int)newDirection;
+                    if (d >= 5)
+                    {
+                        d--;
+                    }
+                    d = (d + sequence[i]) % 8;
+                    if (d >= 5)
+                    {
+                        d++;
+                    }
+                    newDirection = (LeaderDirection)d;
                     blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
                     
                     bounds.Location = blockLocation;
 
                     foreach (var otherDataBlock in otherDataBlocks)
                     {
-                        if (!otherDataBlock.ParentAircraft.FDB)
-                            continue; //both must be fdbs
+                        //if (!otherDataBlock.ParentAircraft.FDB)
+                            //continue; //both must be fdbs
                         var otherPlane = otherDataBlock.ParentAircraft;
-                        if (thisAircraft.ModeSCode != otherPlane.ModeSCode)
+                        if (thisAircraft != otherPlane)
                         {
                             RectangleF otherBounds = new RectangleF(otherPlane.DataBlock.LocationF, otherPlane.DataBlock.SizeF);
                             
-                            if (bounds.IntersectsWith(otherBounds))
+                            if (bounds.IntersectsWith(otherBounds) && otherPlane.FDB)
                             {
                                 conflictcount+=2;
                             }
@@ -3801,7 +4176,7 @@ namespace DGScope
                                 conflictcount++;
                             }
                             if (thisAircraft.ConnectingLine.IntersectsWith(otherPlane.ConnectingLine) ||
-                                thisAircraft.ConnectingLine.IntersectsWith(otherPlane.TargetReturn.BoundsF) ||
+                                thisAircraft.ConnectingLine.IntersectsWith(otherPlane.PositionIndicator.BoundsF) ||
                                 thisAircraft.ConnectingLine.IntersectsWith(otherBounds))
                             {
                                 conflictcount+=2;
@@ -3835,67 +4210,8 @@ namespace DGScope
         }
 
         Timer aircraftGCTimer;
-        private void RescaleTarget(PrimaryReturn target, float scalechange)
-        {
-            if (target == null)
-                return;
-            PointF newLocation = new PointF(target.LocationF.X * scalechange, (target.LocationF.Y * scalechange));
-            target.LocationF = newLocation;
-        }
-        private void RescaleTargets(float scalechange)
-        {
-            lock (Aircraft)
-            {
-                foreach (Aircraft plane in Aircraft)
-                {
-                    RescaleTarget(plane.TargetReturn, scalechange);
-                    plane.History.ToList().ForEach(x => RescaleTarget(x, scalechange));
-                    PointF newLocation = new PointF(plane.LocationF.X * scalechange, (plane.LocationF.Y * scalechange));
-                    plane.LocationF = newLocation;
-                    plane.DataBlock.LocationF = OffsetDatablockLocation(plane);
-                    plane.DataBlock2.LocationF = plane.DataBlock.LocationF;
-                    plane.DataBlock3.LocationF = plane.DataBlock.LocationF;
-                    plane.PositionIndicator.CenterOnPoint(newLocation);
-                    //plane.RedrawDataBlock();
-                }
-            }
-        }
-        private void MoveTarget(PrimaryReturn target, float xChange, float yChange)
-        {
-            if (target == null)
-                return;
-            if (target.LocationF.X == 0 && target.LocationF.Y == 0)
-                return;
-            target.LocationF = new PointF(target.LocationF.X + xChange, target.LocationF.Y - yChange);
-        }
-        private void MoveTargets(float xChange, float yChange)
-        {
-            
-            foreach (TransparentLabel block in dataBlocks.ToList())
-            {
-                if (block.LocationF.X == 0 && block.LocationF.Y == 0)
-                    continue;
-                block.LocationF = new PointF(block.LocationF.X + xChange, block.LocationF.Y - yChange);
-                block.ParentAircraft.ConnectingLine.Start = new PointF(block.ParentAircraft.ConnectingLine.Start.X + xChange, block.ParentAircraft.ConnectingLine.Start.Y - yChange);
-                block.ParentAircraft.ConnectingLine.End = new PointF(block.ParentAircraft.ConnectingLine.End.X + xChange, block.ParentAircraft.ConnectingLine.End.Y - yChange);
-                block.NewLocation = block.LocationF;
-                block.ParentAircraft.DataBlock2.LocationF = block.LocationF;
-                block.ParentAircraft.DataBlock3.LocationF = block.LocationF;
-            }
-            lock (posIndicators)
-                posIndicators.ForEach(x => x.LocationF = new PointF(x.LocationF.X + xChange, x.LocationF.Y - yChange));
-            lock (Aircraft)
-            {
-                foreach (Aircraft plane in Aircraft)
-                {
-                    if (plane.LocationF.X == 0 && plane.LocationF.Y == 0)
-                        continue;
-                    MoveTarget(plane.TargetReturn, xChange, yChange);
-                    plane.History.ToList().ForEach(x => MoveTarget(x, xChange, yChange));
-                    plane.LocationF = new PointF(plane.LocationF.X + xChange, plane.LocationF.Y - yChange);
-                }
-            }
-        }
+        
+        
 
         private bool InFilter(Aircraft aircraft)
         {
@@ -3910,6 +4226,17 @@ namespace DGScope
                 return;
             if (target.ParentAircraft.Location == null)
                 return;
+            if ((target.LastDrawnScreenCenter != ScreenCenterPoint || target.LastDrawnRange != Range || target.LastDrawnScreenRotation != ScreenRotation) && target.GeoLocation != null)
+            {
+                target.LocationF = GeoToScreenPoint(target.GeoLocation);
+                target.LastDrawnScreenRotation = ScreenRotation;
+                target.LastDrawnScreenCenter = ScreenCenterPoint;
+                target.LastDrawnRange = Range;
+                if (target.ParentAircraft != null && target == target.ParentAircraft.TargetReturn)
+                {
+                    target.ParentAircraft.LocationF = target.LocationF;
+                }
+            }
             if (target.LocationF.X == 0 || target.LocationF.Y == 0)
                 return;
             if (target != target.ParentAircraft.TargetReturn) // history
@@ -3919,23 +4246,29 @@ namespace DGScope
                 if (Array.IndexOf(target.ParentAircraft.History, target) >= NumHistory)
                     return;
             }
+            var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
+            var beaconcolor = AdjustedColor(BeaconTargetColor, CurrentPrefSet.Brightness.BeaconTargets);
             if (!target.ParentAircraft.PrimaryOnly)
             {
-                var shape = target == target.ParentAircraft.TargetReturn ? radar.TargetShape : HistoryShape;
+                var rt = radar.RadarType;
+                var history = target != target.ParentAircraft.TargetReturn;
+                if (history)
+                    rt = RadarType.FUSED;
                 var location = target.ParentAircraft.SweptLocation(radar);
                 if (location == null)
                     return;
-                switch (shape)
+                switch (rt)
                 {
-                    case TargetShape.Rectangle:
+                    case RadarType.SLANT_RANGE:
                         //float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
-                        float targetHeight = (float)((1 / scale) * .2 * Math.Sqrt(location.DistanceTo(radar.Location)));
-                        float targetWidth = target.ShapeWidth * pixelScale;    // (window.ClientRectangle.Width/2);
-                        float atan = (float)Math.Atan(targetHeight / targetWidth);
+                        float targetWidth = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                        float targetHeight = (TargetExtentSymbols.SearchTargets.RangeExtent / 32f) / scale;    // (window.ClientRectangle.Width/2);
                         float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
-                        float x1 = (float)(Math.Sin(atan) * targetHypotenuse);
-                        float y1 = (float)(Math.Cos(atan) * targetHypotenuse);
-                        float circleradius = 4f * pixelScale;
+                        float beaconoffset = TargetExtentSymbols.BeaconTargets.RangeOffset / (32f * scale);
+                        float x1 = (float)(targetWidth / 2);
+                        float y1 = (float)(targetHeight / 2);
+                        float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10f);
+                        float y2 = (TargetExtentSymbols.BeaconTargets.RangeExtent / 32f) / scale;
 
                         target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
@@ -3944,40 +4277,51 @@ namespace DGScope
                         GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
                         GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
-                        GL.Begin(PrimitiveType.Polygon);
 
-                        GL.Color4(target.ForeColor);
+                        GL.Begin(PrimitiveType.Polygon);
+                        
+                        GL.Color4(primarycolor);
                         GL.Vertex2(x1, y1);
                         GL.Vertex2(-x1, y1);
                         GL.Vertex2(-x1, -y1);
                         GL.Vertex2(x1, -y1);
-
-
                         GL.End();
+                        if (!target.ParentAircraft.PrimaryOnly)
+                        {
+                            GL.Begin(PrimitiveType.Polygon);
+                            GL.Color4(beaconcolor);
+                            GL.Vertex2(x2, y2 - beaconoffset);
+                            GL.Vertex2(-x2, y2 - beaconoffset);
+                            GL.Vertex2(-x2, -y2 - beaconoffset);
+                            GL.Vertex2(x2, -y2 - beaconoffset);
+                            GL.End();
+                        }
+
                         GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
 
 
                         GL.PopMatrix();
                         break;
-                    case TargetShape.Circle:
-                        float mileageSize = 0.2f / scale;
-                        float pixelSize = TargetWidth * pixelScale;
-                        if (mileageSize > pixelSize && target == target.ParentAircraft.TargetReturn)
+                    case RadarType.FUSED:
+                        float size;
+                        if (!history)
                         {
-                            target.SizeF = new SizeF(mileageSize * 2, mileageSize * 2);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, mileageSize, 1, 30, target.ForeColor, true);
+                            size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                            target.SizeF = new SizeF(size, size);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, primarycolor, true);
                         }
                         else
                         {
-                            target.SizeF = new SizeF(target.ShapeWidth * 2 * pixelScale, target.ShapeWidth * 2 * pixelScale);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, target.ShapeWidth * pixelScale, 1, 30, target.ForeColor, true);
+                            size = (float)TargetExtentSymbols.FMATargetSymbols.Radius * pixelScale;
+                            target.SizeF = new SizeF(size, size);
+                            DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.History), true);
                         }
                         break;
                 }
             }
             else
             {
-                float targetWidth = target.ShapeWidth * pixelScale;
+                float targetWidth = TargetExtentSymbols.MultiRadarTargets.UncorrSymbolPlotSize * pixelScale;
                 float targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
                 float x1 = (float)(Math.Sqrt(2) * targetHypotenuse);
                 target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2);
@@ -3989,7 +4333,7 @@ namespace DGScope
                 GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                 GL.Begin(PrimitiveType.Polygon);
 
-                GL.Color4(target.ForeColor);
+                GL.Color4(primarycolor);
                 GL.Vertex2(x1, x1);
                 GL.Vertex2(-x1, x1);
                 GL.Vertex2(-x1, -x1);
@@ -4009,11 +4353,14 @@ namespace DGScope
 
         private void DrawTargets()
         {
+            List<Aircraft> aclist;
             lock (Aircraft)
             {
-                Aircraft.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                Aircraft.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
-                foreach (var handoffPlane in Aircraft.Where(x => x.PendingHandoff == ThisPositionIndicator))
+                aclist = Aircraft.ToList();
+            }
+                aclist.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
+                aclist.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
+                foreach (var handoffPlane in aclist.Where(x => x.PendingHandoff == ThisPositionIndicator))
                 {
                     if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
                         continue;
@@ -4023,7 +4370,7 @@ namespace DGScope
                     //if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
                         //GenerateDataBlock(handoffPlane);
                 }
-                foreach (var handedoffPlane in Aircraft.Where(x => x.PositionInd == x.PendingHandoff))
+                foreach (var handedoffPlane in aclist.Where(x => x.PositionInd == x.PendingHandoff))
                 {
                     if (handedoffPlane.PendingHandoff != null)
                         handedoffPlane.PendingHandoff = null;
@@ -4036,7 +4383,7 @@ namespace DGScope
                             //GenerateDataBlock(handedoffPlane);
                     }
                 }
-                foreach (var flashingPlane in Aircraft.Where(x => x.DataBlock.Flashing))
+                foreach (var flashingPlane in aclist.Where(x => x.DataBlock.Flashing))
                 {
                     if (flashingPlane.PendingHandoff != ThisPositionIndicator)
                     {
@@ -4047,14 +4394,13 @@ namespace DGScope
                             //GenerateDataBlock(flashingPlane);
                     }
                 }
-                foreach (var beaconatorplane in Aircraft.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
+                foreach (var beaconatorplane in aclist.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
                 {
                     beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
                     //GenerateDataBlock(beaconatorplane);
                     beaconatorplane.RedrawDataBlock(radar);
                 }
-            }
-            Aircraft.ToList().ForEach(x =>
+            aclist.ForEach(x =>
             {
                 if ((!x.PrimaryOnly || x.Associated))
                 {
@@ -4070,7 +4416,7 @@ namespace DGScope
                     }
                 }
             });
-            Aircraft.ToList().ForEach(x =>
+            aclist.ForEach(x =>
             {
                 if (x.TargetReturn.ParentAircraft == null)
                     x.TargetReturn.ParentAircraft = x;
@@ -4086,13 +4432,13 @@ namespace DGScope
                         debugPlane = null; 
                     if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
                     {
-                        DrawLine(block.ParentAircraft.PTL, RBLColor);
+                        DrawLine(block.ParentAircraft.PTL, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                     }
-                    if (timeshare % 2 == 0)
+                    if (ClockPhase.Phase == 0)
                         DrawLabel(block);
-                    else if (timeshare % 4 == 1)
+                    else if (ClockPhase.Phase == 1)
                         DrawLabel(block.ParentAircraft.DataBlock2);
-                    else
+                    else if (ClockPhase.Phase == 2)
                         DrawLabel(block.ParentAircraft.DataBlock3);
                 }
             }
@@ -4106,15 +4452,22 @@ namespace DGScope
                 return;*/
             lock (Label)
             {
+                bool outline = false;
+                if (Label.ParentAircraft != null && Label == Label.ParentAircraft.PositionIndicator) 
+                {
+                    outline = true;
 
+                }
                 GL.Enable(EnableCap.Texture2D);
                 if (Label.TextureID == 0)
                     Label.TextureID = GL.GenTexture();
                 var text_texture = Label.TextureID;
+                Color color = Label.DrawColor;
+
                 if (Label.Redraw)
                 {
                     Label.Font = Font;
-                    Bitmap text_bmp = Label.TextBitmap();
+                    Bitmap text_bmp = Label.TextBitmap(outline);
                     var realWidth = (float)text_bmp.Width * pixelScale;
                     var realHeight = (float)text_bmp.Height * pixelScale;
                     Label.SizeF = new SizeF(realWidth, realHeight);
@@ -4122,8 +4475,10 @@ namespace DGScope
                     BitmapData data = text_bmp.LockBits(new Rectangle(0, 0, text_bmp.Width, text_bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                     GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
                         OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
                     text_bmp.UnlockBits(data);
                     Label.Redraw = false;
                 
@@ -4133,6 +4488,22 @@ namespace DGScope
                 }
                 if (Label.ParentAircraft != null)
                 {
+                    if (Label.ParentAircraft.Owned && Label == Label.ParentAircraft.PositionIndicator)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.PositionSymbols);
+                    }
+                    else if (Label.ParentAircraft.Owned)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.FullDataBlocks);
+                    }
+                    else if (Label.ParentAircraft.FDB)
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.OtherFDBs);
+                    }
+                    else
+                    {
+                        color = AdjustedColor(Label.DrawColor, CurrentPrefSet.Brightness.LimitedDataBlocks);
+                    }
                     if (Label.ParentAircraft.LocationF.X != 0 || Label.ParentAircraft.LocationF.Y != 0)
                     {
                         if (Label == Label.ParentAircraft.DataBlock)
@@ -4158,14 +4529,31 @@ namespace DGScope
                 }
             
                 GL.BindTexture(TextureTarget.Texture2D, text_texture);
-                GL.Begin(PrimitiveType.Quads);
-                GL.Color4(Label.DrawColor);
             
                 var Location = Label.LocationF;
                 var x = RoundUpToNearest(Location.X, pixelScale);
                 var y = RoundUpToNearest(Location.Y, pixelScale);
                 var width = Label.SizeF.Width;
                 var height = Label.SizeF.Height;
+                var w1 = Label.SizeF.Width + (4 * pixelScale);
+                var h1 = Label.SizeF.Height + (4 * pixelScale);
+                var x1 = x - (2 * pixelScale);
+                var y1 = y - (2 * pixelScale);
+                
+                /*GL.Begin(PrimitiveType.Quads);
+                GL.Color4(Color.Black);
+                GL.TexCoord2(0, 0);
+                GL.Vertex2(x1, h1 + y1);
+                GL.TexCoord2(1, 0);
+                GL.Vertex2(w1 + x1, h1 + y1);
+                GL.TexCoord2(1, 1);
+                GL.Vertex2(w1 + x1, y1);
+                GL.TexCoord2(0, 1);
+                GL.Vertex2(x1, y1);
+                GL.End();*/
+
+                GL.Begin(PrimitiveType.Quads);
+                GL.Color3(color);
                 GL.TexCoord2(0,0);
                 GL.Vertex2(x, height + y);
                 GL.TexCoord2(1, 0); 
@@ -4175,12 +4563,13 @@ namespace DGScope
                 GL.TexCoord2(0, 1); 
                 GL.Vertex2(x, y);
                 GL.End();
+
                 GL.BindTexture(TextureTarget.Texture2D, 0);
                 GL.Disable(EnableCap.Texture2D);
 
             
                 GL.Begin(PrimitiveType.Lines);
-                GL.Color4(Label.ForeColor);
+                GL.Color4(color);
             }
             if (Label.ParentAircraft != null && LeaderLength > 0)
             {
@@ -4236,6 +4625,7 @@ namespace DGScope
 
         public static float RoundUpToNearest(float passednumber, float roundto)
         {
+            return passednumber;
             // 105.5 up to nearest 1 = 106
             // 105.5 up to nearest 10 = 110
             // 105.5 up to nearest 7 = 112

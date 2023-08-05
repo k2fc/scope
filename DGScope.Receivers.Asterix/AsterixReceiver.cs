@@ -15,6 +15,8 @@ namespace DGScope.Receivers.Asterix
         public int Port { get; set; } = 30008;
         public string Address { get; set; } 
         public AsteriskReceiverMode Mode { get; set; }
+        public bool UseGeomAltitude { get; set; } = false;
+        public bool UseBaroAltitude { get; set; } = true;
         UdpClient udpclient;
         EventDrivenTCPClient tcpclient;
         public AsterixReceiver() { }
@@ -142,6 +144,10 @@ namespace DGScope.Receivers.Asterix
             byte category = data[0];
             int p = 3;
             bool[] fspec = readFspec(data, ref p);
+            if (fspec == null)
+            {
+                return;
+            }
             Aircraft plane;
             switch (category)
             {
@@ -161,6 +167,10 @@ namespace DGScope.Receivers.Asterix
                     if (fspec[1]) // I021/040 Target Report Descriptor
                     {
                         var trd = readFspec(data, ref p);
+                        if (trd == null)
+                        {
+                            return;
+                        }
                         onground = trd[8];
                     }
                     if (fspec[2]) // I021/161 Track Number
@@ -265,7 +275,7 @@ namespace DGScope.Receivers.Asterix
                     {
                         double alt = ((data[p] << 8) + data[p + 1]) * 6.25;
                         p += 2;
-                        if (alt <= 150000 && alt >= -150 && !alt_set)
+                        if (alt <= 150000 && alt >= -150 && !alt_set && UseGeomAltitude)
                         {
                             plane.Altitude.TrueAltitude = (int)alt;
                             alt_set = true;
@@ -291,7 +301,7 @@ namespace DGScope.Receivers.Asterix
                     {
                         int alt = ((data[p] << 8) + data[p + 1]) * 25;
                         p += 2;
-                        if (alt <= 150000 && alt >= -1500 && !alt_set)
+                        if (alt <= 150000 && alt >= -1500 && !alt_set && UseBaroAltitude)
                         {
                             plane.Altitude.PressureAltitude = alt;
                             alt_set = true;
@@ -426,24 +436,23 @@ namespace DGScope.Receivers.Asterix
             bool[] fs = new bool[(data.Length - offset) * 8];
             int i = offset;
             int b = 0;
-            if (fs.Length < 7)
+            do
             {
-                do
-                {
-                    fs[b + 0] = (data[i] & 0b10000000) != 0;
-                    fs[b + 1] = (data[i] & 0b01000000) != 0;
-                    fs[b + 2] = (data[i] & 0b00100000) != 0;
-                    fs[b + 3] = (data[i] & 0b00010000) != 0;
-                    fs[b + 4] = (data[i] & 0b00001000) != 0;
-                    fs[b + 5] = (data[i] & 0b00000100) != 0;
-                    fs[b + 6] = (data[i] & 0b00000010) != 0;
-                    i++;
-                    b += 7;
-                } while ((data[i - 1] & 0x1) != 0);
-                for (int j = 8 * (i - offset); j < fs.Length; j++)
-                {
-                    fs[j] = false;
-                }
+                if (fs.Length < b + 6)
+                    return null;
+                fs[b + 0] = (data[i] & 0b10000000) != 0;
+                fs[b + 1] = (data[i] & 0b01000000) != 0;
+                fs[b + 2] = (data[i] & 0b00100000) != 0;
+                fs[b + 3] = (data[i] & 0b00010000) != 0;
+                fs[b + 4] = (data[i] & 0b00001000) != 0;
+                fs[b + 5] = (data[i] & 0b00000100) != 0;
+                fs[b + 6] = (data[i] & 0b00000010) != 0;
+                i++;
+                b += 7;
+            } while ((data[i - 1] & 0x1) != 0);
+            for (int j = 8 * (i - offset); j < fs.Length; j++)
+            {
+                fs[j] = false;
             }
             offset = i;
             return fs;

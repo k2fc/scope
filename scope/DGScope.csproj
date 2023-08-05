@@ -282,7 +282,9 @@
     <Compile Include="AirportsXml.cs" />
     <Compile Include="Altitude.cs" />
     <Compile Include="ATPA.cs" />
+    <Compile Include="ATPATcpDisplay.cs" />
     <Compile Include="ATPAVolume.cs" />
+    <Compile Include="BeaconCodeRange.cs" />
     <Compile Include="FAAMapDATFileParser.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
@@ -290,6 +292,9 @@
     <Compile Include="MinSep.cs" />
     <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
+    <Compile Include="STARS\ClockPhase.cs" />
+    <Compile Include="STARS\PrefSet.cs" />
+    <Compile Include="STARS\TargetExtentSymbols.cs" />
     <Compile Include="TimeSync.cs" />
     <Compile Include="TPARing.cs" />
     <Compile Include="LeaderLine.cs" />

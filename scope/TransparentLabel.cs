@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -75,7 +76,7 @@ namespace DGScope
                 }
                 else
                 {
-                    return Color.FromArgb((int)(base.ForeColor.A * 0.5), base.ForeColor.R, base.ForeColor.G, base.ForeColor.B);
+                    return Color.FromArgb((int)(base.ForeColor.A * 1.0), (int)(base.ForeColor.A * 0.5), (int)(base.ForeColor.A * 0.5), (int)(base.ForeColor.A * 0.5));
                 }
             }
         }
@@ -176,7 +177,7 @@ namespace DGScope
             }
         }
         public bool Redraw { get; set; } = true;
-        public Bitmap TextBitmap()
+        public Bitmap TextBitmap(bool outline)
         {
             SizeF size;
             using (Graphics graphics = CreateGraphics())
@@ -197,7 +198,7 @@ namespace DGScope
                 {
                     graphics.FillRectangle(brush, 0, 0, Width, Height);
                 }
-                using (SolidBrush brush = new SolidBrush(ForeColor))
+                using (SolidBrush brush = new SolidBrush(Color.White))
                 {
 
                     // first figure out the top
@@ -241,7 +242,13 @@ namespace DGScope
                                 left = Width - size.Width;
                             break;
                     }
+                    GraphicsPath p = new GraphicsPath();
+                    var emSize = graphics.DpiY * (Font.SizeInPoints / 72);
+                    p.AddString(text, Font.FontFamily, (int)Font.Style, emSize, new Point(0, 0), new StringFormat());
+                    if (outline)
+                        graphics.DrawPath(Pens.Black, p);
                     graphics.DrawString(Text, Font, brush, left, top);
+                    //graphics.FillPath(brush, p);
                 }
             }
             return _backBuffer;

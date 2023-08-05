@@ -114,6 +114,7 @@ namespace DGScope
         public bool QuickLookPlus { get; set; } = false;
 
         public RadarWindow.LeaderDirection? LDRDirection = null;
+        public RadarWindow.LeaderDirection? OwnerLeaderDirection = null;
         public bool ShowCallsignWithNoSquawk { get; set; } = false;
         public bool FDB { 
             get
@@ -145,7 +146,7 @@ namespace DGScope
         {
             get
             {
-                return Squawk == null && ModeSCode == 0 && ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown));
+                return string.IsNullOrEmpty(Squawk) && ModeSCode == 0 && ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown));
                 return ((Altitude == null || Altitude.AltitudeType == AltitudeType.Unknown) && !Associated);
             }
         }
@@ -296,13 +297,28 @@ namespace DGScope
         }
 
         private int dbAlt, dbSpeed = 0;
+        public RadarWindow.LeaderDirection LastDrawnDirection;
 
         public void RedrawDataBlock(Radar radar, RadarWindow.LeaderDirection? leaderDirection = null)
         {
             if (Callsign == null)
                 Callsign = string.Empty;
-            if (leaderDirection == null)
-                leaderDirection = LDRDirection;
+            if (leaderDirection != null)
+            {
+
+            }
+            else if (LDRDirection != null)
+            {
+                leaderDirection = LDRDirection.Value;
+            }
+            else if (OwnerLeaderDirection != null && Owned)
+            {
+                leaderDirection = OwnerLeaderDirection.Value;
+            }
+            if (leaderDirection != null)
+            {
+                LastDrawnDirection = leaderDirection.Value;
+            }
             string oldtext = DataBlock.Text;
             string oldtext2 = DataBlock2.Text;
             string oldtext3 = DataBlock3.Text;
@@ -435,7 +451,7 @@ namespace DGScope
                     {
                         DataBlock.Text = FlightPlanCallsign.PadLeft(9);
                         DataBlock2.Text = FlightPlanCallsign.PadLeft(9); 
-                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9); 
+                        DataBlock3.Text = FlightPlanCallsign.PadLeft(9);
                     }
                     else
                     {
@@ -682,19 +698,19 @@ namespace DGScope
             */
             FpDeleted?.Invoke(this, new EventArgs());
         }
-        public void RedrawTarget(PointF LocationF, Radar radar)
+        public void RedrawTarget(GeoPoint Location, Radar radar)
         {
-            this.LocationF = LocationF;
-            if (LocationF.X != 0 || LocationF.Y != 0)
-            {
+            TargetReturn.GeoLocation = Location;
+            TargetReturn.LastDrawnRange = 0;
+            //if (LocationF.X != 0 || LocationF.Y != 0)
+            //{
                 //TargetReturn.Angle = Location.BearingTo(LocationReceivedBy.Location);
-                TargetReturn.LocationF = LocationF;
                 PositionIndicator.CenterOnPoint(LocationF);
                 RedrawDataBlock(radar);
                 TargetReturn.Intensity = 1;
                 Drawn = false;
                 LocationUpdated?.Invoke(this, new UpdatePositionEventArgs(this, Location));
-            }
+            //}
         }
 
         public GeoPoint SweptLocation(Radar radar)

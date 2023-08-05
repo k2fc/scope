@@ -11,47 +11,16 @@ using System.Xml.Serialization;
 
 namespace DGScope
 {
+    [TypeConverter(typeof(ExpandableObjectConverter))]
     public class NexradDisplay
     {
+
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
         public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
-        double intensity = 1;
-        [DisplayName("Color Intensity"), Description("Weather Radar Color intensity")]
-        public int ColorIntensity {
-            get
-            {
-                return (int)(255 * intensity);
-            }
-            set
-            {
-                if (value > 255)
-                    intensity = 1;
-                else if (value < 0)
-                    intensity = 0;
-                else
-                    intensity = value / 255d;
-            }
-        }
-        double alphafactor = .12156;
-        [DisplayName("Transparency"), Description("Weather Radar Transparency")]
-        public int Transparency 
-        { 
-            get
-            {
-                return (int)(255 * (1 - alphafactor));
-            }
-            set
-            {
-                if (value > 255)
-                    alphafactor = 0;
-                else if (value < 0)
-                    alphafactor = 1;
-                else
-                    alphafactor = 1 - (value / 255d);
-            }
-        }
+        
+        [Browsable(false)]
         public string Name { get; set; }
-        bool enabled = true;
+        bool enabled = false;
         public bool Enabled { 
             get
             {
@@ -66,9 +35,10 @@ namespace DGScope
                 enabled = value;
             }
         }
+        [Description("URL for NWS Radar Product File")]
         public string URL { get; set; }
+        [Description("Product Download Interval (sec.)")]
         public int DownloadInterval { get; set; } = 300;
-        public int Range { get; set; } = 248;
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
         DescriptionBlock description;
@@ -76,6 +46,8 @@ namespace DGScope
         void GetRadarData(string url)
         {
             if (!Enabled)
+                return;
+            if (string.IsNullOrEmpty(url))
                 return;
             using (var client = new WebClient())
             {
@@ -98,18 +70,13 @@ namespace DGScope
             }
             //decoder.setFileResource("e:\\users\\dennis\\downloads\\KOKX_SDUS51_N0ROKX_202009292354");
 
-            //RecomputeVertices(_center, _scale, _rotation);
-            if (!recomputeVerticesThread.IsAlive)
-            {
-                recomputeVerticesThread.Start();
-            }
-            recompute = true;
+            RecomputeVertices();
+            
         }
-        Thread recomputeVerticesThread;
         public NexradDisplay() 
         {
-            recomputeVerticesThread = new Thread(new ThreadStart(RecomputeVertices));
-            recomputeVerticesThread.IsBackground = true;
+
+            
         }
         System.Threading.Timer timer;
         private void cbTimerElapsed(object state)
@@ -117,15 +84,8 @@ namespace DGScope
             GetRadarData(URL);
         }
         bool recompute = true;
-        public Polygon[] Polygons(GeoPoint center, double scale, double rotation = 0)
+        public Polygon[] Polygons()
         {
-            if (_center != center || _scale != scale || _rotation != rotation)
-            {
-                _center = center;
-                _scale = scale;
-                _rotation = rotation;
-                recompute = true;
-            }
             if (timer == null)
                 timer = new Timer(new TimerCallback(cbTimerElapsed), null,0,DownloadInterval * 1000);
             
@@ -134,72 +94,49 @@ namespace DGScope
             return polygons;
         }
         
-        public void RescalePolygons(float scalechange, float ar_change)
-        {
-            if (polygons == null)
-                return;
-            for (int i = 0; i < polygons.Length; i++)
-            {
-                for (int j = 0; j < polygons[i].vertices.Length; j++)
-                {
-                    polygons[i].vertices[0].X *= scalechange;
-                    polygons[i].vertices[0].Y *= scalechange / ar_change;
-                }
-            }
-        }
-        public void MovePolygons(float xChange, float yChange)
-        {
-            if (polygons == null)
-                return;
-            for (int i = 0; i < polygons.Length; i++)
-            {
-                for (int j = 0; j < polygons[i].vertices.Length; j++)
-                {
-                    polygons[i].vertices[0].X += xChange;
-                    polygons[i].vertices[0].Y -= yChange;
-                }
-            }
-        }
         Polygon[] polygons;
         
         GeoPoint _center = new GeoPoint();
         double _scale;
         double _rotation;
 
+        
+        private static WXColorTable colortable;
         public void RecomputeVertices()
         {
-            while(true) 
-            {
-                if (recompute)
-                {
-                    RecomputeVertices(_center, _scale, _rotation);
-                }
-                else
-                    Thread.Sleep(100);
-            }
-        }
-        public void RecomputeVertices(GeoPoint center, double scale, double rotation = 0)
-        {
             if (ColorTable.Count == 0)
+            {
                 ColorTable = new List<WXColor>()
-                    {
-                        new WXColor(30, Color.FromArgb(0, 255, 0)),
-                        new WXColor(40, Color.FromArgb(255, 255, 0)),
-                        new WXColor(50, Color.FromArgb(255, 0, 0)),
-                        new WXColor(60, Color.FromArgb(255, 0, 255)),
-                        new WXColor(70, Color.FromArgb(255, 255, 255)),
-                        new WXColor(80, Color.FromArgb(128, 128, 128)),
-                    };
-            var colortable = new WXColorTable(ColorTable);
+                {
+                    new WXColor(20, Color.FromArgb(38, 77, 77)),
+                    new WXColor(30, Color.FromArgb(38, 77, 77), Color.White, WXColor.StippleType.LIGHT),
+                    new WXColor(40, Color.FromArgb(38, 77, 77), Color.White, WXColor.StippleType.DENSE),
+                    new WXColor(45, Color.FromArgb(100, 100, 51)),
+                    new WXColor(50, Color.FromArgb(100, 100, 51), Color.White, WXColor.StippleType.LIGHT),
+                    new WXColor(55, Color.FromArgb(100, 100, 51), Color.White, WXColor.StippleType.DENSE)
+                };
+            }
+            if (colortable == null)
+            {
+                colortable = new WXColorTable(ColorTable);
+            }
             if (!gotdata)
                 return;
-            _center = center;
-            _scale = scale;
-            _rotation = rotation;
-            recompute = false;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
-            var scanrange = (double)Range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
+            int range;
+            switch (description.Code)
+            {
+                case 94:
+                    range = 248;
+                    break;
+                case 180:
+                    range = 48;
+                    break;
+                default:
+                    return;
+            }
+            var scanrange = range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
             double resolution = scanrange / symbology.LayerNumberOfRangeBins;
             for (int i = 0; i < symbology.NumberOfRadials; i++)
             {
@@ -216,14 +153,12 @@ namespace DGScope
                         var color = colortable.GetWXColor(symbology.Radials[i].Values[j]);
                         if (color != null)
                         {
-                            polygon.Color = Color.FromArgb((int)(color.MinColor.A * alphafactor), (int)(color.MinColor.R * intensity), (int)(color.MinColor.G * intensity),
-                                (int)(color.MinColor.B * intensity));
+                            polygon.Color = color.MinColor;
                             if (color.StippleColor != null)
-                                polygon.StippleColor = Color.FromArgb((int)(color.StippleColor.A * alphafactor), (int)(color.StippleColor.R * intensity),
-                                    (int)(color.StippleColor.G * intensity), (int)(color.StippleColor.B * intensity));
+                                polygon.StippleColor = color.StippleColor;
                             if (color.StipplePattern != null)
                                 polygon.StipplePattern = color.StipplePattern;
-                            polygon.ComputeVertices(center, scale, rotation);
+                            polygon.ComputeVertices();
                             polygons.Add(polygon);
                         }
                     }
@@ -249,7 +184,7 @@ namespace DGScope
         public Color StippleColor { get; set; }
         public byte[] StipplePattern { get; set; }
 
-        public void ComputeVertices(GeoPoint center, double scale, double ScreenRotation = 0)
+        public void ComputeVertices()
         {
             GeoPoint[] points;
             lock (Points)
@@ -259,10 +194,8 @@ namespace DGScope
             vertices = new PointF[points.Length];
             for (int i = 0; i < points.Length; i++)
             {
-                double bearing = center.BearingTo(points[i]) - ScreenRotation;
-                double distance = center.DistanceTo(points[i]);
-                vertices[i].X = (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
-                vertices[i].Y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].X = (float)points[i].Longitude; // (float)(Math.Sin(bearing * (Math.PI / 180)) * (distance / scale));
+                vertices[i].Y = (float)points[i].Latitude; // (Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             }
         }
     }

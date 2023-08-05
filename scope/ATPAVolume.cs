@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,26 +10,28 @@ namespace DGScope
 {
     public class ATPAVolume
     {
-        [Description("Volume ID"), Category("Identity")]
+        [DisplayName("Volume ID"), Category("Identity")]
         public string VolumeId { get; set; }
         public bool Active { get; set; }
-        [Description("Volume Name"), Category("Identity")]
+        [Description("Draw the volume on the scope, for testing purposes.")]
+        public bool Draw { get; set; }
+        [DisplayName("Volume Name"), Category("Identity")]
         public string Name { get; set; }
-        [Description("Runway Threshold Location"), Category("Geometry")]
+        [DisplayName("Runway Threshold Location"), Category("Geometry")]
         public GeoPoint RunwayThreshold { get; set; } = new GeoPoint();
-        [Description("Runway True Heading"), Category("Geometry")] 
+        [DisplayName("Runway True Heading"), Category("Geometry")] 
         public int TrueHeading { get; set; }
-        [Description("Maximum Heading Deviation"), Category("Geometry")] 
+        [DisplayName("Maximum Heading Deviation (deg)"), Category("Geometry")] 
         public int MaxHeadingDeviation { get; set; }
-        [Category("Geometry")] 
+        [DisplayName("Ceiling (ft)"), Category("Geometry")] 
         public int Ceiling { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Floor (ft)"), Category("Geometry")]
         public int Floor { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Length (NM)"), Category("Geometry")]
         public double Length { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Width Left (ft)"), Category("Geometry")]
         public int WidthLeft { get; set; }
-        [Category("Geometry")]
+        [DisplayName("Width Right (ft)"), Category("Geometry")]
         public int WidthRight { get; set; }
         [DisplayName("Enabled"), Category("2.5nm Approach")]
         public bool TwoPointFiveEnabled { get; set; }
@@ -43,6 +46,13 @@ namespace DGScope
         public double TwoPointFiveDistance { get; set; }
         [DisplayName("Scratchpad"), Category("Filters")]
         public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
+        [DisplayName("TCP Display"), Category("Filters")]
+        public List<ATPATCPDisplay> TcpDisplay { get; set; } = new List<ATPATCPDisplay>();
+        [DisplayName("TCP Exclusions"), Category("Filters")]
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, " +
+        "System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        typeof(UITypeEditor))]
+        public List<string> TcpExclusion { get; set; } = new List<string>();
 
 
         private List<Aircraft> order;
@@ -53,15 +63,21 @@ namespace DGScope
         private int minBearing => (TrueHeading + 270) % 360;
         private int maxBearing => (TrueHeading + 450) % 360;
         
-        public bool IsInside (Aircraft aircraft, Radar radar)
+        public bool IsInside (Aircraft aircraft, Radar radar, ATPA atpa)
         {
             if (aircraft == null)
+                return false;
+            if (TcpExclusion.Contains(aircraft.PositionInd))
+                return false;
+            if (atpa.ExcludedACIDs.Any(x => aircraft.FlightPlanCallsign != null && x.Trim() == aircraft.FlightPlanCallsign.Trim()))
+                return false;
+            if (atpa.ExcludedSSRCodes.Any(x => aircraft.Squawk != null && x.IsInRange(aircraft.Squawk)))
                 return false;
             if (aircraft.TrueAltitude > Ceiling || aircraft.TrueAltitude < Floor)
                 return false;
             if (Destination != null && Destination != aircraft.Destination)
                 return false;
-            if (LeaderFilters.Count > 0 && (!aircraft.LDRDirection.HasValue || !LeaderFilters.Contains(aircraft.LDRDirection.Value)))
+            if (LeaderFilters.Count > 0 && (!aircraft.OwnerLeaderDirection.HasValue || !LeaderFilters.Contains(aircraft.OwnerLeaderDirection.Value)))
                 return false;
             var acloc = aircraft.SweptLocation(radar);
             if (acloc == null)
@@ -100,7 +116,7 @@ namespace DGScope
             }
         }
 
-        public void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
+        public static void ResetAircraftATPAValues(Aircraft aircraft, bool resetAcATPARef = true)
         {
             if (resetAcATPARef)
                 aircraft.ATPAVolume = null;
@@ -113,7 +129,7 @@ namespace DGScope
             aircraft.ATPACone = null;
         }
 
-        public void CalculateATPA(List<Aircraft> aircraft, SeparationTable separationtable, Radar radar)
+        public void CalculateATPA(List<Aircraft> aircraft, ATPA atpa, Radar radar)
         {
             lock (orderlock) 
             {
@@ -122,7 +138,7 @@ namespace DGScope
                     aircraft.Where(x => x.ATPAVolume == this).ToList().ForEach(x => ResetAircraftATPAValues(x));
                     return;
                 }
-                order = (aircraft.ToList().Where(x => IsInside(x, radar)).OrderBy(x => x.SweptLocation(radar).DistanceTo(RunwayThreshold))).ToList();
+                order = (aircraft.ToList().Where(x => IsInside(x, radar, atpa)).OrderBy(x => x.SweptLocation(radar).DistanceTo(RunwayThreshold))).ToList();
                 aircraft.ToList().Where(x => x.ATPAVolume == this && !order.Contains(x)).ToList().ForEach(x =>
                 {
                     ResetAircraftATPAValues(x);
@@ -147,7 +163,7 @@ namespace DGScope
                             double minsep = 3;
                             if (TwoPointFiveEnabled && TwoPointFiveActive && follower.SweptLocation(radar).DistanceTo(RunwayThreshold) <= TwoPointFiveDistance)
                                 minsep = 2.5;
-                            if (follower.Category != null && separationtable.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
+                            if (follower.Category != null && atpa.RequiredSeparation.TryGetValue(follower.Category, out SerializableDictionary<string, double> leaderTable))
                             {
                                 if (leader.Category != null && leaderTable != null && leaderTable.TryGetValue(leader.Category, out double miles))
                                     follower.ATPARequiredMileage = miles;
@@ -166,6 +182,10 @@ namespace DGScope
                             else
                                 follower.ATPAStatus = ATPAStatus.Monitor;
                             follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
+                        }
+                        else
+                        {
+                            follower.ATPAStatus = ATPAStatus.Monitor;
                         }
                     }
                 }
