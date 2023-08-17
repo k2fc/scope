@@ -3697,9 +3697,9 @@ namespace DGScope
                 if (oldcolor != aircraft.DataBlock.ForeColor)
                     aircraft.DataBlock.Redraw = true;
                 aircraft.RedrawDataBlock(radar);
-                Bitmap text_bmp = aircraft.DataBlock.TextBitmap(false);
-                var realWidth = text_bmp.Width * pixelScale;
-                var realHeight = text_bmp.Height * pixelScale;
+                var realWidth = aircraft.DataBlock.Width * pixelScale;
+                var realHeight = aircraft.DataBlock.Height * pixelScale;
+                
                 aircraft.DataBlock.SizeF = new SizeF(realWidth, realHeight);
                 aircraft.DataBlock.ParentAircraft = aircraft;
                 aircraft.DataBlock2.ParentAircraft = aircraft;
@@ -3796,9 +3796,8 @@ namespace DGScope
                         dataBlocks.Remove(aircraft.DataBlock);
 
 
-                Bitmap text_bmp = aircraft.PositionIndicator.TextBitmap(true);
-                var realWidth = text_bmp.Width * pixelScale;
-                var realHeight = text_bmp.Height * pixelScale;
+                var realWidth = aircraft.PositionIndicator.Width * pixelScale;
+                var realHeight = aircraft.PositionIndicator.Height * pixelScale;
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
                 var posindlocation = GeoToScreenPoint(TargetExtentSymbols.PositionSymbolLocation(aircraft, radar));
                 aircraft.PositionIndicator.CenterOnPoint(posindlocation);

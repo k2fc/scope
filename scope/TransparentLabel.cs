@@ -183,21 +183,12 @@ namespace DGScope
             using (Graphics graphics = CreateGraphics())
             {
                 size = graphics.MeasureString(Text, Font);
-                if (AutoSize)
-                {
-                    Width = (int)size.Width;
-                    Height = (int)size.Height;
-                }
+                Width = (int)size.Width;
+                Height = (int)size.Height;
             }
             Bitmap _backBuffer = new Bitmap(Width + 1, Height + 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             using (Graphics graphics = Graphics.FromImage(_backBuffer))
             {
-                
-                
-                using(SolidBrush brush = new SolidBrush(Color.Transparent))
-                {
-                    graphics.FillRectangle(brush, 0, 0, Width, Height);
-                }
                 using (SolidBrush brush = new SolidBrush(Color.White))
                 {
 
@@ -242,13 +233,14 @@ namespace DGScope
                                 left = Width - size.Width;
                             break;
                     }
-                    GraphicsPath p = new GraphicsPath();
-                    var emSize = graphics.DpiY * (Font.SizeInPoints / 72);
-                    p.AddString(text, Font.FontFamily, (int)Font.Style, emSize, new Point(0, 0), new StringFormat());
                     if (outline)
+                    {
+                        GraphicsPath p = new GraphicsPath();
+                        var emSize = graphics.DpiY * (Font.SizeInPoints / 72);
+                        p.AddString(text, Font.FontFamily, (int)Font.Style, emSize, new Point(0, 0), new StringFormat());
                         graphics.DrawPath(Pens.Black, p);
+                    }
                     graphics.DrawString(Text, Font, brush, left, top);
-                    //graphics.FillPath(brush, p);
                 }
             }
             return _backBuffer;
