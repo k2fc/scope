@@ -545,12 +545,6 @@ namespace DGScope
                 DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
             }
 
-            if (!DataBlock.Redraw)
-                DataBlock.Redraw = DataBlock2.Text != oldtext;
-            if (!DataBlock2.Redraw)
-                DataBlock2.Redraw = DataBlock.Text != oldtext2;
-            if (!DataBlock3.Redraw)
-                DataBlock3.Redraw = DataBlock.Text != oldtext3;
             if (!string.IsNullOrEmpty(PositionInd))
                 PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
             else if (isSquawkSelected())
@@ -665,10 +659,6 @@ namespace DGScope
                 DataBlock2.Text += "ID";
                 DataBlock.Text += "ID";
             }
-            if (!DataBlock2.Redraw)
-                DataBlock2.Redraw = DataBlock2.Text != oldtext2;
-            if (!DataBlock.Redraw)
-                DataBlock.Redraw = DataBlock.Text != oldtext;
             if (PositionInd != null)
                 PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
             else

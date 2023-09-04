@@ -2522,7 +2522,6 @@ namespace DGScope
                 PreviewArea.Text = previewmessage;
             else
                 PreviewArea.Text = GeneratePreviewString(Preview);
-            PreviewArea.Redraw = oldtext != PreviewArea.Text;
             PreviewArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.FullDataBlocks);
             DrawLabel(PreviewArea);
         }
@@ -2632,8 +2631,6 @@ namespace DGScope
                 }
                 StatusArea.Text += "\r\n";
             }
-            if (oldtext != StatusArea.Text)
-                StatusArea.Redraw = true;
             DrawLabel(StatusArea);
         }
 
@@ -2965,7 +2962,6 @@ namespace DGScope
                     case Key.Escape:
                         Preview.Clear();
                         previewmessage = null;
-                        PreviewArea.Redraw = true;
                         if (tempLine != null)
                         {
                             lock (rangeBearingLines)
@@ -3015,14 +3011,6 @@ namespace DGScope
             
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
-            lock (dataBlocks)
-            {
-                dataBlocks.ForEach(x => x.Redraw = true);
-                dataBlocks.ForEach(x => x.ParentAircraft.DataBlock2.Redraw = true);
-                dataBlocks.ForEach(x => x.ParentAircraft.DataBlock3.Redraw = true);
-            }
-            lock (posIndicators)
-                posIndicators.ForEach(x => x.Redraw = true);
         }
 
         private void Window_UpdateFrame(object sender, FrameEventArgs e)
@@ -3694,8 +3682,6 @@ namespace DGScope
                 }
                 aircraft.PositionIndicator.ForeColor = aircraft.DataBlock.ForeColor;
                 aircraft.DataBlock3.ForeColor = aircraft.DataBlock.ForeColor;
-                if (oldcolor != aircraft.DataBlock.ForeColor)
-                    aircraft.DataBlock.Redraw = true;
                 aircraft.RedrawDataBlock(radar);
                 var realWidth = aircraft.DataBlock.Width * pixelScale;
                 var realHeight = aircraft.DataBlock.Height * pixelScale;
@@ -4466,7 +4452,7 @@ namespace DGScope
                 if (Label.Redraw)
                 {
                     Label.Font = Font;
-                    Bitmap text_bmp = Label.TextBitmap(outline);
+                    Bitmap text_bmp = Label.NewTextBitmap(outline);
                     var realWidth = (float)text_bmp.Width * pixelScale;
                     var realHeight = (float)text_bmp.Height * pixelScale;
                     Label.SizeF = new SizeF(realWidth, realHeight);
@@ -4476,12 +4462,10 @@ namespace DGScope
                         OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+                    //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+                    //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
                     text_bmp.UnlockBits(data);
                     Label.Redraw = false;
-                
-                    
 
                     //text_bmp.Save($"{text_texture}.bmp");
                 }

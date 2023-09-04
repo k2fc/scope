@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Threading;
@@ -9,7 +10,7 @@ namespace DGScope
     /// <summary>
     /// A label that can be transparent.
     /// </summary>
-    public class TransparentLabel : Control, IScreenObject
+    public class TransparentLabel : Control
     {
 
         private static System.Timers.Timer _flashtimer;
@@ -36,7 +37,6 @@ namespace DGScope
                 return _flashtimer;
             }
         }
-        bool flashing = false;
         public bool Flashing { get; set; }
         private static void FlashTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
@@ -61,13 +61,13 @@ namespace DGScope
             {
                 if (base.ForeColor == value)
                     return;
-                Redraw = true;
                 base.ForeColor = value;
+                Redraw = true;
             }
         }
-
+        
         public Color DrawColor
-        {
+        { 
             get
             {
                 if (!Flashing || FlashOn)
@@ -77,8 +77,8 @@ namespace DGScope
                 else
                 {
                     return Color.FromArgb((int)(base.ForeColor.A * 1.0), (int)(base.ForeColor.A * 0.5), (int)(base.ForeColor.A * 0.5), (int)(base.ForeColor.A * 0.5));
-                }
             }
+        }
         }
         public bool InBoundsF => LocationF.X > -1 && LocationF.X < 1 && LocationF.Y > -1 && LocationF.Y < 1;
         /// <summary>
@@ -92,12 +92,12 @@ namespace DGScope
   ControlStyles.UserPaint |
   ControlStyles.DoubleBuffer, false);
         }
-
+        
         /// <summary>
         /// Gets the creation parameters.
         /// </summary>
         protected override CreateParams CreateParams
-        {
+        { 
             get
             {
                 CreateParams cp = base.CreateParams;
@@ -111,23 +111,11 @@ namespace DGScope
         /// </summary>
         /// <param name="e">E.</param>
         protected override void OnPaintBackground(PaintEventArgs e)
-        {
+                {
             // do nothing
-        }
+                }
 
-        /// <summary>
-        /// Paints the control.
-        /// </summary>
-        /// <param name="e">E.</param>
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            DrawText();
-        }
-
-        protected override void OnLocationChanged(EventArgs e)
-        {
-            DrawText();
-        }
+        
 
         protected override void OnTextChanged(EventArgs e)
         {
@@ -135,35 +123,10 @@ namespace DGScope
             Redraw = true;
         }
 
-        protected override void WndProc(ref Message m)
-        {
-            base.WndProc(ref m);
-            if (m.Msg == 0x000F)
-            {
-                DrawText();
-            }
-        }
-
-        protected override void OnHandleCreated(EventArgs e)
-        {
-            base.OnHandleCreated(e);
-            DrawText();
-        }
 
 
         private Bitmap _backBuffer;
-        public void DrawText()
-        {
-
-            //using (Graphics g = CreateGraphics())
-            //{
-
-                //_backBuffer = TextBitmap();
-
-                //g.DrawImageUnscaled(_backBuffer, 0, 0);
-            //}
-        }
-
+        
         public int TextureID { get; set; }
         public PointF LocationF { get; set; }
         public PointF NewLocation { get; set; }
@@ -175,6 +138,52 @@ namespace DGScope
             {
                 return new RectangleF(LocationF.X, LocationF.Y, SizeF.Width, SizeF.Height);
             }
+        }
+        public Bitmap NewTextBitmap(bool outline = false)
+        {
+            PointF point = new PointF(this.Padding.Left, this.Padding.Top);
+            SizeF size = new SizeF();
+
+            if (this.Text is null || this.Text.Length == 0)
+            {
+                _backBuffer = new Bitmap(1, 1);
+                return _backBuffer;
+            }
+            StringFormat sf = new StringFormat();
+            Bitmap nb;
+            using (Graphics graphics = CreateGraphics())
+            {
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                size = graphics.MeasureString(this.Text, this.Font, new PointF(), sf);
+                this.Size = new Size((int)(size.Width + this.Padding.Left + this.Padding.Right + 1), (int)(size.Height + this.Padding.Top + this.Padding.Bottom + 1));
+                var innerSize = new SizeF()
+                {
+                    Width = this.Size.Width - (this.Padding.Left + this.Padding.Right),
+                    Height = this.Size.Height - (this.Padding.Top + this.Padding.Bottom)
+                };
+                nb = new Bitmap((int)(innerSize.Width), (int)(innerSize.Height));
+            }
+            using (Graphics graphics = Graphics.FromImage(nb)) {
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.CompositingQuality = CompositingQuality.HighSpeed;
+                float fontSize = graphics.DpiY * this.Font.SizeInPoints / 72;
+                
+                using (GraphicsPath path = new GraphicsPath())
+                {
+                    if (outline)
+                    {
+                        path.AddString(this.Text, this.Font.FontFamily, (int)this.Font.Style, fontSize, point, sf);
+                        using(Pen pen = new Pen(Color.Black, 1.75f))
+                            graphics.DrawPath(pen, path);
+                    }
+                    using (SolidBrush brush = new SolidBrush(Color.White))
+                        graphics.DrawString(Text, this.Font, brush, point);
+                    
+                }
+            }
+            _backBuffer = nb;
+            return _backBuffer;
         }
         public bool Redraw { get; set; } = true;
         public Bitmap TextBitmap(bool outline)
@@ -325,7 +334,7 @@ namespace DGScope
             {
                 if (value != textAlign)
                     Redraw = true;
-                textAlign = value;
+                    textAlign = value;
                 //dg RecreateHandle();
             }
         }
