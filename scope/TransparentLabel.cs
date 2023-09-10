@@ -141,6 +141,10 @@ namespace DGScope
         }
         public Bitmap NewTextBitmap(bool outline = false)
         {
+            if (!Redraw)
+            {
+                return _backBuffer;
+            }
             PointF point = new PointF(this.Padding.Left, this.Padding.Top);
             SizeF size = new SizeF();
 
@@ -165,29 +169,39 @@ namespace DGScope
                 nb = new Bitmap((int)(innerSize.Width), (int)(innerSize.Height));
             }
             using (Graphics graphics = Graphics.FromImage(nb)) {
-                graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                graphics.CompositingQuality = CompositingQuality.HighSpeed;
-                float fontSize = graphics.DpiY * this.Font.SizeInPoints / 72;
                 
                 using (GraphicsPath path = new GraphicsPath())
                 {
                     if (outline)
                     {
+                        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        graphics.CompositingQuality = CompositingQuality.HighQuality;
+                        float fontSize = graphics.DpiY * this.Font.SizeInPoints / 72;
                         path.AddString(this.Text, this.Font.FontFamily, (int)this.Font.Style, fontSize, point, sf);
-                        using(Pen pen = new Pen(Color.Black, 1.75f))
+                        using (Pen pen = new Pen(Color.Black, 3.0f))
                             graphics.DrawPath(pen, path);
+                        using (SolidBrush brush = new SolidBrush(Color.White))
+                            graphics.FillPath(brush, path);
                     }
-                    using (SolidBrush brush = new SolidBrush(Color.White))
-                        graphics.DrawString(Text, this.Font, brush, point);
-                    
+                    else
+                    {
+                        using (SolidBrush brush = new SolidBrush(Color.White))
+                            graphics.DrawString(Text, this.Font, brush, point);
+                    }
                 }
             }
             _backBuffer = nb;
+            Redraw = false;
             return _backBuffer;
         }
-        public bool Redraw { get; set; } = true;
+        public bool Redraw { get; private set; } = true;
+
         public Bitmap TextBitmap(bool outline)
         {
+            if (!Redraw)
+            {
+                return _backBuffer;
+            }
             SizeF size;
             using (Graphics graphics = CreateGraphics())
             {
@@ -195,7 +209,7 @@ namespace DGScope
                 Width = (int)size.Width;
                 Height = (int)size.Height;
             }
-            Bitmap _backBuffer = new Bitmap(Width + 1, Height + 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            _backBuffer = new Bitmap(Width + 1, Height + 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             using (Graphics graphics = Graphics.FromImage(_backBuffer))
             {
                 using (SolidBrush brush = new SolidBrush(Color.White))
@@ -252,6 +266,7 @@ namespace DGScope
                     graphics.DrawString(Text, Font, brush, left, top);
                 }
             }
+            Redraw = false;
             return _backBuffer;
         }
         /// <summary>

@@ -4465,7 +4465,6 @@ namespace DGScope
                     //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
                     //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
                     text_bmp.UnlockBits(data);
-                    Label.Redraw = false;
 
                     //text_bmp.Save($"{text_texture}.bmp");
                 }
