@@ -4438,6 +4438,8 @@ namespace DGScope
             lock (Label)
             {
                 bool outline = false;
+                if (string.IsNullOrEmpty(Label.Text))
+                    return;
                 if (Label.ParentAircraft != null && Label == Label.ParentAircraft.PositionIndicator) 
                 {
                     outline = true;
@@ -4462,8 +4464,8 @@ namespace DGScope
                         OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                    //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                    //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
                     text_bmp.UnlockBits(data);
 
                     //text_bmp.Save($"{text_texture}.bmp");

@@ -178,10 +178,12 @@ namespace DGScope
                         graphics.CompositingQuality = CompositingQuality.HighQuality;
                         float fontSize = graphics.DpiY * this.Font.SizeInPoints / 72;
                         path.AddString(this.Text, this.Font.FontFamily, (int)this.Font.Style, fontSize, point, sf);
-                        using (Pen pen = new Pen(Color.Black, 3.0f))
+                        using (Pen pen = new Pen(Color.Black, 3.5f))
                             graphics.DrawPath(pen, path);
                         using (SolidBrush brush = new SolidBrush(Color.White))
                             graphics.FillPath(brush, path);
+                            //graphics.DrawString(Text, this.Font, brush, point);
+
                     }
                     else
                     {
