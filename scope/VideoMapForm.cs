@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Drawing.Design;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
+using DGScope.MapImporter.VRC;
+using DGScope.MapImporter.CRC;
 
 namespace DGScope
 {
@@ -291,6 +288,28 @@ namespace DGScope
                     var newmaps = GeoJSONMapExporter.GeoJSONFileToMaps(filePath);
                     maps.AddRange(newmaps);
                 }
+            }
+            changed = true;
+            ResetGrid();
+        }
+
+        private void fromCRCToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "CRC ARTCC Files (*.json)|*.json";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    //Get the path of specified file
+                    var filePath = openFileDialog.FileName;
+
+                    //Read the contents of the file into a stream
+                    var newmaps = CRCMapImporter.CRCARTCCFileToMaps(filePath);
+                    maps.AddRange(newmaps);
+                }
+
             }
             changed = true;
             ResetGrid();

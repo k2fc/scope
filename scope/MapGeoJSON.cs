@@ -92,38 +92,52 @@ namespace DGScope
             {
                 case GeoJsonType.FeatureCollection:
                     var featureCollection = data as FeatureCollection;
-                    switch (featureCollection.Features.First().Geometry.Type)
+                    if (featureCollection.Features.Any(x => x.Geometry.Type == GeoJsonType.LineString))
                     {
-                        case GeoJsonType.LineString:
-                            VideoMap map = new VideoMap();
-                            foreach (var feature in featureCollection.Features)
+                        VideoMap map = new VideoMap();
+                        var fcl = featureCollection.Features.ToList();
+                        foreach (var feature in featureCollection.Features.Where(x => x.Geometry != null && x.Geometry.Type == GeoJsonType.LineString))
+                        {
+                            var geometry = feature.Geometry as LineString;
+                            var lines = LineStringToLines(geometry);
+                            if (lines != null)
                             {
-                                var geometry = feature.Geometry as LineString;
-                                map.Lines.AddRange(LineStringToLines(geometry));
+                                map.Lines.AddRange(lines);
                             }
-                            map.Name = "Imported map - " + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString();
+                        }
+                        map.Name = "Imported map - " + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString();
+                        if (map.Lines.Count > 0)
+                        {
                             maps.Add(map);
-                            break;
-                        case GeoJsonType.GeometryCollection:
-                            foreach (var feature in featureCollection.Features)
+                        }
+                    }
+                    else if (featureCollection.Features.Any(x => x.Geometry != null && x.Geometry.Type == GeoJsonType.GeometryCollection))
+                    {
+                        foreach (var feature in featureCollection.Features)
+                        {
+                            VideoMap newmap = new VideoMap();
+                            var geometryCollection = feature.Geometry as GeometryCollection;
+                            if (feature.Properties.ContainsKey("name"))
+                                newmap.Name = feature.Properties["name"];
+                            if (feature.Properties.ContainsKey("number"))
+                                newmap.Number = (int)feature.Properties["number"];
+                            if (feature.Properties.ContainsKey("category"))
+                                newmap.Category = (MapCategory)(int)feature.Properties["category"];
+                            foreach (var geometry in geometryCollection.Geometries)
                             {
-                                VideoMap newmap = new VideoMap();
-                                var geometryCollection = feature.Geometry as GeometryCollection;
-                                if (feature.Properties.ContainsKey("name"))
-                                    newmap.Name = feature.Properties["name"];
-                                if (feature.Properties.ContainsKey("number"))
-                                    newmap.Number = (int)feature.Properties["number"];
-                                if (feature.Properties.ContainsKey("category"))
-                                    newmap.Category = (MapCategory)(int)feature.Properties["category"];
-                                foreach (var geometry in geometryCollection.Geometries)
+                                if (geometry.Type != GeoJsonType.LineString)
+                                    continue;
+                                var lines = LineStringToLines(geometry as LineString);
+                                if (lines != null)
                                 {
-                                    if (geometry.Type != GeoJsonType.LineString)
-                                        continue;
-                                    newmap.Lines.AddRange(LineStringToLines(geometry as LineString));
+                                    newmap.Lines.AddRange(lines);
                                 }
+                            }
+                            if (newmap.Lines.Count > 0)
+                            {
                                 maps.Add(newmap);
                             }
-                            break;
+                        }
                     }
                     break;
             }
@@ -132,6 +146,7 @@ namespace DGScope
 
         private static List<Line> LineStringToLines(LineString lineString)
         {
+            if (lineString == null) return null;
             var points = lineString.Coordinates.ToArray();
             var lines = new List<Line>();
             for (int i = 1; i < points.Length; i++)

@@ -1,7 +1,9 @@
 ﻿
+using System.Windows.Forms;
+
 namespace DGScope
 {
-    partial class VideoMapForm
+    partial class VideoMapForm : Form
     {
         /// <summary>
         /// Required designer variable.
@@ -43,6 +45,7 @@ namespace DGScope
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toGeoJSONToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
+            this.fromCRCToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -54,7 +57,7 @@ namespace DGScope
             this.dataGridView1.Location = new System.Drawing.Point(0, 24);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowTemplate.Height = 25;
-            this.dataGridView1.Size = new System.Drawing.Size(480, 426);
+            this.dataGridView1.Size = new System.Drawing.Size(411, 366);
             this.dataGridView1.TabIndex = 0;
             // 
             // menuStrip1
@@ -63,7 +66,8 @@ namespace DGScope
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(800, 24);
+            this.menuStrip1.Padding = new System.Windows.Forms.Padding(5, 2, 0, 2);
+            this.menuStrip1.Size = new System.Drawing.Size(686, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -113,7 +117,8 @@ namespace DGScope
             this.importToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fromVRCToolStripMenuItem,
             this.fromFAAdatFileToolStripMenuItem,
-            this.fromGeoJSONToolStripMenuItem});
+            this.fromGeoJSONToolStripMenuItem,
+            this.fromCRCToolStripMenuItem});
             this.importToolStripMenuItem.Name = "importToolStripMenuItem";
             this.importToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.importToolStripMenuItem.Text = "&Import";
@@ -157,16 +162,23 @@ namespace DGScope
             // propertyGrid1
             // 
             this.propertyGrid1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGrid1.Location = new System.Drawing.Point(480, 24);
+            this.propertyGrid1.Location = new System.Drawing.Point(411, 24);
             this.propertyGrid1.Name = "propertyGrid1";
-            this.propertyGrid1.Size = new System.Drawing.Size(320, 426);
+            this.propertyGrid1.Size = new System.Drawing.Size(275, 366);
             this.propertyGrid1.TabIndex = 2;
+            // 
+            // fromCRCToolStripMenuItem
+            // 
+            this.fromCRCToolStripMenuItem.Name = "fromCRCToolStripMenuItem";
+            this.fromCRCToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.fromCRCToolStripMenuItem.Text = "From &CRC";
+            this.fromCRCToolStripMenuItem.Click += new System.EventHandler(this.fromCRCToolStripMenuItem_Click);
             // 
             // VideoMapForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(686, 390);
             this.Controls.Add(this.propertyGrid1);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.menuStrip1);
@@ -199,5 +211,6 @@ namespace DGScope
         private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toGeoJSONToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromGeoJSONToolStripMenuItem;
+        private ToolStripMenuItem fromCRCToolStripMenuItem;
     }
 }

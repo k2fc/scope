@@ -230,10 +230,18 @@
     <Compile Include="ATPATcpDisplay.cs" />
     <Compile Include="ATPAVolume.cs" />
     <Compile Include="BeaconCodeRange.cs" />
+    <Compile Include="MapImporter\CRC\CRCARTCC.cs" />
     <Compile Include="FAAMapDATFileParser.cs" />
     <Compile Include="GeoPoint.cs" />
     <Compile Include="InputBox.cs" />
     <Compile Include="MapGeoJSON.cs" />
+    <Compile Include="MapImporter\CRC\CRCFacilityPicker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MapImporter\CRC\CRCFacilityPicker.Designer.cs">
+      <DependentUpon>CRCFacilityPicker.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MapImporter\CRC\CRCMapImporter.cs" />
     <Compile Include="MinSep.cs" />
     <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
@@ -268,10 +276,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="VideoMap.cs" />
-    <Compile Include="VideoMapForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="VideoMapForm.Designer.cs" />
     <Compile Include="VideoMapList.cs" />
     <Compile Include="ATPAVolumeSelector.cs">
       <SubType>Form</SubType>
@@ -279,16 +283,25 @@
     <Compile Include="ATPAVolumeSelector.Designer.cs">
       <DependentUpon>ATPAVolumeSelector.cs</DependentUpon>
     </Compile>
+    <Compile Include="VideoMapForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="VideoMapForm.Designer.cs">
+      <DependentUpon>VideoMapForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="VideoMapSelector.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="VideoMapSelector.Designer.cs">
       <DependentUpon>VideoMapSelector.cs</DependentUpon>
     </Compile>
-    <Compile Include="VRCFileParser.cs" />
+    <Compile Include="MapImporter\VRC\VRCFileParser.cs" />
     <Compile Include="Waypoints.cs" />
     <Compile Include="WeatherService.cs" />
     <Compile Include="XmlSerializer.cs" />
+    <EmbeddedResource Include="MapImporter\CRC\CRCFacilityPicker.resx">
+      <DependentUpon>CRCFacilityPicker.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -304,6 +317,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ATPAVolumeSelector.resx">
       <DependentUpon>ATPAVolumeSelector.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="VideoMapForm.resx">
+      <DependentUpon>VideoMapForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="VideoMapSelector.resx">
       <DependentUpon>VideoMapSelector.cs</DependentUpon>
