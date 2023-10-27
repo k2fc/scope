@@ -242,6 +242,7 @@
       <DependentUpon>CRCFacilityPicker.cs</DependentUpon>
     </Compile>
     <Compile Include="MapImporter\CRC\CRCMapImporter.cs" />
+    <Compile Include="Metars.cs" />
     <Compile Include="MinSep.cs" />
     <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
