@@ -2905,12 +2905,6 @@ namespace DGScope
                         selector.BringToFront();
                         selector.Focus();
                         break;
-                    case Key.T:
-                        if (!showAllCallsigns)
-                        {
-                            showAllCallsigns = true;
-                        }
-                        break;
                     case Key.F9:
                         Preview.Clear();
                         Preview.Add(KeyCode.RngRing);
@@ -2980,6 +2974,12 @@ namespace DGScope
                         if (Preview.Count > 0)
                             Preview.RemoveAt(Preview.Count - 1);
                         break;
+                    case Key.F1:
+                        if (!showAllCallsigns)
+                        {
+                            showAllCallsigns = true;
+                        }
+                        break;
                     default:
                         if (((int)e.Key > 9 && (int)e.Key < 22) || e.Key == Key.End)
                             Preview.Clear();
@@ -2997,7 +2997,7 @@ namespace DGScope
         {
             switch (e.Key)
             {
-                case Key.T:
+                case Key.F1:
                     if (showAllCallsigns)
                     {
                         showAllCallsigns = false;
