@@ -1,5 +1,4 @@
-﻿using libmetar;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -62,10 +61,6 @@ namespace DGScope.Library
         public Track(Guid guid)
         {
             Guid = guid;
-            Created?.Invoke(this, new TrackUpdatedEventArgs(GetCompleteUpdate()));
-        }
-        public Track(Pressure altimeter)
-        {
             Created?.Invoke(this, new TrackUpdatedEventArgs(GetCompleteUpdate()));
         }
         public bool SetGroundTrack (double Track, DateTime SetTime)

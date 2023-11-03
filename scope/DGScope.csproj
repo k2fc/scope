@@ -40,9 +40,6 @@
     <Reference Include="GeoJSON, Version=2.3.1.0, Culture=neutral, PublicKeyToken=67a0afa7ce9a900b, processorArchitecture=MSIL">
       <HintPath>..\packages\GeoJSON.2.3.1\lib\net45\GeoJSON.dll</HintPath>
     </Reference>
-    <Reference Include="libmetar, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\libmetar.1.0.0\lib\netstandard1.6\libmetar.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
@@ -341,6 +338,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\csharp-metar-decoder\csharp-metar-decoder\csharp-metar-decoder.csproj">
+      <Project>{14d27854-ab0a-45de-9b68-ee7e926aa1b6}</Project>
+      <Name>csharp-metar-decoder</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NexradDecoder\NexradDecoder.csproj">
       <Project>{6a8559f0-0f1f-49c6-baae-6d1c0a624940}</Project>
       <Name>NexradDecoder</Name>

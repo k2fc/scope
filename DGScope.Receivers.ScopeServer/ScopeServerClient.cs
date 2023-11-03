@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DGScope.Library;
 using DGScope.Receivers;
-using libmetar;
 using Newtonsoft.Json;
 
 namespace DGScope.Receivers.ScopeServer

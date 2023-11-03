@@ -10,8 +10,6 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using DGScope.Receivers;
-using libmetar;
-using libmetar.Services;
 
 namespace DGScope
 {

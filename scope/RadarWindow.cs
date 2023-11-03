@@ -15,7 +15,6 @@ using System.Security.Cryptography;
 using System.Drawing.Design;
 using DGScope.Receivers;
 using System.Threading;
-using libmetar;
 using System.Windows.Forms.Design;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
@@ -2540,7 +2539,7 @@ namespace DGScope
             StatusArea.Font = Font;
             var oldtext = StatusArea.Text;
             var timesyncind = timesync.Synchronized ? " " : "*";
-            StatusArea.Text = CurrentTime.ToString("HHmm/ss") + timesyncind + Converter.Pressure(wx.Altimeter, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00") + "\r\n";
+            StatusArea.Text = CurrentTime.ToString("HHmm/ss") + timesyncind + wx.Altimeter.Value.ToString("00.00") + "\r\n";
             for (int i = 0; i < 10; i++)
             {
                 if (atises[i] != null)
@@ -2583,39 +2582,50 @@ namespace DGScope
                 }
             }
             int metarnum = 0;
-            foreach (var metar in wx.Metars.OrderBy(x=> x.Icao))
+            bool crlast = false;
+            foreach (var metar in wx.Metars.OrderBy(x=> x.ICAO))
             {
                 metarnum++;
-                if (metar.IsParsed)
+                if (metar.IsValid)
                 {
                     try
                     {
-                        string station = metar.Icao;
+                        string station = metar.ICAO;
                         if (station.Length == 4 && station[0] == 'K') //not really correct, but whatever
                             station = station.Substring(1);
                         if (metar.Pressure != null)
                         {
                             StatusArea.Text += station;
-                            StatusArea.Text += (metar.Date - CurrentTime).Value.TotalHours > 1 ? "*" : " ";
-                            StatusArea.Text += Converter.Pressure(metar.Pressure, libmetar.Enums.PressureUnit.inHG).Value.ToString("00.00");
+                            StatusArea.Text += " ";
+                            StatusArea.Text += metar.Pressure.GetConvertedValue(csharp_metar_decoder.entity.Value.Unit.MercuryInch).ToString("00.00");
 
                         }
                         else
                         {
                             StatusArea.Text += station + " 00.00";
                         }
-                        if (WindInStatusArea)
-                            StatusArea.Text += " " + metar.Wind.Raw;
+                        //if (WindInStatusArea)
+                        //    StatusArea.Text += " " + metar.Wind.Raw;
                     }
                     catch
                     {
-                        StatusArea.Text += metar.Icao + " METAR ERR";
+                        StatusArea.Text += metar.ICAO + " METAR ERR";
                     }
                     if (WindInStatusArea || metarnum % 3 == 0)
+                    {
                         StatusArea.Text += "\r\n";
+                        crlast = true;
+                    }
                     else
+                    {
                         StatusArea.Text += " ";
+                        crlast = false;
+                    }
                 }
+            }
+            if (!crlast)
+            {
+                StatusArea.Text += "\r\n";
             }
             if (FPSInStatusArea)
             {

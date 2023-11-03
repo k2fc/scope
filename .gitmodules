@@ -1,0 +1,3 @@
+[submodule "csharp-metar-decoder"]
+	path = csharp-metar-decoder
+	url = https://github.com/SafranCassiopee/csharp-metar-decoder.git

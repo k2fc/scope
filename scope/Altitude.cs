@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using libmetar;
 
 namespace DGScope
 {
@@ -26,7 +25,7 @@ namespace DGScope
             {
                 if (AltitudeType == AltitudeType.Pressure)
                     return Value;
-                var altimetervalue = Converter.Pressure(Altimeter, libmetar.Enums.PressureUnit.inHG).Value;
+                var altimetervalue = Altimeter.Value;
                 var correction = (int)((altimetervalue - 29.92) * 1000);
                 var newvalue = Value;
                 if (this.AltitudeType == AltitudeType.True)
@@ -44,7 +43,7 @@ namespace DGScope
             {
                 if (AltitudeType == AltitudeType.True)
                     return Value;
-                var altimetervalue = Converter.Pressure(Altimeter, libmetar.Enums.PressureUnit.inHG).Value;
+                var altimetervalue = Altimeter.Value;
                 var correction = (int)((altimetervalue - 29.92) * 1000);
                 var newvalue = Value;
                 if (this.AltitudeType == AltitudeType.Pressure)
@@ -75,7 +74,7 @@ namespace DGScope
 
         public Altitude (){}
 
-        public void SetAltitudeProperties (int TransitionAltitude, Pressure Altimeter)
+        public void SetAltitudeProperties (int TransitionAltitude, Altimeter Altimeter)
         {
             this.TransitionAltitude = TransitionAltitude;
             this.Altimeter = Altimeter;
@@ -90,7 +89,7 @@ namespace DGScope
             }
         }
 
-        private Pressure Altimeter = new Pressure("");
+        private Altimeter Altimeter = new Altimeter();
         public Altitude ConvertTo (AltitudeType type)
         {
             Altitude newAlt = new Altitude();
