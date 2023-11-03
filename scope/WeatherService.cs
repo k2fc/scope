@@ -9,6 +9,7 @@ using csharp_metar_decoder.entity;
 using System.ComponentModel;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace DGScope
 {
@@ -25,6 +26,7 @@ namespace DGScope
             {
                 _altimeterStations = value;
                 correctioncalculated = false;
+                GetWeather(true);
             }
         }
 
@@ -42,7 +44,6 @@ namespace DGScope
         }
         private bool correctioncalculated = false;
         Altimeter altimeter;
-        private Altimeter cachedalt => Altimeter;
         public Altimeter Altimeter
         {
             get
