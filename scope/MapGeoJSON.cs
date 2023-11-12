@@ -81,7 +81,12 @@ namespace DGScope
         public static VideoMapList GeoJSONFileToMaps(string path)
         {
             var json = File.ReadAllText(path);
-            return GeoJSONToMaps(json);
+            try
+            {
+                return GeoJSONToMaps(json);
+            }
+            catch (Exception ex) { System.Windows.Forms.MessageBox.Show("Error with video map " + path + "\r\n" + ex.Message); }
+            return null;
         }
 
         public static VideoMapList GeoJSONToMaps(string json)

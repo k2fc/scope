@@ -68,6 +68,10 @@ namespace DGScope.MapImporter.CRC
                     VideoMap map = new VideoMap();
                     var mappath = mapdirectory + importmap.id + ".geojson";
                     var importmapobj = GeoJSONMapExporter.GeoJSONFileToMaps(mappath);
+                    if (importmapobj == null)
+                    {
+                        continue;
+                    }
                     if (importmapobj.Any())
                     {
                         map.Lines = importmapobj.First().Lines; 
