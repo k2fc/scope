@@ -67,16 +67,18 @@ namespace DGScope.MapImporter.CRC
                 {
                     VideoMap map = new VideoMap();
                     var mappath = mapdirectory + importmap.id + ".geojson";
+                    var name = importmap.name;
                     var importmapobj = GeoJSONMapExporter.GeoJSONFileToMaps(mappath);
                     if (importmapobj == null)
                     {
+                        System.Windows.Forms.MessageBox.Show("Did not import map: " + name);
                         continue;
                     }
                     if (importmapobj.Any())
                     {
                         map.Lines = importmapobj.First().Lines; 
                     }
-                    map.Name = importmap.name;
+                    map.Name = name;
                     map.Category = importmap.starsBrightnessCategory == "A" ? MapCategory.A : MapCategory.B;
                     map.Number = importmap.starsId.Value;
                     maps.Add(map);
