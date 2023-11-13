@@ -92,6 +92,8 @@ namespace DGScope
         public static VideoMapList GeoJSONToMaps(string json)
         {
             VideoMapList maps = new VideoMapList();
+            GeoJsonConfig.IgnoreLatitudeValidation = true;
+            GeoJsonConfig.IgnoreLongitudeValidation = true;
             var data = GeoJson.FromJson(json);
             switch (data.Type)
             {
