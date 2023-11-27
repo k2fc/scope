@@ -7,29 +7,12 @@ namespace DGScope.MapImporter.CRC
         public string id { get; set; }
         public DateTime lastUpdatedAt { get; set; }
         public Facility facility { get; set; }
-        public Visibilitycenter1[] visibilityCenters { get; set; }
+        public Visibilitycenter[] visibilityCenters { get; set; }
         public DateTime aliasesLastUpdatedAt { get; set; }
         public Videomap[] videoMaps { get; set; }
     }
 
-    public class Facility
-    {
-        public string id { get; set; }
-        public string type { get; set; }
-        public string name { get; set; }
-        public Childfacility[] childFacilities { get; set; }
-        public Eramconfiguration eramConfiguration { get; set; }
-        public object edstConfiguration { get; set; }
-        public object starsConfiguration { get; set; }
-        public object towerCabConfiguration { get; set; }
-        public object asdexConfiguration { get; set; }
-        public object tdlsConfiguration { get; set; }
-        public object flightStripsConfiguration { get; set; }
-        public Position4[] positions { get; set; }
-        public string[] neighboringFacilityIds { get; set; }
-        public string[] nonNasFacilityIds { get; set; }
-    }
-
+    
     public class Eramconfiguration
     {
         public string nasId { get; set; }
@@ -69,7 +52,7 @@ namespace DGScope.MapImporter.CRC
         public string id { get; set; }
         public string category { get; set; }
         public string priority { get; set; }
-        public int subset { get; set; }
+        public int? subset { get; set; }
         public int start { get; set; }
         public int end { get; set; }
     }
@@ -100,29 +83,33 @@ namespace DGScope.MapImporter.CRC
         public float lon { get; set; }
     }
 
-    public class Childfacility
+    public class Facility
     {
         public string id { get; set; }
         public string type { get; set; }
         public string name { get; set; }
-        public Childfacility1[] childFacilities { get; set; }
+        public Facility[] childFacilities { get; set; }
         public object eramConfiguration { get; set; }
         public object edstConfiguration { get; set; }
-        public Starsconfiguration starsConfiguration { get; set; }
-        public Towercabconfiguration towerCabConfiguration { get; set; }
-        public Asdexconfiguration asdexConfiguration { get; set; }
-        public Tdlsconfiguration tdlsConfiguration { get; set; }
-        public Flightstripsconfiguration flightStripsConfiguration { get; set; }
-        public Position3[] positions { get; set; }
+        public Starsconfiguration? starsConfiguration { get; set; }
+        public Towercabconfiguration? towerCabConfiguration { get; set; }
+        public Asdexconfiguration? asdexConfiguration { get; set; }
+        public Tdlsconfiguration? tdlsConfiguration { get; set; }
+        public Flightstripsconfiguration? flightStripsConfiguration { get; set; }
+        public Position[] positions { get; set; }
         public string[] neighboringFacilityIds { get; set; }
         public object[] nonNasFacilityIds { get; set; }
+        public override string ToString()
+        {
+            return id;
+        }
     }
 
     public class Starsconfiguration
     {
         public Area[] areas { get; set; }
         public string[] internalAirports { get; set; }
-        public Beaconcodebank1[] beaconCodeBanks { get; set; }
+        public Beaconcodebank[] beaconCodeBanks { get; set; }
         public object[] rpcs { get; set; }
         public Primaryscratchpadrule[] primaryScratchpadRules { get; set; }
         public object[] secondaryScratchpadRules { get; set; }
@@ -163,14 +150,6 @@ namespace DGScope.MapImporter.CRC
         public int range { get; set; }
     }
 
-    public class Beaconcodebank1
-    {
-        public string id { get; set; }
-        public string type { get; set; }
-        public int? subset { get; set; }
-        public int start { get; set; }
-        public int end { get; set; }
-    }
 
     public class Primaryscratchpadrule
     {
@@ -223,14 +202,9 @@ namespace DGScope.MapImporter.CRC
         public object[] runwayConfigurations { get; set; }
         public Position[] positions { get; set; }
         public string defaultPositionId { get; set; }
-        public Towerlocation1 towerLocation { get; set; }
+        public Towerlocation towerLocation { get; set; }
     }
 
-    public class Towerlocation1
-    {
-        public float lat { get; set; }
-        public float lon { get; set; }
-    }
 
     public class Fixrule
     {
@@ -244,6 +218,10 @@ namespace DGScope.MapImporter.CRC
         public string id { get; set; }
         public string name { get; set; }
         public object[] runwayIds { get; set; }
+        public override string ToString()
+        {
+            return name;
+        }
     }
 
     public class Tdlsconfiguration
@@ -342,66 +320,9 @@ namespace DGScope.MapImporter.CRC
         public int numberOfRacks { get; set; }
     }
 
-    public class Childfacility1
-    {
-        public string id { get; set; }
-        public string type { get; set; }
-        public string name { get; set; }
-        public object[] childFacilities { get; set; }
-        public object eramConfiguration { get; set; }
-        public object edstConfiguration { get; set; }
-        public object starsConfiguration { get; set; }
-        public Towercabconfiguration1 towerCabConfiguration { get; set; }
-        public Asdexconfiguration1 asdexConfiguration { get; set; }
-        public Tdlsconfiguration1 tdlsConfiguration { get; set; }
-        public Flightstripsconfiguration1 flightStripsConfiguration { get; set; }
-        public Position2[] positions { get; set; }
-        public string[] neighboringFacilityIds { get; set; }
-        public object[] nonNasFacilityIds { get; set; }
-    }
+   
 
-    public class Towercabconfiguration1
-    {
-        public string videoMapId { get; set; }
-        public int defaultRotation { get; set; }
-        public int defaultZoomRange { get; set; }
-        public int aircraftVisibilityCeiling { get; set; }
-        public Towerlocation2 towerLocation { get; set; }
-    }
-
-    public class Towerlocation2
-    {
-        public float lat { get; set; }
-        public float lon { get; set; }
-    }
-
-    public class Asdexconfiguration1
-    {
-        public string videoMapId { get; set; }
-        public int defaultRotation { get; set; }
-        public int defaultZoomRange { get; set; }
-        public int targetVisibilityRange { get; set; }
-        public int targetVisibilityCeiling { get; set; }
-        public Fixrule1[] fixRules { get; set; }
-        public bool useDestinationIdAsFix { get; set; }
-        public Runwayconfiguration[] runwayConfigurations { get; set; }
-        public Position1[] positions { get; set; }
-        public string defaultPositionId { get; set; }
-        public Towerlocation3 towerLocation { get; set; }
-    }
-
-    public class Towerlocation3
-    {
-        public float lat { get; set; }
-        public float lon { get; set; }
-    }
-
-    public class Fixrule1
-    {
-        public string id { get; set; }
-        public string searchPattern { get; set; }
-        public string fixId { get; set; }
-    }
+    
 
     public class Runwayconfiguration
     {
@@ -412,61 +333,12 @@ namespace DGScope.MapImporter.CRC
         public object[] holdShortRunwayPairs { get; set; }
     }
 
-    public class Position1
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-        public string[] runwayIds { get; set; }
-    }
+    
 
-    public class Tdlsconfiguration1
-    {
-        public bool mandatorySid { get; set; }
-        public bool mandatoryClimbout { get; set; }
-        public bool mandatoryClimbvia { get; set; }
-        public bool mandatoryInitialAlt { get; set; }
-        public bool mandatoryDepFreq { get; set; }
-        public bool mandatoryExpect { get; set; }
-        public bool mandatoryContactInfo { get; set; }
-        public bool mandatoryLocalInfo { get; set; }
-        public Sid1[] sids { get; set; }
-        public Climbout1[] climbouts { get; set; }
-        public Climbvia[] climbvias { get; set; }
-        public Initialalt1[] initialAlts { get; set; }
-        public Depfreq1[] depFreqs { get; set; }
-        public Expect1[] expects { get; set; }
-        public Contactinfo1[] contactInfos { get; set; }
-        public Localinfo1[] localInfos { get; set; }
-        public string defaultSidId { get; set; }
-        public object defaultTransitionId { get; set; }
-    }
+    
 
-    public class Sid1
-    {
-        public string name { get; set; }
-        public string id { get; set; }
-        public Transition1[] transitions { get; set; }
-    }
-
-    public class Transition1
-    {
-        public string name { get; set; }
-        public string id { get; set; }
-        public string firstRoutePoint { get; set; }
-        public string defaultExpect { get; set; }
-        public object defaultClimbout { get; set; }
-        public string defaultClimbvia { get; set; }
-        public string defaultInitialAlt { get; set; }
-        public string defaultDepFreq { get; set; }
-        public string defaultContactInfo { get; set; }
-        public string defaultLocalInfo { get; set; }
-    }
-
-    public class Climbout1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
+    
+   
 
     public class Climbvia
     {
@@ -474,122 +346,18 @@ namespace DGScope.MapImporter.CRC
         public string value { get; set; }
     }
 
-    public class Initialalt1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
+    
 
-    public class Depfreq1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
-
-    public class Expect1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
-
-    public class Contactinfo1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
-
-    public class Localinfo1
-    {
-        public string id { get; set; }
-        public string value { get; set; }
-    }
-
-    public class Flightstripsconfiguration1
-    {
-        public Stripbay1[] stripBays { get; set; }
-        public Externalbay[] externalBays { get; set; }
-        public bool displayDestinationAirportIds { get; set; }
-        public bool displayBarcodes { get; set; }
-        public bool enableArrivalStrips { get; set; }
-        public bool enableSeparateArrDepPrinters { get; set; }
-    }
-
-    public class Stripbay1
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-        public int numberOfRacks { get; set; }
-    }
-
+    
     public class Externalbay
     {
         public string facilityId { get; set; }
         public string bayId { get; set; }
     }
 
-    public class Position2
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-        public bool starred { get; set; }
-        public string radioName { get; set; }
-        public string callsign { get; set; }
-        public int frequency { get; set; }
-        public object eramConfiguration { get; set; }
-        public Starsconfiguration1 starsConfiguration { get; set; }
-    }
+    
 
-    public class Starsconfiguration1
-    {
-        public int subset { get; set; }
-        public string sectorId { get; set; }
-        public string areaId { get; set; }
-        public string colorSet { get; set; }
-    }
-
-    public class Position3
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-        public bool starred { get; set; }
-        public string radioName { get; set; }
-        public string callsign { get; set; }
-        public int frequency { get; set; }
-        public object eramConfiguration { get; set; }
-        public Starsconfiguration2 starsConfiguration { get; set; }
-    }
-
-    public class Starsconfiguration2
-    {
-        public int subset { get; set; }
-        public string sectorId { get; set; }
-        public string areaId { get; set; }
-        public string colorSet { get; set; }
-    }
-
-    public class Position4
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-        public bool starred { get; set; }
-        public string radioName { get; set; }
-        public string callsign { get; set; }
-        public int frequency { get; set; }
-        public Eramconfiguration1 eramConfiguration { get; set; }
-        public object starsConfiguration { get; set; }
-    }
-
-    public class Eramconfiguration1
-    {
-        public string sectorId { get; set; }
-    }
-
-    public class Visibilitycenter1
-    {
-        public float lat { get; set; }
-        public float lon { get; set; }
-    }
-
+    
     public class Videomap
     {
         public string id { get; set; }

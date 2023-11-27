@@ -30,7 +30,7 @@ namespace DGScope.MapImporter.CRC
             {
                 return new List<VideoMap>();
             }
-            Childfacility importfacility;
+            Facility importfacility;
             if (facilities.Count() == 1)
             {
                 importfacility = facilities.First();
