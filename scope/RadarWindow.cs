@@ -3361,9 +3361,9 @@ namespace DGScope
             {
                 if (((plane.PositionInd == ThisPositionIndicator && DrawATPAMonitorCones) ||
                     plane.ATPAVolume.TcpDisplay.Any(x => x.TCP == ThisPositionIndicator && x.ConeType == ATPAStatus.Monitor))
-                    && plane.ATPAStatus == ATPAStatus.Monitor)
+                    && plane.ATPAStatus == ATPAStatus.Monitor && plane.ATPATrackToLeader != null && plane.ATPARequiredMileage != null)
                 {
-                    if (plane.ATPACone == null)
+                    if (plane.ATPACone == null )
                         plane.ATPACone = new TPACone(plane, (decimal)plane.ATPARequiredMileage, TPAColor, Font, true, plane.ATPATrackToLeader);
                     else
                     {

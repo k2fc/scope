@@ -181,12 +181,12 @@ namespace DGScope
                                 follower.ATPAStatus = ATPAStatus.Caution;
                             else
                                 follower.ATPAStatus = ATPAStatus.Monitor;
-                            follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
                         }
                         else
                         {
                             follower.ATPAStatus = ATPAStatus.Monitor;
                         }
+                        follower.ATPATrackToLeader = follower.SweptLocation(radar).BearingTo(leader.SweptLocation(radar));
                     }
                 }
                 else if (order.Count == 1)
