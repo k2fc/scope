@@ -3027,6 +3027,9 @@ namespace DGScope
         {
         }
         private int fps = 0;
+        private Matrix4 mtrans;
+        private Matrix4 mrot; 
+        private Matrix4 mscale;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
             DeleteTextures();
@@ -3034,6 +3037,9 @@ namespace DGScope
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
             pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
+            mtrans = Matrix4.CreateTranslation(-(float) ScreenCenterPoint.Longitude, -(float) ScreenCenterPoint.Latitude, 0.0f);
+            mrot = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians((float) ScreenRotation));
+            mscale = Matrix4.CreateScale((float)((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude* (Math.PI / 180))), (float) (60d / scale), 1.0f);
             GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
@@ -3077,15 +3083,22 @@ namespace DGScope
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
-            double bearing = (ScreenCenterPoint.BearingTo(geoPoint) - ScreenRotation) * (Math.PI / 180);
-            double distance = ScreenCenterPoint.DistanceTo(geoPoint);
-            float x = (float)(Math.Sin(bearing) * (distance / scale));
-            float y = (float)(Math.Cos(bearing) * (distance / scale));
-            return new PointF(x, y);
+            OpenTK.Vector4 vec = new OpenTK.Vector4((float)geoPoint.Longitude, (float)geoPoint.Latitude, 0.0f, 1.0f);
+            
+            vec *= mtrans;
+            vec *= mscale;
+            vec *= mrot;
+            return new PointF(vec.X, vec.Y);
         }
 
         private GeoPoint ScreenToGeoPoint(PointF Point)
         {
+            OpenTK.Vector4 vec = new OpenTK.Vector4(Point.X, Point.Y, 0.0f, 1.0f);
+            vec *= mrot.Inverted();
+            vec *= mscale.Inverted();
+            vec *= mtrans.Inverted();
+            return new GeoPoint(vec.Y, vec.X);
+
             double r = Math.Sqrt(Math.Pow(Point.X, 2) + Math.Pow(Point.Y, 2));
             double angle = Math.Atan(Point.Y / Point.X);
             if (Point.X < 0)
