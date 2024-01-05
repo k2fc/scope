@@ -3509,9 +3509,9 @@ namespace DGScope
                 cone.Label.Text = ((int)cone.Miles).ToString();
             }
             
-            //var endwidth = pixelScale * TPAConeWidth;
+            var endwidth = pixelScale * TPAConeWidth;
             var y = (float)cone.Miles / scale;
-            var endwidth = y * (2d / 30);
+            //var endwidth = y * (2d / 30);
             var x1 = endwidth / 2;
             var x2 = -x1;
             var clearanceWidth = cone.ShowSize ? (float)(Math.Sqrt(Math.Pow(cone.Label.Height, 2) + Math.Pow(cone.Label.Width, 2)) * pixelScale) : 0;
