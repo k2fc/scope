@@ -3039,7 +3039,7 @@ namespace DGScope
             pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
             mtrans = Matrix4.CreateTranslation(-(float) ScreenCenterPoint.Longitude, -(float) ScreenCenterPoint.Latitude, 0.0f);
             mrot = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians((float) ScreenRotation));
-            mscale = Matrix4.CreateScale((float)((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude* (Math.PI / 180))), (float) (60d / scale), 1.0f);
+            mscale = Matrix4.CreateScale((float)((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude))), (float) (60d / scale), 1.0f);
             GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
@@ -3302,7 +3302,7 @@ namespace DGScope
             var rrr = (aspect_ratio > 1 ? Range * aspect_ratio : Range / aspect_ratio) + distance;
             var x = RangeRingCenter.Longitude;
             var y = RangeRingCenter.Latitude;
-            var latfactor = Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180));
+            var latfactor = Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude));
             GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
             GL.Scale((60d / scale) * latfactor, (60d / scale), 1.0);
@@ -3564,7 +3564,7 @@ namespace DGScope
         {
             GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
             GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
             foreach (Line line in lines)
             {
@@ -3589,7 +3589,7 @@ namespace DGScope
             float y2 = end2.Y;*/
             GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
             GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
             DrawLine((float)line.End1.Longitude, (float)line.End1.Latitude, (float)line.End2.Longitude, (float)line.End2.Latitude, color);
             GL.PopMatrix();
@@ -3636,7 +3636,7 @@ namespace DGScope
             var polygons = Nexrad.Polygons();
             GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(ScreenCenterPoint.Latitude * (Math.PI / 180)), (60d / scale), 1.0);
+            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
             GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
 
             for (int i = 0; i < polygons.Length; i++)

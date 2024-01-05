@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenTK;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Design;
@@ -91,7 +92,7 @@ namespace DGScope
             if (!BearingIsBetween(aircraft.SweptTrack(radar), minHeading, maxHeading))
                 return false;
             var angletothreshold = acbearingtothreshold - TrueHeading;
-            var disttocenterline = acdistancetothreshold * Math.Sin(Math.Abs(angletothreshold) * (Math.PI / 180));
+            var disttocenterline = acdistancetothreshold * Math.Sin(MathHelper.DegreesToRadians(Math.Abs(angletothreshold)));
             if (angletothreshold > 0 && disttocenterline * 6076 > WidthLeft) // left
                 return false;
             if (angletothreshold < 0 && disttocenterline * 6076 > WidthRight) // right
