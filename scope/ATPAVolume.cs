@@ -59,10 +59,10 @@ namespace DGScope
         private List<Aircraft> order;
         private object orderlock = new object();
 
-        private int minHeading => (TrueHeading - MaxHeadingDeviation) % 360;
-        private int maxHeading => (TrueHeading + MaxHeadingDeviation + 360) % 360;
-        private int minBearing => (TrueHeading + 270) % 360;
-        private int maxBearing => (TrueHeading + 450) % 360;
+        private int minHeading => TrueHeading - MaxHeadingDeviation;
+        private int maxHeading => TrueHeading + MaxHeadingDeviation;
+        private int minBearing => TrueHeading - 90;
+        private int maxBearing => TrueHeading + 90;
         
         public bool IsInside (Aircraft aircraft, Radar radar, ATPA atpa)
         {
@@ -86,7 +86,7 @@ namespace DGScope
             var acdistancetothreshold = acloc.DistanceTo(RunwayThreshold);
             if (acdistancetothreshold > Length) 
                 return false;
-            var acbearingtothreshold = (acloc.BearingTo(RunwayThreshold) + 360) % 360;
+            var acbearingtothreshold = acloc.BearingTo(RunwayThreshold);
             if (!BearingIsBetween(acbearingtothreshold, minBearing, maxBearing))
                 return false;
             if (!BearingIsBetween(aircraft.SweptTrack(radar), minHeading, maxHeading))
@@ -103,6 +103,9 @@ namespace DGScope
         }
         private bool BearingIsBetween(double bearing, double az1, double az2)
         {
+            bearing = (bearing + 360) % 360;
+            az1 = (az1 + 360) % 360;
+            az2 = (az2 + 360) % 360;
             if (az2 == az1)
             {
                 return bearing == az1;
