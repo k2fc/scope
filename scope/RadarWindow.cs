@@ -18,9 +18,8 @@ using System.Threading;
 using System.Windows.Forms.Design;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using System.Numerics;
 using DGScope.STARS;
-using System.Reflection.Emit;
+using Vector4 = OpenTK.Vector4;
 
 namespace DGScope
 {
@@ -1075,10 +1074,19 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
-                double xMove = e.XDelta * pixelScale;
-                double yMove = e.YDelta * pixelScale;
-                ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
-                ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
+                float xMove = e.XDelta * pixelScale;
+                float yMove = e.YDelta * pixelScale;
+                var center = new Vector4((float)ScreenCenterPoint.Longitude, (float)ScreenCenterPoint.Latitude, 0.0f, 1.0f);
+                Vector4 move = new Vector4(-xMove, yMove, 0.0f, 1.0f);
+                move *= mrot.Inverted();
+                move *= mscale.Inverted();
+                var trans = Matrix4.CreateTranslation(move.X, move.Y, move.Z);
+                center *= trans;
+                ScreenCenterPoint = new GeoPoint(center.Y, center.X);
+                //move *= mtrans.Inverted();
+                //ScreenCenterPoint = new GeoPoint(move.Y, move.X);
+                //ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
+                //ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
             }
 
         }
@@ -3093,7 +3101,7 @@ namespace DGScope
 
         private GeoPoint ScreenToGeoPoint(PointF Point)
         {
-            OpenTK.Vector4 vec = new OpenTK.Vector4(Point.X, Point.Y, 0.0f, 1.0f);
+            Vector4 vec = new Vector4(Point.X, Point.Y, 0.0f, 1.0f);
             vec *= mrot.Inverted();
             vec *= mscale.Inverted();
             vec *= mtrans.Inverted();
