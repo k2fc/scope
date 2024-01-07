@@ -4265,62 +4265,67 @@ namespace DGScope
             }
             var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
             var beaconcolor = AdjustedColor(BeaconTargetColor, CurrentPrefSet.Brightness.BeaconTargets);
-            if (!target.ParentAircraft.PrimaryOnly)
+            var rt = radar.RadarType;
+            var history = target != target.ParentAircraft.TargetReturn;
+            if (history)
+                rt = RadarType.FUSED;
+            var location = target.ParentAircraft.SweptLocation(radar);
+            if (location == null)
+                return;
+            float targetWidth;
+            float targetHeight;
+            float targetHypotenuse;
+            float x1;
+            float angle;
+            switch (rt)
             {
-                var rt = radar.RadarType;
-                var history = target != target.ParentAircraft.TargetReturn;
-                if (history)
-                    rt = RadarType.FUSED;
-                var location = target.ParentAircraft.SweptLocation(radar);
-                if (location == null)
-                    return;
-                switch (rt)
-                {
-                    case RadarType.SLANT_RANGE:
-                        //float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
-                        float targetWidth = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
-                        float targetHeight = (TargetExtentSymbols.SearchTargets.RangeExtent / 32f) / scale;    // (window.ClientRectangle.Width/2);
-                        float targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
-                        float beaconoffset = TargetExtentSymbols.BeaconTargets.RangeOffset / (32f * scale);
-                        float x1 = (float)(targetWidth / 2);
-                        float y1 = (float)(targetHeight / 2);
-                        float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10f);
-                        float y2 = (TargetExtentSymbols.BeaconTargets.RangeExtent / 32f) / scale;
+                case RadarType.SLANT_RANGE:
+                    //float targetHeight = target.ShapeHeight * pixelScale; // (window.ClientRectangle.Height/2);
+                    targetWidth = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                    targetHeight = (TargetExtentSymbols.SearchTargets.RangeExtent / 32f) / scale;    // (window.ClientRectangle.Width/2);
+                    targetHypotenuse = (float)(Math.Sqrt((targetHeight * targetHeight) + (targetWidth * targetWidth)) / 2);
+                    float beaconoffset = TargetExtentSymbols.BeaconTargets.RangeOffset / (32f * scale);
+                    x1 = (float)(targetWidth / 2);
+                    float y1 = (float)(targetHeight / 2);
+                    float x2 = x1 * (TargetExtentSymbols.BeaconTargets.AzimuthExtentFactor / 10f);
+                    float y2 = (TargetExtentSymbols.BeaconTargets.RangeExtent / 32f) / scale;
 
-                        target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
+                    target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2 );
 
-                        GL.PushMatrix();
-                        float angle = (float)(-(location.BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
-                        GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                        GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
-                        GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
+                    GL.PushMatrix();
+                    angle = (float)(-(location.BearingTo(radar.Location) + 360) % 360) + (float)ScreenRotation;
+                    GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
+                    GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
+                    GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
 
-                        GL.Begin(PrimitiveType.Polygon);
+                    GL.Begin(PrimitiveType.Polygon);
                         
-                        GL.Color4(primarycolor);
-                        GL.Vertex2(x1, y1);
-                        GL.Vertex2(-x1, y1);
-                        GL.Vertex2(-x1, -y1);
-                        GL.Vertex2(x1, -y1);
+                    GL.Color4(primarycolor);
+                    GL.Vertex2(x1, y1);
+                    GL.Vertex2(-x1, y1);
+                    GL.Vertex2(-x1, -y1);
+                    GL.Vertex2(x1, -y1);
+                    GL.End();
+                    if (!target.ParentAircraft.PrimaryOnly)
+                    {
+                        GL.Begin(PrimitiveType.Polygon);
+                        GL.Color4(beaconcolor);
+                        GL.Vertex2(x2, y2 - beaconoffset);
+                        GL.Vertex2(-x2, y2 - beaconoffset);
+                        GL.Vertex2(-x2, -y2 - beaconoffset);
+                        GL.Vertex2(x2, -y2 - beaconoffset);
                         GL.End();
-                        if (!target.ParentAircraft.PrimaryOnly)
-                        {
-                            GL.Begin(PrimitiveType.Polygon);
-                            GL.Color4(beaconcolor);
-                            GL.Vertex2(x2, y2 - beaconoffset);
-                            GL.Vertex2(-x2, y2 - beaconoffset);
-                            GL.Vertex2(-x2, -y2 - beaconoffset);
-                            GL.Vertex2(x2, -y2 - beaconoffset);
-                            GL.End();
-                        }
+                    }
 
-                        GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
+                    GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
 
 
-                        GL.PopMatrix();
-                        break;
-                    case RadarType.FUSED:
-                        float size;
+                    GL.PopMatrix();
+                    break;
+                case RadarType.FUSED:
+                    float size;
+                    if (!target.ParentAircraft.PrimaryOnly)
+                    {
                         if (!history)
                         {
                             size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
@@ -4333,36 +4338,37 @@ namespace DGScope
                             target.SizeF = new SizeF(size, size);
                             DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.History), true);
                         }
-                        break;
-                }
+                    }
+                    else
+                    {
+                        targetWidth = TargetExtentSymbols.MultiRadarTargets.UncorrSymbolPlotSize * pixelScale;
+                        targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
+                        x1 = (float)(Math.Sqrt(2) * targetHypotenuse);
+                        target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2);
+                        GL.PushMatrix();
+
+                        angle = 0; // -(float)ScreenRotation;
+                        GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
+                        GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
+                        GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
+                        GL.Begin(PrimitiveType.Polygon);
+
+                        GL.Color4(primarycolor);
+                        GL.Vertex2(x1, x1);
+                        GL.Vertex2(-x1, x1);
+                        GL.Vertex2(-x1, -x1);
+                        GL.Vertex2(x1, -x1);
+
+
+                        GL.End();
+                        GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
+
+
+                        GL.PopMatrix();
+                    }
+                    break;
             }
-            else
-            {
-                float targetWidth = TargetExtentSymbols.MultiRadarTargets.UncorrSymbolPlotSize * pixelScale;
-                float targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
-                float x1 = (float)(Math.Sqrt(2) * targetHypotenuse);
-                target.SizeF = new SizeF(targetHypotenuse * 2, targetHypotenuse * 2);
-                GL.PushMatrix();
-
-                float angle = 0; // -(float)ScreenRotation;
-                GL.Translate(target.LocationF.X, target.LocationF.Y, 0.0f);
-                GL.Rotate(angle, 0.0f, 0.0f, 1.0f);
-                GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
-                GL.Begin(PrimitiveType.Polygon);
-
-                GL.Color4(primarycolor);
-                GL.Vertex2(x1, x1);
-                GL.Vertex2(-x1, x1);
-                GL.Vertex2(-x1, -x1);
-                GL.Vertex2(x1, -x1);
-
-
-                GL.End();
-                GL.Translate(-target.LocationF.X, -target.LocationF.Y, 0.0f);
-
-
-                GL.PopMatrix();
-            }
+            
 
 
 

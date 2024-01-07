@@ -93,7 +93,7 @@ namespace DGScope
         private async Task ScanTarget(Aircraft plane, DateTime time)
         {
             GeoPoint location;
-            if (plane.PrimaryOnly || InhibitExtrapolation)
+            if ((plane.PrimaryOnly && RadarType == RadarType.FUSED) || InhibitExtrapolation)
             {
                 location = plane.Location;
             }

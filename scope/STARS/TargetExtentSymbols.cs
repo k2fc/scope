@@ -155,8 +155,8 @@ namespace DGScope.STARS
         {
             public int SymbolFillRange { get; set; }
             public int SymbolHeight { get; set; }
-            public int SymbolWidth { get; set; }    
-            public int UncorrSymbolPlotSize { get; set; }
+            public int SymbolWidth { get; set; }
+            public int UncorrSymbolPlotSize { get; set; } = 8;
         }
 
         [Serializable()]
