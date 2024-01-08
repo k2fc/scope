@@ -4446,7 +4446,7 @@ namespace DGScope
                 DrawTarget(x.TargetReturn);
             });
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB && (x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)) DrawLabel(x); });
+                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
             lock (dataBlocks)
             {
                 foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null && (x.ParentAircraft.FDB || x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
@@ -4466,7 +4466,7 @@ namespace DGScope
                 }
             }
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB && (x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)) DrawLabel(x); });
+                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
         }
 
         private void DrawLabel(TransparentLabel Label)

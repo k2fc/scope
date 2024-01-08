@@ -549,6 +549,8 @@ namespace DGScope
                 PositionIndicator.Text = PositionInd.Substring(PositionInd.Length - 1);
             else if (isSquawkSelected())
                 PositionIndicator.Text = selectedSquawkChar.ToString();
+            else if (PrimaryOnly)
+                PositionIndicator.Text = "◇";
             else
                 PositionIndicator.Text = "*";
         }
