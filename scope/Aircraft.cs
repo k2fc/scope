@@ -518,7 +518,7 @@ namespace DGScope
                         DataBlock3.Text += yscratch.PadRight(3) + handoffchar + vfrchar + catchar;
                     }
                 }
-                if (ShowCallsignWithNoSquawk && Callsign != null)
+                if (ShowCallsignWithNoSquawk && Callsign != null && !Associated)
                 {
                     var cs = Callsign;
                     if (leaderDirection == RadarWindow.LeaderDirection.W ||
