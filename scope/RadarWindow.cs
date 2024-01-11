@@ -3155,7 +3155,7 @@ namespace DGScope
                 DrawLine(new PointF(x, -h), new PointF(x1, -h1), color);
                 DrawLine(new PointF(-x, -h), new PointF(-x1, -h1), color);
                 var line = (i / 10);
-                if (i / 10f == line && (cmp_labels[line] == null || aspect_ratio != oldar))
+                if (i / 10f == line )
                 {
                     if (cmp_labels[line] == null)
                     {
@@ -3167,14 +3167,14 @@ namespace DGScope
                             cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
                         }
                     }
-                    cmp_labels[line].ForceRedraw();
-                    cmp_labels[line + 18].ForceRedraw();
+                    DrawLabel(cmp_labels[line]);
+                    DrawLabel(cmp_labels[line + 18]);
                     cmp_labels[line].CenterOnPoint(new PointF(x1, h1 - cmp_labels[line].SizeF.Height));
                     cmp_labels[line + 18].CenterOnPoint(new PointF(-x1, -h1 + cmp_labels[line].SizeF.Height));
                     if (line > 0)
                     {
-                        cmp_labels[18 - line].ForceRedraw();
-                        cmp_labels[36 - line].ForceRedraw();
+                        DrawLabel(cmp_labels[18 - line]);
+                        DrawLabel(cmp_labels[36 - line]);
                         cmp_labels[18 - line].CenterOnPoint(new PointF(x1, cmp_labels[line].SizeF.Height - h1));
                         cmp_labels[36 - line].CenterOnPoint(new PointF(-x1, h1 - cmp_labels[line].SizeF.Height));
                     }
@@ -3189,7 +3189,7 @@ namespace DGScope
                 DrawLine(new PointF(w, -y), new PointF(w1, -y1), color);
                 DrawLine(new PointF(-w, -y), new PointF(-w1, -y1), color);
                 var line = (i / 10);
-                if (i / 10f == line && (cmp_labels[line] == null || aspect_ratio != oldar))
+                if (i / 10f == line)
                 {
                     if (cmp_labels[line] == null)
                     {
@@ -3202,27 +3202,32 @@ namespace DGScope
                             cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
                         }
                     }
-                    cmp_labels[line].ForceRedraw();
-                    cmp_labels[line + 18].ForceRedraw();
+                    DrawLabel(cmp_labels[line]);
+                    DrawLabel(cmp_labels[line + 18]);
                     cmp_labels[line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, y1));
                     cmp_labels[line + 18].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, -y1));
                     if (line > 0)
                     {
-                        cmp_labels[18 - line].ForceRedraw();
-                        cmp_labels[36 - line].ForceRedraw();
+                        DrawLabel(cmp_labels[18 - line]);
+                        DrawLabel(cmp_labels[36 - line]);
                         cmp_labels[36 - line].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, y1));
                         cmp_labels[18 - line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, -y1));
                     }
                 }
             }
-            for (int l = 0; l < 36; l++)
+            if (oldar != aspect_ratio)
             {
-                var label = cmp_labels[l];
-                var deg = l * 10;
-                label.Text = deg.ToString();
-                label.ForeColor = color;
-                DrawLabel(label);
+                foreach(var label in cmp_labels)
+                {
+                    label.ForceRedraw();
+                }
             }
+            //for (int l = 0; l < 36; l++)
+            //{
+            //    var label = cmp_labels[l];
+             //   label.ForeColor = color;
+            //    DrawLabel(label);
+            //}
         }
         private void DrawATPAVolumes()
         {
