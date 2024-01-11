@@ -3153,12 +3153,16 @@ namespace DGScope
                             cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
                         }
                     }
+                    cmp_labels[line].ForeColor = color;
+                    cmp_labels[line + 18].ForeColor = color;
                     DrawLabel(cmp_labels[line]);
                     DrawLabel(cmp_labels[line + 18]);
                     cmp_labels[line].CenterOnPoint(new PointF(x1, h1 - cmp_labels[line].SizeF.Height));
                     cmp_labels[line + 18].CenterOnPoint(new PointF(-x1, -h1 + cmp_labels[line].SizeF.Height));
                     if (line > 0)
                     {
+                        cmp_labels[18 - line].ForeColor = color;
+                        cmp_labels[36 - line].ForeColor = color;
                         DrawLabel(cmp_labels[18 - line]);
                         DrawLabel(cmp_labels[36 - line]);
                         cmp_labels[18 - line].CenterOnPoint(new PointF(x1, cmp_labels[line].SizeF.Height - h1));
@@ -3188,12 +3192,16 @@ namespace DGScope
                             cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
                         }
                     }
+                    cmp_labels[line].ForeColor = color;
+                    cmp_labels[line + 18].ForeColor = color;
                     DrawLabel(cmp_labels[line]);
                     DrawLabel(cmp_labels[line + 18]);
                     cmp_labels[line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, y1));
                     cmp_labels[line + 18].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, -y1));
                     if (line > 0)
                     {
+                        cmp_labels[18 - line].ForeColor = color;
+                        cmp_labels[36 - line].ForeColor = color;
                         DrawLabel(cmp_labels[18 - line]);
                         DrawLabel(cmp_labels[36 - line]);
                         cmp_labels[36 - line].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, y1));
