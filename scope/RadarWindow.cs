@@ -3326,11 +3326,11 @@ namespace DGScope
                 DrawLine(line.Start, line.End, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                 line.Label.ForeColor = AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools);
                 line.Label.LocationF = line.End;
-                int bearing = 0;
+                double bearing = 0;
                 double range = 0;
                 if (line.EndGeo != null)
                 {
-                    bearing = (int)(line.StartGeo.BearingTo(line.EndGeo) - ScreenRotation + 720) % 360;
+                    bearing = line.StartGeo.BearingTo(line.EndGeo) - ScreenRotation;
                     if (bearing == 000)
                         bearing = 360;
                     range = line.StartGeo.DistanceTo(line.EndGeo);
@@ -3338,11 +3338,12 @@ namespace DGScope
                 else
                 {
                     GeoPoint tempEndGeo = ScreenToGeoPoint(line.End);
-                    bearing = (int)(line.StartGeo.BearingTo(tempEndGeo) - ScreenRotation + 720) % 360;
+                    bearing = line.StartGeo.BearingTo(tempEndGeo) - ScreenRotation;
                     if (bearing == 000)
                         bearing = 360;
                     range = line.StartGeo.DistanceTo(tempEndGeo);
                 }
+                bearing = (int)((bearing + 720.5) % 360);
                 if ((line.StartPlane != null && line.EndPlane == null) || (line.StartPlane == null && line.EndPlane != null))
                 {
                     Aircraft plane;
