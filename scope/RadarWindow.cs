@@ -3152,6 +3152,10 @@ namespace DGScope
                             cmp_labels[36 - line] = new TransparentLabel { Font = Font, Text = (360 - i).ToString(), ForeColor = color };
                             cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
                         }
+                        else
+                        {
+                            cmp_labels[line].Text = "360";
+                        }
                     }
                     cmp_labels[line].ForeColor = color;
                     cmp_labels[line + 18].ForeColor = color;
