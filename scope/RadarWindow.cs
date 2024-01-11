@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
+using System.Xml;
+using System.Reflection.Emit;
 
 namespace DGScope
 {
@@ -3038,6 +3040,7 @@ namespace DGScope
         private Matrix4 mtrans;
         private Matrix4 mrot; 
         private Matrix4 mscale;
+        private Matrix4 arscale;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
             DeleteTextures();
@@ -3058,10 +3061,12 @@ namespace DGScope
             if (window.ClientSize.Width < window.ClientSize.Height)
             {
                 GL.Scale(1.0f, aspect_ratio, 1.0f);
+                arscale = Matrix4.CreateScale(1 / aspect_ratio, 1.0f, 1.0f);
             }
             else if (window.ClientSize.Width > window.ClientSize.Height)
             {
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
+                arscale = Matrix4.CreateScale(1.0f, aspect_ratio, 1.0f);
             }
             if (!hidewx)
             {
@@ -3069,6 +3074,7 @@ namespace DGScope
             }
             DrawRangeRings();
             DrawVideoMapLines();
+            DrawCompass();
             if (ATPA.Active)
             {
                 ATPA.Calculate(Aircraft, radar);
@@ -3088,6 +3094,7 @@ namespace DGScope
                 lock(Aircraft)
                     ADSBtoFlightPlanCallsigns(Aircraft.ToList());
             }
+            oldar = aspect_ratio;
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
@@ -3118,6 +3125,104 @@ namespace DGScope
         private GeoPoint ScreenToGeoPoint(Point Point)
         {
             return ScreenToGeoPoint(LocationFromScreenPoint(Point));
+        }
+
+        private TransparentLabel[] cmp_labels = new TransparentLabel[36];
+        private void DrawCompass()
+        {
+            if (CurrentPrefSet.Brightness.Compass == 0)
+                return;
+            var color = AdjustedColor(Color.FromArgb(140, 140, 140), CurrentPrefSet.Brightness.Compass);
+            var linelength = 15 * pixelScale;
+            var w = arscale.Column1.Length - pixelScale;
+            var h = arscale.Column0.Length - pixelScale;
+            DrawLine(new PointF(w, -h), new PointF(-w,-h), color);
+            DrawLine(new PointF(-w, -h), new PointF(-w, h), color);
+            DrawLine(new PointF(-w, h), new PointF(w, h), color);
+            DrawLine(new PointF(w, h), new PointF(w, -h), color);
+            var atan = MathHelper.RadiansToDegrees(Math.Atan(aspect_ratio));
+            int i;
+            var h1 = h - linelength;
+            var w1 = w - linelength;
+            var hr = (h1 / h);
+            var wr = (w1 / w);
+            for (i = 0; i < atan; i += 5)
+            {
+                var x = (float)Math.Tan(MathHelper.DegreesToRadians(i)) * h;
+                var x1 = x * hr;
+                DrawLine(new PointF(x, h), new PointF(x1, h1), color);
+                DrawLine(new PointF(-x, h), new PointF(-x1, h1), color);
+                DrawLine(new PointF(x, -h), new PointF(x1, -h1), color);
+                DrawLine(new PointF(-x, -h), new PointF(-x1, -h1), color);
+                var line = (i / 10);
+                if (i / 10f == line && (cmp_labels[line] == null || aspect_ratio != oldar))
+                {
+                    if (cmp_labels[line] == null)
+                    {
+                        cmp_labels[line] = new TransparentLabel { Font = Font, Text = i.ToString(), ForeColor = color };
+                        cmp_labels[line + 18] = new TransparentLabel { Font = Font, Text = (i + 180).ToString(), ForeColor = color };
+                        if (line > 0)
+                        {
+                            cmp_labels[36 - line] = new TransparentLabel { Font = Font, Text = (360 - i).ToString(), ForeColor = color };
+                            cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
+                        }
+                    }
+                    cmp_labels[line].ForceRedraw();
+                    cmp_labels[line + 18].ForceRedraw();
+                    cmp_labels[line].CenterOnPoint(new PointF(x1, h1 - cmp_labels[line].SizeF.Height));
+                    cmp_labels[line + 18].CenterOnPoint(new PointF(-x1, -h1 + cmp_labels[line].SizeF.Height));
+                    if (line > 0)
+                    {
+                        cmp_labels[18 - line].ForceRedraw();
+                        cmp_labels[36 - line].ForceRedraw();
+                        cmp_labels[18 - line].CenterOnPoint(new PointF(x1, cmp_labels[line].SizeF.Height - h1));
+                        cmp_labels[36 - line].CenterOnPoint(new PointF(-x1, h1 - cmp_labels[line].SizeF.Height));
+                    }
+                }
+            }
+            for (; i <= 90; i += 5)
+            {
+                var y = (float)Math.Tan(MathHelper.DegreesToRadians(90 - i)) * w;
+                var y1 = y * wr;
+                DrawLine(new PointF(w, y), new PointF(w1, y1), color);
+                DrawLine(new PointF(-w, y), new PointF(-w1, y1), color);
+                DrawLine(new PointF(w, -y), new PointF(w1, -y1), color);
+                DrawLine(new PointF(-w, -y), new PointF(-w1, -y1), color);
+                var line = (i / 10);
+                if (i / 10f == line && (cmp_labels[line] == null || aspect_ratio != oldar))
+                {
+                    if (cmp_labels[line] == null)
+                    {
+                        cmp_labels[line] = new TransparentLabel { Font = Font, Text = i.ToString(), ForeColor = color };
+                        cmp_labels[line + 18] = new TransparentLabel { Font = Font, Text = (i + 180).ToString(), ForeColor = color };
+
+                        if (line > 0)
+                        {
+                            cmp_labels[36 - line] = new TransparentLabel { Font = Font, Text = (360 - i).ToString(), ForeColor = color };
+                            cmp_labels[18 - line] = new TransparentLabel { Font = Font, Text = (180 - i).ToString(), ForeColor = color };
+                        }
+                    }
+                    cmp_labels[line].ForceRedraw();
+                    cmp_labels[line + 18].ForceRedraw();
+                    cmp_labels[line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, y1));
+                    cmp_labels[line + 18].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, -y1));
+                    if (line > 0)
+                    {
+                        cmp_labels[18 - line].ForceRedraw();
+                        cmp_labels[36 - line].ForceRedraw();
+                        cmp_labels[36 - line].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, y1));
+                        cmp_labels[18 - line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, -y1));
+                    }
+                }
+            }
+            for (int l = 0; l < 36; l++)
+            {
+                var label = cmp_labels[l];
+                var deg = l * 10;
+                label.Text = deg.ToString();
+                label.ForeColor = color;
+                DrawLabel(label);
+            }
         }
         private void DrawATPAVolumes()
         {
@@ -4468,7 +4573,6 @@ namespace DGScope
             lock (posIndicators)
                 posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
         }
-
         private void DrawLabel(TransparentLabel Label)
         {
             /*if (!Aircraft.Contains(Label.ParentAircraft))

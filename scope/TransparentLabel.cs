@@ -139,6 +139,10 @@ namespace DGScope
                 return new RectangleF(LocationF.X, LocationF.Y, SizeF.Width, SizeF.Height);
             }
         }
+        public void ForceRedraw()
+        {
+            this.Redraw = true;
+        }
         public Bitmap NewTextBitmap(bool outline = false)
         {
             if (!Redraw)
