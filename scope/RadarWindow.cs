@@ -742,28 +742,10 @@ namespace DGScope
         }
         [Browsable(false)]
         public PointF PreviewLocation
-        {
-            get
-            {
-                return PreviewArea.LocationF;
-            }
-            set
-            {
-                PreviewArea.LocationF = value;
-            }
-        }
+        { get; set; }
         [Browsable(false)]
         public PointF StatusLocation
-        {
-            get
-            {
-                return StatusArea.LocationF;
-            }
-            set
-            {
-                StatusArea.LocationF = value;
-            }
-        }
+        { get; set; }
         [DisplayName("Wind in Status Area"), Description("Show wind values in Status Area"), Category("Display Properties")]
         public bool WindInStatusArea { get; set; } = false;
         [DisplayName("FPS in Status Area"), Description("Show FPS in Status Area"), Category("Display Properties")]
@@ -1936,7 +1918,7 @@ namespace DGScope
                             case 'P':
                                 if (!clickedplane)
                                 {
-                                    PreviewArea.LocationF = (PointF)clicked;
+                                    PreviewLocation = (PointF)clicked;
                                     Preview.Clear();
                                 }
                                 break;
@@ -1972,7 +1954,7 @@ namespace DGScope
                             case 'S': 
                                 if (!clickedplane && keys[0].Length == 2)
                                 {
-                                    StatusArea.LocationF = (PointF)clicked;
+                                    StatusLocation = (PointF)clicked;
                                     Preview.Clear();
                                 }
                                 else if (!clickedplane && keys[0].Length >= 3 && keys[0][2].GetType() == typeof(char))
@@ -2531,7 +2513,9 @@ namespace DGScope
                 PreviewArea.Text = previewmessage;
             else
                 PreviewArea.Text = GeneratePreviewString(Preview);
+            PreviewArea.ForceRedraw();
             PreviewArea.ForeColor = AdjustedColor(DataBlockColor, CurrentPrefSet.Brightness.FullDataBlocks);
+            PreviewArea.LocationF = new PointF(PreviewLocation.X, PreviewLocation.Y - PreviewArea.SizeF.Height);
             DrawLabel(PreviewArea);
         }
         string previewmessage = null;
@@ -2651,6 +2635,7 @@ namespace DGScope
                 }
                 StatusArea.Text += "\r\n";
             }
+            StatusArea.LocationF = new PointF(StatusLocation.X, StatusLocation.Y - StatusArea.SizeF.Height);
             DrawLabel(StatusArea);
         }
 
@@ -2859,6 +2844,7 @@ namespace DGScope
                     }
                 }
             }
+            output += " ";
             return output;
         }
         private void Window_KeyPress(object sender, KeyPressEventArgs e)
