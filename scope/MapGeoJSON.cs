@@ -19,6 +19,7 @@ namespace DGScope
                 feature.Properties.Add("name", map.Name);
                 feature.Properties.Add("number", map.Number);
                 feature.Properties.Add("category", map.Category);
+                feature.Properties.Add("mnemonic", map.Mnemonic);
                 features.Add(feature);
             }
             FeatureCollection fc = new FeatureCollection(features);
@@ -128,6 +129,8 @@ namespace DGScope
                                 newmap.Name = feature.Properties["name"];
                             if (feature.Properties.ContainsKey("number"))
                                 newmap.Number = (int)feature.Properties["number"];
+                            if (feature.Properties.ContainsKey("mnemonic"))
+                                newmap.Mnemonic = feature.Properties["mnemonic"];
                             if (feature.Properties.ContainsKey("category"))
                                 newmap.Category = (MapCategory)(int)feature.Properties["category"];
                             foreach (var geometry in geometryCollection.Geometries)

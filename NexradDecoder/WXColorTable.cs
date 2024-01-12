@@ -10,6 +10,8 @@ namespace DGScope
     {
         
         public List<WXColor> Colors { get; set; } = new List<WXColor>();
+        public bool[] LevelsEnabled;
+        public bool[] LevelsAvailable;
         public WXColor GetWXColor(double value)
         {
             var colors = Colors.OrderBy(x => x.MinValue).ToArray();
@@ -17,11 +19,19 @@ namespace DGScope
                 return null;
             if (value < colors[0].MinValue)
                 return null;
+            if (LevelsEnabled == null || LevelsEnabled.Length != colors.Length)
+                LevelsEnabled = new bool[colors.Length];
+            if (LevelsAvailable == null || LevelsAvailable.Length != colors.Length)
+                LevelsAvailable = new bool[colors.Length];
             for (int i = colors.Length - 1; i >= 0; i--)
             {
                 if (value > colors[i].MinValue)
                 {
-                    return colors[i];
+                    LevelsAvailable[i] = true;
+                    if (LevelsEnabled[i])
+                    { 
+                        return colors[i];
+                    }
                 }
             }
             return null;
@@ -29,7 +39,12 @@ namespace DGScope
         public WXColorTable() 
         {
         }
-        public WXColorTable(List<WXColor> colors) { Colors = colors; }
+        public WXColorTable(List<WXColor> colors) 
+        { 
+            Colors = colors;
+            LevelsEnabled = new bool[colors.Count];
+            LevelsAvailable = new bool[colors.Count];
+        }
     }
 
     public class WXColor
@@ -77,6 +92,7 @@ namespace DGScope
         public Color MinColor { get; set; }
         [XmlIgnore]
         public Color StippleColor { get; set; }
+
         public WXColor(double minvalue, Color mincolor)
         {
             MinValue = minvalue;

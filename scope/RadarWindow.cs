@@ -21,6 +21,8 @@ using System.Collections.ObjectModel;
 using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
 using System.Xml;
+using DGScope.MapImporter.CRC;
+using static System.Windows.Forms.LinkLabel;
 
 namespace DGScope
 {
@@ -262,6 +264,7 @@ namespace DGScope
         public double ScreenRotation { get; set; } = 0;
         [DisplayName("Show Range Rings"), Category("Display Properties")]
         public bool ShowRangeRings { get; set; } = true;
+        
         [DisplayName("TPA Size"), Description("Show TPA Mileage Values"), Category("Display Properties")]
         public bool TPASize
         {
@@ -822,6 +825,7 @@ namespace DGScope
             window.MouseWheel += Window_MouseWheel;
             window.MouseMove += Window_MouseMove;
             window.MouseDown += Window_MouseDown;
+            window.MouseUp += Window_MouseUp;
             if (RadarSites.Count > 0)
                 radar = RadarSites[0];
             else
@@ -845,6 +849,11 @@ namespace DGScope
             }
             OrderWaypoints();
             Aircraft.CollectionChanged += Aircraft_CollectionChanged;
+        }
+
+        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            dcb.ActiveMenu.MouseUp();
         }
 
         private void Aircraft_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -1041,12 +1050,13 @@ namespace DGScope
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
             MouseLocation = e.Position;
+            dcb.ActiveMenu.MouseMove(e.Position);
             if (tempLine != null)
                 tempLine.End = LocationFromScreenPoint(e.Position);
             if (!e.Mouse.IsAnyButtonDown)
             {
+                
                 double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
-
                 if (move > 10 && isScreenSaver && _mousesettled)
                 {
                     StopReceivers();
@@ -1070,7 +1080,6 @@ namespace DGScope
                 //ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
                 //ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
             }
-
         }
         bool hidewx = false;
         private object ClickedObject(Point ClickedPoint)
@@ -1093,12 +1102,30 @@ namespace DGScope
         private void Window_MouseDown(object sender, MouseEventArgs e)
         {
             var clicked = ClickedObject(e.Position);
+            dcb.ActiveMenu.MouseDown();
             if (e.Mouse.LeftButton == ButtonState.Pressed)
             {
                 if ((Keyboard.GetState().IsKeyDown(Key.ControlLeft) || Keyboard.GetState().IsKeyDown(Key.ControlRight)) &&
                     (Keyboard.GetState().IsKeyDown(Key.ShiftLeft) || Keyboard.GetState().IsKeyDown(Key.ShiftRight)))
                 {
                     System.Windows.Forms.Clipboard.SetText(ScreenToGeoPoint(e.Position).ToString());
+                }
+                else if (activeDcbButton != null)
+                {
+                    if (activeDcbButton == dcbPlaceCntrButton)
+                    { 
+                        ScreenCenterPoint = ScreenToGeoPoint(e.Position);
+                    }
+                    else if (activeDcbButton == dcbPlaceRRButton)
+                    {
+                        RangeRingCenter = ScreenToGeoPoint(e.Position);
+                    }
+                    else if (activeDcbButton == dcbRRCntrButton)
+                    {
+                        RangeRingCenter = HomeLocation;
+                    }
+                    activeDcbButton.Active = false;
+                    activeDcbButton = null;
                 }
                 else if (tempLine == null)
                 {
@@ -1145,9 +1172,9 @@ namespace DGScope
             if (window.ClientSize.Width > window.ClientSize.Height)
             {
                 x *= aspect_ratio;
-        }
+            }
             else
-        {
+            {
                 y /= aspect_ratio;
             }
             return new PointF(x, y);
@@ -2915,6 +2942,9 @@ namespace DGScope
                         selector.BringToFront();
                         selector.Focus();
                         break;
+                    case Key.F8:
+                        dcb.Visible = !dcb.Visible;
+                        break;
                     case Key.F9:
                         Preview.Clear();
                         Preview.Add(KeyCode.RngRing);
@@ -3026,7 +3056,127 @@ namespace DGScope
         private void Window_UpdateFrame(object sender, FrameEventArgs e)
         {
         }
+        
         private int fps = 0;
+        private DCB dcb;
+        private DCBMenu dcbMainMenu = new DCBMenu();
+        private DCBButton activeDcbButton;
+        private DCBAdjustmentButton dcbRangeButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
+        private DCBActionButton dcbPlaceCntrButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nCNTR" };
+        private DCBToggleButton dcbOffCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "OFF\r\nCNTR" };
+        private DCBAdjustmentButton dcbRRButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
+        private DCBActionButton dcbPlaceRRButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nRR" };
+        private DCBToggleButton dcbRRCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
+        private DCBSubmenuButton dcbMapsButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "MAPS" };
+        private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
+        private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
+        private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
+        private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+
+        public TCP TCP { get; set; } = new TCP();
+
+        private void SetupDCB()
+        {
+            dcbMainMenu.Buttons.Add(dcbRangeButton);
+            dcbMainMenu.Buttons.Add(dcbPlaceCntrButton);
+            dcbPlaceCntrButton.Click += DcbScopeActionButtonClick;
+            dcbMainMenu.Buttons.Add(dcbOffCntrButton);
+            dcbMainMenu.Buttons.Add(dcbRRButton);
+            dcbMainMenu.Buttons.Add(dcbPlaceRRButton);
+            dcbPlaceRRButton.Click += DcbScopeActionButtonClick;
+            dcbMainMenu.Buttons.Add(dcbRRCntrButton);
+            dcbMainMenu.Buttons.Add(dcbMapsButton);
+            for (int i = 0; i < 6; i++)
+            {
+                dcbMapButton[i] = new DCBToggleButton { Height = 40, Width = 80, Text = "MAP\r\n" + (i + 1) };
+                dcbMainMenu.Buttons.Add(dcbMapButton[i]);
+                dcbMapButton[i].Click += DcbMapButtonClick;
+            }
+            for (int i = 0; i < dcbWxButton.Length; i++)
+            {
+                dcbWxButton[i] = new DCBToggleButton { Height = 80, Width = 40, RotateIfVertical = true, Text = "WX" + (i + 1) };
+                dcbMainMenu.Buttons.Add(dcbWxButton[i]);
+                dcbWxButton[i].Click += DcbWxButtonClick;
+            }
+            dcbMainMenu.Buttons.Add(dcbBriteButton);
+            dcbMainMenu.Buttons.Add(dcbLdrDirButton);
+            dcbMainMenu.Buttons.Add(dcbLdrLenButton);
+            dcb = new DCB()
+            {
+                Location = DCBLocation.Top,
+                Visible = true,
+                ActiveMenu = dcbMainMenu
+            };
+            
+        }
+
+        private void DcbScopeActionButtonClick(object sender, EventArgs e)
+        {
+            activeDcbButton = sender as DCBButton;
+            activeDcbButton.Active = true;
+        }
+
+        private void DcbMapButtonClick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < dcbMapButton.Length; i++)
+            {
+                if (VideoMaps.Count <= i)
+                    break;
+                if (sender == dcbMapButton[i])
+                {
+                    var map = VideoMaps.Where(x => x.Number == TCP.DCBMapList[i]).FirstOrDefault();
+                    if (map == null)
+                        return;
+                    map.Visible = !map.Visible;
+                }
+            }
+        }
+
+        private void DcbWxButtonClick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < dcbWxButton.Length; i++)
+            {
+                if (sender == dcbWxButton[i])
+                {
+                    Nexrad.LevelsEnabled[i] = !Nexrad.LevelsEnabled[i];
+                }
+            }
+            Nexrad.RecomputeVertices();
+        }
+
+        private void UpdateDCB()
+        {
+            dcb.Location = DCBLocation.Top;
+            dcbRangeButton.Text = "RANGE\r\n" + Range;
+            dcbOffCntrButton.Active = ScreenCenterPoint != HomeLocation;
+            dcbRRButton.Text = "RR\r\n" + (int)RangeRingInterval;
+            dcbRRCntrButton.Active = RangeRingCenter == HomeLocation;
+            for (int i = 0; i < 6; i++)
+            {
+                if (VideoMaps.Count <= i)
+                    break;
+                var map = VideoMaps.Where(x => x.Number == TCP.DCBMapList[i]).FirstOrDefault();
+                if (map == null)
+                    continue;
+                dcbMapButton[i].Text = map.Mnemonic + "\r\n" + map.Number;
+                dcbMapButton[i].Active = map.Visible;
+            }
+            for (int i = 0; i < dcbWxButton.Length; i++)
+            {
+                if (Nexrad.LevelsEnabled == null || Nexrad.LevelsEnabled.Length <= i)
+                    break;
+                dcbWxButton[i].Active = Nexrad.LevelsEnabled[i];
+                if (Nexrad.LevelsAvailable == null || Nexrad.LevelsAvailable.Length <= i)
+                    break;
+                dcbWxButton[i].Text = Nexrad.LevelsAvailable[i]  && i <= 1 ? "WX" + (i + 1) + "\r\nAVL" : "WX" + (i + 1) + "\r\n ";
+                dcbWxButton[i].BackColorActive = Nexrad.LevelsAvailable[i] ? Color.SlateBlue : Color.Green;
+                dcbWxButton[i].BackColorInactive = Nexrad.LevelsAvailable[i] ? Color.DarkSlateBlue : Color.FromArgb(0, 80, 0);
+            }
+            dcbLdrDirButton.Text = "LDR DIR\r\n" + UnownedLeaderDirection;
+            dcbLdrLenButton.Text = "LDR LEN\r\n" + (int)LeaderLength;
+        } 
+
         private Matrix4 geoToScreen;
         private Matrix4 rotscale;
         private Matrix4 arscale;
@@ -3071,17 +3221,19 @@ namespace DGScope
             }
             DrawRangeRings();
             DrawVideoMapLines();
+            DrawStatic();
             DrawCompass();
+            DrawRBLs();
+            UpdateDCB();
+            dcb.Draw(window.ClientSize.Width, window.ClientSize.Height, ref pixeltransform);
             if (ATPA.Active)
             {
                 ATPA.Calculate(Aircraft, radar);
                 DrawATPAVolumes();
             }
             GenerateTargets();
-            DrawStatic();
             DrawTargets();
             DrawMinSeps();
-            DrawRBLs();
             GL.PopMatrix();
             GL.Flush();
             window.SwapBuffers();
@@ -3133,6 +3285,36 @@ namespace DGScope
             var linelength = 15 * pixelScale;
             var w = arscale.Column1.Length - pixelScale;
             var h = arscale.Column0.Length - pixelScale;
+            GL.PushMatrix();
+            if (!dcb.Visible)
+            {
+                
+            }
+            else if (dcb.Location == DCBLocation.Left || dcb.Location == DCBLocation.Right)
+            {
+                w -= dcb.Size * pixelScale / 2;
+                if (dcb.Location == DCBLocation.Left)
+                {
+                    GL.Translate(dcb.Size / 2 * pixelScale, 0, 0);
+                }
+                else
+                {
+                    GL.Translate(-dcb.Size / 2 * pixelScale, 0, 0);
+                }
+            }
+            else
+            {
+                h -= dcb.Size * pixelScale / 2;
+                if (dcb.Location == DCBLocation.Top)
+                {
+                    GL.Translate(0, -dcb.Size / 2 * pixelScale, 0);
+                }
+                else
+                {
+                    GL.Translate(0, dcb.Size / 2 * pixelScale, 0);
+                }
+            }
+            float aspect_ratio = w / h;
             DrawLine(new PointF(w, -h), new PointF(-w,-h), color);
             DrawLine(new PointF(-w, -h), new PointF(-w, h), color);
             DrawLine(new PointF(-w, h), new PointF(w, h), color);
@@ -3209,14 +3391,18 @@ namespace DGScope
                     DrawLabel(cmp_labels[line + 18]);
                     cmp_labels[line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, y1));
                     cmp_labels[line + 18].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, -y1));
-                    cmp_labels[18 - line].ForeColor = color;
-                    cmp_labels[36 - line].ForeColor = color;
-                    DrawLabel(cmp_labels[18 - line]);
-                    DrawLabel(cmp_labels[36 - line]);
-                    cmp_labels[36 - line].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, y1));
-                    cmp_labels[18 - line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, -y1));
+                    if (line > 0)
+                    {
+                        cmp_labels[18 - line].ForeColor = color;
+                        cmp_labels[36 - line].ForeColor = color;
+                        DrawLabel(cmp_labels[18 - line]);
+                        DrawLabel(cmp_labels[36 - line]);
+                        cmp_labels[36 - line].CenterOnPoint(new PointF(cmp_labels[line].SizeF.Width - w1, y1));
+                        cmp_labels[18 - line].CenterOnPoint(new PointF(w1 - cmp_labels[line].SizeF.Width, -y1));
+                    }
                 }
             }
+            GL.PopMatrix();
             if (oldar != aspect_ratio)
             {
                 foreach(var label in cmp_labels)
@@ -3227,7 +3413,7 @@ namespace DGScope
             //for (int l = 0; l < 36; l++)
             //{
             //    var label = cmp_labels[l];
-             //   label.ForeColor = color;
+            //   label.ForeColor = color;
             //    DrawLabel(label);
             //}
         }
@@ -3379,6 +3565,7 @@ namespace DGScope
                 window.CursorVisible = false;
             }
             StartReceivers();
+            SetupDCB();
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {

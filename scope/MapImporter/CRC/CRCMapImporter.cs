@@ -68,6 +68,7 @@ namespace DGScope.MapImporter.CRC
                     VideoMap map = new VideoMap();
                     var mappath = mapdirectory + importmap.id + ".geojson";
                     var name = importmap.name;
+                    var mnemonic = importmap.shortName;
                     var importmapobj = GeoJSONMapExporter.GeoJSONFileToMaps(mappath);
                     if (importmapobj == null)
                     {
@@ -79,6 +80,7 @@ namespace DGScope.MapImporter.CRC
                         map.Lines = importmapobj.First().Lines; 
                     }
                     map.Name = name;
+                    map.Mnemonic = mnemonic;
                     map.Category = importmap.starsBrightnessCategory == "A" ? MapCategory.A : MapCategory.B;
                     map.Number = importmap.starsId.Value;
                     maps.Add(map);

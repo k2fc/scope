@@ -15,6 +15,7 @@ namespace DGScope
         [Browsable(false)]
         public int VertexBuffer { get; set; }
         public string Name { get; set; }
+        public string Mnemonic { get; set; }
         [Browsable(false)]
         public bool Visible { get; set; }
         public MapCategory Category { get; set; } = MapCategory.A;

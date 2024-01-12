@@ -39,9 +39,15 @@ namespace DGScope
         public string URL { get; set; }
         [Description("Product Download Interval (sec.)")]
         public int DownloadInterval { get; set; } = 300;
+        [Browsable(false)]
+        [XmlIgnore]
+        public bool[] LevelsAvailable => colortable == null ? dummyLevelsA : colortable.LevelsAvailable;
+        public bool[] LevelsEnabled => colortable == null ? dummyLevelsE : colortable.LevelsEnabled;
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
         DescriptionBlock description;
+        bool[] dummyLevelsE = new bool[6];
+        bool[] dummyLevelsA = new bool[6];
         bool gotdata = false;
         void GetRadarData(string url)
         {
