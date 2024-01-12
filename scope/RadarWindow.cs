@@ -21,7 +21,6 @@ using System.Collections.ObjectModel;
 using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
 using System.Xml;
-using System.Reflection.Emit;
 
 namespace DGScope
 {
@@ -1138,6 +1137,9 @@ namespace DGScope
 
         private PointF LocationFromScreenPoint(Point point)
         {
+            var vec = new Vector4(point.X, point.Y, 0, 1);
+            vec *= pixeltransform;
+            return new PointF(vec.X, vec.Y);
             float x = (2 * (point.X / (float)window.ClientSize.Width) - 1);
             float y = 1 - 2 * (point.Y / (float)window.ClientSize.Height);
             if (window.ClientSize.Width > window.ClientSize.Height)
@@ -3028,6 +3030,7 @@ namespace DGScope
         private Matrix4 geoToScreen;
         private Matrix4 rotscale;
         private Matrix4 arscale;
+        private Matrix4 pixeltransform;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
             DeleteTextures();
@@ -3040,6 +3043,8 @@ namespace DGScope
             Matrix4 mrot = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians((float) ScreenRotation));
             geoToScreen = mtrans * mscale * mrot;
             rotscale = (mscale * mrot).Inverted();
+            pixeltransform = Matrix4.CreateTranslation(-window.ClientSize.Width / 2, -window.ClientSize.Height / 2, 0);
+            pixeltransform *= Matrix4.CreateScale(2f / window.ClientSize.Width, -2f / window.ClientSize.Height, 1.0f);
             
             GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
@@ -3052,11 +3057,13 @@ namespace DGScope
             {
                 GL.Scale(1.0f, aspect_ratio, 1.0f);
                 arscale = Matrix4.CreateScale(1 / aspect_ratio, 1.0f, 1.0f);
+                pixeltransform *= Matrix4.CreateScale(1, 1 / aspect_ratio, 1);
             }
             else if (window.ClientSize.Width > window.ClientSize.Height)
             {
                 GL.Scale(1 / aspect_ratio, 1.0f, 1.0f);
                 arscale = Matrix4.CreateScale(1.0f, aspect_ratio, 1.0f);
+                pixeltransform *= Matrix4.CreateScale(aspect_ratio, 1, 1);
             }
             if (!hidewx)
             {
@@ -3110,6 +3117,10 @@ namespace DGScope
         }
         private GeoPoint ScreenToGeoPoint(Point Point)
         {
+            Vector4 vec = new Vector4(Point.X, Point.Y, 0.0f, 1.0f);
+            vec *= pixeltransform;
+            vec *= geoToScreen.Inverted();
+            return new GeoPoint(vec.Y, vec.X);
             return ScreenToGeoPoint(LocationFromScreenPoint(Point));
         }
 
