@@ -1062,8 +1062,7 @@ namespace DGScope
                 float yMove = e.YDelta * pixelScale;
                 var center = new Vector4((float)ScreenCenterPoint.Longitude, (float)ScreenCenterPoint.Latitude, 0.0f, 1.0f);
                 Vector4 move = new Vector4(-xMove, yMove, 0.0f, 1.0f);
-                move *= mrot.Inverted();
-                move *= mscale.Inverted();
+                move *= rotscale;
                 var trans = Matrix4.CreateTranslation(move.X, move.Y, move.Z);
                 center *= trans;
                 ScreenCenterPoint = new GeoPoint(center.Y, center.X);
@@ -1137,15 +1136,18 @@ namespace DGScope
             }
         }
 
-        private void Click()
-        {
-
-        }
-
         private PointF LocationFromScreenPoint(Point point)
         {
-            float x = (2 * (point.X / (float)window.ClientSize.Width) - 1) * aspect_ratio;
-            float y = (1 - 2 * (point.Y / (float)window.ClientSize.Height));
+            float x = (2 * (point.X / (float)window.ClientSize.Width) - 1);
+            float y = 1 - 2 * (point.Y / (float)window.ClientSize.Height);
+            if (window.ClientSize.Width > window.ClientSize.Height)
+            {
+                x *= aspect_ratio;
+        }
+            else
+        {
+                y /= aspect_ratio;
+            }
             return new PointF(x, y);
         }
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -3023,9 +3025,8 @@ namespace DGScope
         {
         }
         private int fps = 0;
-        private Matrix4 mtrans;
-        private Matrix4 mrot; 
-        private Matrix4 mscale;
+        private Matrix4 geoToScreen;
+        private Matrix4 rotscale;
         private Matrix4 arscale;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
@@ -3034,9 +3035,12 @@ namespace DGScope
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
             pixelScale = window.ClientSize.Width < window.ClientSize.Height ? 2f / window.ClientSize.Width : 2f / window.ClientSize.Height;
-            mtrans = Matrix4.CreateTranslation(-(float) ScreenCenterPoint.Longitude, -(float) ScreenCenterPoint.Latitude, 0.0f);
-            mrot = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians((float) ScreenRotation));
-            mscale = Matrix4.CreateScale((float)((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude))), (float) (60d / scale), 1.0f);
+            Matrix4 mtrans = Matrix4.CreateTranslation(-(float) ScreenCenterPoint.Longitude, -(float) ScreenCenterPoint.Latitude, 0.0f);
+            Matrix4 mscale = Matrix4.CreateScale((float)((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude))), (float) (60d / scale), 1.0f);
+            Matrix4 mrot = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians((float) ScreenRotation));
+            geoToScreen = mtrans * mscale * mrot;
+            rotscale = (mscale * mrot).Inverted();
+            
             GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
@@ -3084,20 +3088,16 @@ namespace DGScope
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
-            OpenTK.Vector4 vec = new OpenTK.Vector4((float)geoPoint.Longitude, (float)geoPoint.Latitude, 0.0f, 1.0f);
+            Vector4 vec = new Vector4((float)geoPoint.Longitude, (float)geoPoint.Latitude, 0.0f, 1.0f);
             
-            vec *= mtrans;
-            vec *= mscale;
-            vec *= mrot;
+            vec *= geoToScreen;
             return new PointF(vec.X, vec.Y);
         }
 
         private GeoPoint ScreenToGeoPoint(PointF Point)
         {
             Vector4 vec = new Vector4(Point.X, Point.Y, 0.0f, 1.0f);
-            vec *= mrot.Inverted();
-            vec *= mscale.Inverted();
-            vec *= mtrans.Inverted();
+            vec *= geoToScreen.Inverted();
             return new GeoPoint(vec.Y, vec.X);
 
             double r = Math.Sqrt(Math.Pow(Point.X, 2) + Math.Pow(Point.Y, 2));
@@ -3413,17 +3413,14 @@ namespace DGScope
             var x = RangeRingCenter.Longitude;
             var y = RangeRingCenter.Latitude;
             var latfactor = Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude));
-            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * latfactor, (60d / scale), 1.0);
-            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            GL.MultMatrix(ref geoToScreen);
 
             for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
             {
                 DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, AdjustedColor(RangeRingColor, CurrentPrefSet.Brightness.RangeRings));
             }
             GL.PopMatrix();
-            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
 
@@ -3672,16 +3669,13 @@ namespace DGScope
 
         private void DrawLines (List<Line> lines, Color color)
         {
-            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
-            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            GL.MultMatrix(ref geoToScreen);
             foreach (Line line in lines)
             {
                 DrawLine(line.End1.Longitude, line.End1.Latitude, line.End2.Longitude, line.End2.Latitude, color);
             }
             GL.PopMatrix();
-            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawLine(PointF Point1, PointF Point2, Color color)
@@ -3697,13 +3691,10 @@ namespace DGScope
             float x2 = end2.X;
             float y1 = end1.Y;
             float y2 = end2.Y;*/
-            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
-            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            GL.MultMatrix(ref geoToScreen);
             DrawLine((float)line.End1.Longitude, (float)line.End1.Latitude, (float)line.End2.Longitude, (float)line.End2.Latitude, color);
             GL.PopMatrix();
-            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
         }
 
         private void DrawPolygon (Polygon polygon)
@@ -3744,10 +3735,8 @@ namespace DGScope
             }
         
             var polygons = Nexrad.Polygons();
-            GL.Rotate(ScreenRotation, 0.0f, 0.0f, 1.0f);
             GL.PushMatrix();
-            GL.Scale((60d / scale) * Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude)), (60d / scale), 1.0);
-            GL.Translate(-ScreenCenterPoint.Longitude, -ScreenCenterPoint.Latitude, 0.0f);
+            GL.MultMatrix(ref geoToScreen);
 
             for (int i = 0; i < polygons.Length; i++)
             {
@@ -3756,7 +3745,6 @@ namespace DGScope
             }
 
             GL.PopMatrix();
-            GL.Rotate(-ScreenRotation, 0.0f, 0.0f, 1.0f);
             //}
         }
         private void DrawLine (double x1, double y1, double x2, double y2, Color color, float width = 1)
