@@ -4641,7 +4641,7 @@ namespace DGScope
                         GL.Ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 0.0f);
                         GL.Begin(PrimitiveType.Polygon);
 
-                        GL.Color4(primarycolor);
+                        GL.Color4(AdjustedColor(ReturnColor, CurrentPrefSet.Brightness.PrimaryTargets));
                         GL.Vertex2(x1, x1);
                         GL.Vertex2(-x1, x1);
                         GL.Vertex2(-x1, -x1);
