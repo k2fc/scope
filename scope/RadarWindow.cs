@@ -3068,40 +3068,54 @@ namespace DGScope
         private DCBActionButton dcbPlaceRRButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nRR" };
         private DCBToggleButton dcbRRCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
         private DCBSubmenuButton dcbMapsButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "MAPS" };
+        private DCBActionButton dcbMapsSubmenuDoneButton = new DCBActionButton() { Height = 40, Width = 80, Text = "DONE" };
+        private DCBActionButton dcbClearAllMapsButton = new DCBActionButton() { Height = 40, Width = 80, Text = "CLR ALL" };
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
         private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
         private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBMenu dcbMapsMenu = new DCBMenu();
 
         public TCP TCP { get; set; } = new TCP();
 
         private void SetupDCB()
         {
-            dcbMainMenu.Buttons.Add(dcbRangeButton);
-            dcbMainMenu.Buttons.Add(dcbPlaceCntrButton);
+            dcbMainMenu.AddButton(dcbRangeButton);
+            dcbMainMenu.AddButton(dcbPlaceCntrButton);
             dcbPlaceCntrButton.Click += DcbScopeActionButtonClick;
-            dcbMainMenu.Buttons.Add(dcbOffCntrButton);
-            dcbMainMenu.Buttons.Add(dcbRRButton);
-            dcbMainMenu.Buttons.Add(dcbPlaceRRButton);
+            dcbMainMenu.AddButton(dcbOffCntrButton);
+            dcbMainMenu.AddButton(dcbRRButton);
+            dcbMainMenu.AddButton(dcbPlaceRRButton);
             dcbPlaceRRButton.Click += DcbScopeActionButtonClick;
-            dcbMainMenu.Buttons.Add(dcbRRCntrButton);
-            dcbMainMenu.Buttons.Add(dcbMapsButton);
+            dcbMainMenu.AddButton(dcbRRCntrButton);
+            dcbMainMenu.AddButton(dcbMapsButton);
+            dcbMapsButton.Submenu = dcbMapsMenu;
             for (int i = 0; i < 6; i++)
             {
                 dcbMapButton[i] = new DCBToggleButton { Height = 40, Width = 80, Text = "MAP\r\n" + (i + 1) };
-                dcbMainMenu.Buttons.Add(dcbMapButton[i]);
+                dcbMainMenu.AddButton(dcbMapButton[i]);
+                dcbMapButton[i].Click += DcbMapButtonClick;
+            }
+            dcbMapsMenu.AddButton(dcbMapsSubmenuDoneButton);
+            dcbMapsMenu.AddButton(dcbClearAllMapsButton);
+            dcbMapsSubmenuDoneButton.Click += DcbMapsSubmenuDoneButton_Click;
+            dcbClearAllMapsButton.Click += DcbClearAllMapsButton_Click;
+            for (int i = 6; i < dcbMapButton.Length; i++)
+            {
+                dcbMapButton[i] = new DCBToggleButton { Height = 40, Width = 80, Text = "MAP\r\n" + (i + 1) };
+                dcbMapsMenu.AddButton(dcbMapButton[i]);
                 dcbMapButton[i].Click += DcbMapButtonClick;
             }
             for (int i = 0; i < dcbWxButton.Length; i++)
             {
                 dcbWxButton[i] = new DCBToggleButton { Height = 80, Width = 40, RotateIfVertical = true, Text = "WX" + (i + 1) };
-                dcbMainMenu.Buttons.Add(dcbWxButton[i]);
+                dcbMainMenu.AddButton(dcbWxButton[i]);
                 dcbWxButton[i].Click += DcbWxButtonClick;
             }
-            dcbMainMenu.Buttons.Add(dcbBriteButton);
-            dcbMainMenu.Buttons.Add(dcbLdrDirButton);
-            dcbMainMenu.Buttons.Add(dcbLdrLenButton);
+            dcbMainMenu.AddButton(dcbBriteButton);
+            dcbMainMenu.AddButton(dcbLdrDirButton);
+            dcbMainMenu.AddButton(dcbLdrLenButton);
             dcb = new DCB()
             {
                 Location = DCBLocation.Top,
@@ -3109,6 +3123,16 @@ namespace DGScope
                 ActiveMenu = dcbMainMenu
             };
             
+        }
+
+        private void DcbClearAllMapsButton_Click(object sender, EventArgs e)
+        {
+            VideoMaps.ForEach(x => x.Visible = false);
+        }
+
+        private void DcbMapsSubmenuDoneButton_Click(object sender, EventArgs e)
+        {
+            dcbMapsButton.OnClick(null);
         }
 
         private void DcbScopeActionButtonClick(object sender, EventArgs e)
@@ -3152,7 +3176,7 @@ namespace DGScope
             dcbOffCntrButton.Active = ScreenCenterPoint != HomeLocation;
             dcbRRButton.Text = "RR\r\n" + (int)RangeRingInterval;
             dcbRRCntrButton.Active = RangeRingCenter == HomeLocation;
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < dcbMapButton.Length; i++)
             {
                 if (VideoMaps.Count <= i)
                     break;

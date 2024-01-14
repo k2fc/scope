@@ -15,10 +15,13 @@ namespace DGScope
         int textureID = 0;
         string drawntext;
         public event EventHandler Click;
-        public bool Enabled { get; set; }
         public bool Active { get; set; }
         public Color BackColorActive { get; set; } = Color.Green;
         public Color BackColorInactive { get; set; } = Color.FromArgb(0, 80, 0);
+        public Color BackColorDisabled { get; set; } = Color.FromArgb(0, 40, 0);
+        public Color ForeColor { get; set; } = Color.White;
+        public Color ForeColorDwell { get; set; } = Color.Yellow;
+        public Color ForeColorDisabled { get; set; } = Color.DarkGray;
         public Font Font { get; set; } = new Font("FixedDemiBold", 8);
         public StringFormat StringFormat { get; set; } = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         public string Text { get; set; }
@@ -75,7 +78,10 @@ namespace DGScope
             GL.Vertex2(0, height);
             GL.End();
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(drawactive ? BackColorActive : BackColorInactive );
+            if (Enabled)
+                GL.Color4(drawactive ? BackColorActive : BackColorInactive);
+            else
+                GL.Color4(BackColorDisabled);
             GL.Vertex2(bordersize, bordersize);
             GL.Vertex2(width - bordersize, bordersize);
             GL.Vertex2(width - bordersize, height - bordersize);
@@ -95,7 +101,10 @@ namespace DGScope
             }
             GL.BindTexture(TextureTarget.Texture2D, textureID);
             GL.Begin(PrimitiveType.Quads);
-            GL.Color3(mouseInside ? Color.Yellow : Color.White);
+            if (Enabled)
+                GL.Color3(mouseInside ? ForeColorDwell : ForeColor);
+            else
+                GL.Color3(ForeColorDisabled);
             GL.TexCoord2(0, 0);
             GL.Vertex2(0, 0);
             GL.TexCoord2(1, 0);
@@ -112,8 +121,21 @@ namespace DGScope
         }
         bool mouseInside = false;
         bool mousePressed = false;
+        public new bool Enabled
+        {
+            get => base.Enabled;
+            set
+            {
+                if (!value)
+                {
+                    mouseInside = false;
+                    mousePressed = false;
+                }
+            }
+        }
         public override void MouseMove(Point position)
         {
+            if (!Enabled) return;
             if (DrawnBounds.Contains(position))
             {
                 mouseInside = true;
@@ -125,6 +147,7 @@ namespace DGScope
         }
         public override void MouseDown()
         {
+            if (!Enabled) return;
             if (mouseInside)
             {
                 mousePressed = true;
@@ -132,6 +155,7 @@ namespace DGScope
         }
         public override void MouseUp()
         {
+            if (!Enabled) return;
             if (mouseInside && mousePressed) 
             {
                 OnClick(new EventArgs());
@@ -168,7 +192,65 @@ namespace DGScope
 
     internal class DCBSubmenuButton : DCBButton
     {
-    
+        public DCBMenu Submenu { get; set; }
+        public override void Draw(bool vertical)
+        {
+            base.Draw(vertical);
+            if (!Active)
+                return;
+            if (vertical)
+            {
+                Submenu.Width = DrawnBounds.Width;
+            }
+            else
+            {
+                Submenu.Height = DrawnBounds.Height;
+            }
+            Submenu.LayoutButtons(vertical);
+            GL.PushMatrix();
+            if (vertical)
+                Submenu.Top = DrawnBounds.Bottom;
+            else
+                Submenu.Left = DrawnBounds.Right;
+            Submenu.Draw(vertical);
+            GL.PopMatrix();
+        }
+        public override void MouseDown()
+        {
+            base.MouseDown();
+            if (Active)
+            {
+                Submenu.MouseDown();
+            }
+        }
+        public override void MouseUp()
+        {
+            base.MouseUp();
+            if (Active)
+            {
+                Submenu.MouseUp();
+            }
+        }
+        public override void MouseMove(Point position)
+        {
+            base.MouseMove(position);
+            if (Active)
+            {
+                Submenu.MouseMove(position);
+            }
+        }
+        public override void OnClick(EventArgs e)
+        {
+            Active = !Active;
+            if (Active)
+            {
+                ParentMenu.Enabled = false;
+            }
+            else
+            {
+                ParentMenu.Enabled = true;
+            }
+        }
     }
 
     internal class DCBActionButton : DCBButton

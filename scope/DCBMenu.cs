@@ -17,15 +17,35 @@ namespace DGScope
     {
         bool laidoutvertical;
         bool laidouthorizontal;
-        public List<DCBMenuItem> Buttons { get; set; } = new List<DCBMenuItem>();
+        protected List<DCBMenuItem> Buttons { get; set; } = new List<DCBMenuItem>();
+        public void AddButton(DCBMenuItem button)
+        {
+            Buttons.Add(button);
+            button.ParentMenu = this;
+        }
         public new bool RotateIfVertical { get => true; }
-        
+        public new bool Enabled
+        {
+            get => base.Enabled;
+            set
+            {
+                if (base.Enabled == value)
+                {
+                    return;
+                }
+                base.Enabled = value;
+                Buttons.ForEach(x => x.Enabled = value);
+            }
+        }
         public override void Draw(bool vertical)
         {
             LayoutButtons(vertical);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
-            Buttons.ForEach(x => x.Draw(vertical));
+            for (int i = Buttons.Count - 1; i >= 0; i--)
+            {
+                Buttons[i].Draw(vertical);
+            }
             DrawnBounds = new Rectangle(Left, Top, Width, Height);
             GL.PopMatrix();
         }
@@ -126,7 +146,8 @@ namespace DGScope
             }
         }
         public Size Size { get; set;}
-
+        public bool Enabled { get; set; } = true;
+        public DCBMenu ParentMenu { get; set; }
         public bool RotateIfVertical { get; set; }
         public Rectangle DrawnBounds { get; protected set; }
         public abstract void Draw(bool vertical);
