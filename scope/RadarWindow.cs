@@ -3272,6 +3272,8 @@ namespace DGScope
         {
             //if (activeDcbButton.GetType() != typeof(DCBAdjustmentButton))
             //    activeDcbButton.Active = false;
+            if (activeDcbButton == null)
+                return;
             if (activeDcbButton.GetType() == typeof(DCBActionButton))
                 ((DCBActionButton)activeDcbButton).ActionDone();
             activeDcbButton = null;
