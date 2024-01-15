@@ -561,25 +561,6 @@ namespace DGScope
         [Editor(typeof(ReceiverCollectionEditor), typeof(UITypeEditor))]
         [DisplayName("Receivers"), Description("The collection of data receivers for the Radar scope")]
         public ListOfIReceiver Receivers { get; set; } = new ListOfIReceiver();
-        private GeoPoint _screenCenter = null;
-        [Browsable(false)]
-        public GeoPoint ScreenCenterPoint
-        {
-            get
-            {
-                if (_screenCenter == null)
-                {
-                    return HomeLocation;
-                }
-                return _screenCenter;
-            }
-            set
-            {
-                _screenCenter = value;
-                if (HomeLocation.Latitude == 0 && HomeLocation.Longitude == 0) //Check to see if this value needs to be created.
-                    HomeLocation = value;
-            }
-        }
         private GeoPoint _homeLocation = new GeoPoint(0, 0);
         [DisplayName("Facility Center")]
         public GeoPoint HomeLocation
@@ -591,8 +572,6 @@ namespace DGScope
                 OrderWaypoints();
             }
         }
-        [DisplayName("Range Ringe Center"), Category("Display Properties")]
-        public GeoPoint RangeRingCenter { get; set; } = new GeoPoint(0, 0);
         private double _startingRange = 20;
         [DisplayName("Scope Range"), Category("Display Properties")]
         public int Range { get; set; }
@@ -779,6 +758,8 @@ namespace DGScope
         private GameWindow window;
         private bool isScreenSaver = false;
         private bool tpasize = true;
+        private GeoPoint ScreenCenterPoint => CurrentPrefSet.ScopeCentered ? HomeLocation : CurrentPrefSet.ScreenCenterPoint;
+        private GeoPoint RangeRingCenter => CurrentPrefSet.RangeRingsCentered ? HomeLocation : CurrentPrefSet.RangeRingLocation;
         public static DateTime CurrentTime => timesync.CurrentTime();
         private TransparentLabel PreviewArea = new TransparentLabel()
         {
@@ -1086,7 +1067,8 @@ namespace DGScope
                 move *= rotscale;
                 var trans = Matrix4.CreateTranslation(move.X, move.Y, move.Z);
                 center *= trans;
-                ScreenCenterPoint = new GeoPoint(center.Y, center.X);
+                CurrentPrefSet.ScopeCentered = false;
+                CurrentPrefSet.ScreenCenterPoint = new GeoPoint(center.Y, center.X);
                 //move *= mtrans.Inverted();
                 //ScreenCenterPoint = new GeoPoint(move.Y, move.X);
                 //ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
@@ -1126,15 +1108,13 @@ namespace DGScope
                 {
                     if (activeDcbButton == dcbPlaceCntrButton)
                     { 
-                        ScreenCenterPoint = ScreenToGeoPoint(e.Position);
+                        CurrentPrefSet.ScreenCenterPoint = ScreenToGeoPoint(e.Position);
+                        CurrentPrefSet.ScopeCentered = false;
                     }
                     else if (activeDcbButton == dcbPlaceRRButton)
                     {
-                        RangeRingCenter = ScreenToGeoPoint(e.Position);
-                    }
-                    else if (activeDcbButton == dcbRRCntrButton)
-                    {
-                        RangeRingCenter = HomeLocation;
+                        CurrentPrefSet.RangeRingLocation = ScreenToGeoPoint(e.Position);
+                        CurrentPrefSet.RangeRingsCentered = false;
                     }
                     ReleaseDCBButton();
                 }
@@ -2171,20 +2151,12 @@ namespace DGScope
                         //Range Rings
                         if (keys[0].Length == 1)
                         {
-                            if (!enter && clicked != null)
-                            {
-                                if (clicked.GetType() == typeof(PointF))
-                                    RangeRingCenter = ScreenToGeoPoint((PointF)clicked);
-                            }
-                            else if (enter)
-                            {
-                                ShowRangeRings = !ShowRangeRings;
-                            }
                         }
                         else if (enter)
                         {
                             if (double.TryParse(KeysToString(Preview.ToArray()), out double interval))
                             {
+                                CurrentPrefSet.RangeRingSpacing = (int)interval;
                                 RangeRingInterval = interval;
                             }
                         }
@@ -2199,9 +2171,9 @@ namespace DGScope
                             {
                                 var airport = airports.First();
                                 GeoPoint loc = new GeoPoint(airport.Location.Latitude, airport.Location.Longitude);
-                                ScreenCenterPoint = loc;
+                                CurrentPrefSet.ScopeCentered = true;
                                 HomeLocation = loc;
-                                RangeRingCenter = loc;
+                                CurrentPrefSet.RangeRingLocation = loc;
                                 ScreenRotation = (double)airport.MagVar;
                                 Preview.Clear();
                             }
@@ -2943,7 +2915,14 @@ namespace DGScope
                     case Key.F1:
                         if (!e.Shift)
                         {
-                            ScreenCenterPoint = HomeLocation;
+                            if (CurrentPrefSet.ScopeCentered)
+                            {
+                                CurrentPrefSet.ScopeCentered = false;
+                            }
+                            else
+                            {
+                                CurrentPrefSet.ScopeCentered = true;
+                            }
                         }
                         else
                         {
@@ -3082,11 +3061,11 @@ namespace DGScope
         private DCBToggleButton dcbOffCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "OFF\r\nCNTR" };
         private DCBAdjustmentButton dcbRRButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
         private DCBActionButton dcbPlaceRRButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nRR" };
-        private DCBToggleButton dcbRRCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
+        private DCBButton dcbRRCntrButton = new DCBButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
         private DCBSubmenuButton dcbMapsButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "MAPS" };
         private DCBMenu dcbMapsMenu = new DCBMenu();
         private DCBButton dcbMapsSubmenuDoneButton = new DCBButton() { Height = 40, Width = 80, Text = "DONE" };
-        private DCBActionButton dcbClearAllMapsButton = new DCBActionButton() { Height = 40, Width = 80, Text = "CLR ALL" };
+        private DCBButton dcbClearAllMapsButton = new DCBButton() { Height = 40, Width = 80, Text = "CLR ALL" };
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
         private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE", Disabled = true };
@@ -3124,11 +3103,13 @@ namespace DGScope
             dcbMainMenu.AddButton(dcbPlaceCntrButton);
             dcbPlaceCntrButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbOffCntrButton);
+            dcbOffCntrButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbRRButton);
             dcbRRButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbPlaceRRButton);
             dcbPlaceRRButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbRRCntrButton);
+            dcbRRCntrButton.Click += DcbButtonClick;
             
             dcbMainMenu.AddButton(dcbMapsButton);
             dcbMapsButton.Submenu = dcbMapsMenu;
@@ -3206,20 +3187,32 @@ namespace DGScope
             {
                 dcb.Location = DCBLocation.Top;
             }
-
             else if (sender == dcbDcbLeftButton)
             {
                 dcb.Location = DCBLocation.Left;
             }
-
             else if (sender == dcbDcbBottomButton)
             {
                 dcb.Location = DCBLocation.Bottom;
             }
-
             else if (sender == dcbDcbRightButton)
             {
                 dcb.Location = DCBLocation.Right;
+            }
+            else if (sender == dcbRRCntrButton)
+            {
+                CurrentPrefSet.RangeRingsCentered = !CurrentPrefSet.RangeRingsCentered;
+            }
+            else if (sender == dcbOffCntrButton)
+            {
+                if (CurrentPrefSet.ScopeCentered)
+                {
+                    CurrentPrefSet.ScopeCentered = false;
+                }
+                else
+                {
+                    CurrentPrefSet.ScopeCentered = true;
+                }
             }
         }
 
@@ -3276,6 +3269,9 @@ namespace DGScope
                 return;
             if (activeDcbButton.GetType() == typeof(DCBActionButton))
                 ((DCBActionButton)activeDcbButton).ActionDone();
+            activeDcbButton.Active = false;
+            if (activeDcbButton.ParentMenu != null)
+                activeDcbButton.ParentMenu.Enabled = true;
             activeDcbButton = null;
         }
         private void UpdateDCB()

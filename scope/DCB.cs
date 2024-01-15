@@ -95,7 +95,7 @@ namespace DGScope
         
     }
 
-    enum DCBLocation
+    public enum DCBLocation
     {
         Top, Bottom, Left, Right
     }

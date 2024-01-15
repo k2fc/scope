@@ -14,13 +14,16 @@ namespace DGScope.STARS
     [JsonObject]
     public class PrefSet
     {
-        public GeoPoint ScreenCenterPoint { get; set; }
+        public GeoPoint ScreenCenterPoint { get; set; } = new GeoPoint();
         public PointF PreviewAreaLocation { get; set; }
         public List<int> DisplayedMaps { get; set; } = new List<int>();
         public bool RangeRingsDisplayed { get; set; }
-        public GeoPoint RangeRingLocation { get; set; }
+        public GeoPoint RangeRingLocation { get; set; } = new GeoPoint();
         public int RangeRingSpacing { get; set; }
         public List<string> QuickLookedTCPs { get; set; } = new List<string>();
+        public DCBLocation DCBLocation { get; set; } = DCBLocation.Top;
+        public bool RangeRingsCentered { get; set; }
+        public bool ScopeCentered { get; set; }
         public int AltitudeFilterAssociatedMax { get; set; } = 99900;
         public int AltitudeFilterAssociatedMin { get; set; } = -9900;
         public int AltitudeFilterUnAssociatedMax { get; set; } = 99900;

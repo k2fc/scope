@@ -59,6 +59,8 @@ namespace DGScope
 
         public double DistanceTo(GeoPoint From, double Altitude = 0)
         {
+            if (From == null)
+                return 0;
             double R = 3443.92; // nautical miles
             double φ2 = Latitude * (Math.PI / 180);
             double φ1 = From.Latitude * (Math.PI / 180);

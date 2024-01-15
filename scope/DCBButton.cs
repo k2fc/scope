@@ -250,7 +250,6 @@ namespace DGScope
             if (Submenu.Font != Font) 
                 Submenu.Font = Font;
             Submenu.LayoutButtons(vertical);
-            GL.PushMatrix();
             if (vertical)
             {
                 Submenu.Top = DrawnBounds.Bottom;
@@ -263,7 +262,6 @@ namespace DGScope
             }
             Submenu.Draw(vertical);
             Submenu.Enabled = true;
-            GL.PopMatrix();
         }
         public override void MouseDown()
         {
