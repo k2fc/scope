@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 
 namespace DGScope
 {
-    internal abstract class DCBButton : DCBMenuItem
+    internal class DCBButton : DCBMenuItem
     {
         int bordersize = 3;
         Rectangle internalrectangle;
@@ -14,6 +15,10 @@ namespace DGScope
         bool drawnhorizontally = false;
         int textureID = 0;
         string drawntext;
+        bool enabled => Enabled && !Disabled;
+
+        Font drawnfont;
+
         public event EventHandler Click;
         public bool Active { get; set; }
         public Color BackColorActive { get; set; } = Color.Green;
@@ -22,8 +27,8 @@ namespace DGScope
         public Color ForeColor { get; set; } = Color.White;
         public Color ForeColorDwell { get; set; } = Color.Yellow;
         public Color ForeColorDisabled { get; set; } = Color.DarkGray;
-        public Font Font { get; set; } = new Font("FixedDemiBold", 8);
-        public StringFormat StringFormat { get; set; } = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        public override Font Font { get; set; }
+        public StringFormat StringFormat { get; set; } = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.NoClip };
         public string Text { get; set; }
         private void PaintText()
         {
@@ -32,6 +37,8 @@ namespace DGScope
             var img = new Bitmap(DrawnBounds.Width, DrawnBounds.Height);
             using (Graphics graphics = Graphics.FromImage(img))
             {
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
                 using (SolidBrush brush = new SolidBrush(Color.White))
                     graphics.DrawString(Text, this.Font, brush, internalrectangle, StringFormat);
             }
@@ -47,13 +54,14 @@ namespace DGScope
             GL.BindTexture(TextureTarget.Texture2D, 0);
             img.UnlockBits(data);
             drawntext = Text;
+            drawnfont = Font;
         }
         public override void Draw(bool vertical)
         {
             int width = RotateIfVertical && vertical ? Height : Width;
             int height = RotateIfVertical && vertical ? Width : Height;
             var drawactive = Active != (mousePressed && mouseInside);
-            internalrectangle = new Rectangle(bordersize, bordersize, width - 2 * bordersize, height - 2 * bordersize);
+            internalrectangle = new Rectangle(0, 0, width, height);
             DrawnBounds = new Rectangle(Left, Top, width, height);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
@@ -78,7 +86,7 @@ namespace DGScope
             GL.Vertex2(0, height);
             GL.End();
             GL.Begin(PrimitiveType.Polygon);
-            if (Enabled)
+            if (enabled)
                 GL.Color4(drawactive ? BackColorActive : BackColorInactive);
             else
                 GL.Color4(BackColorDisabled);
@@ -93,7 +101,7 @@ namespace DGScope
             {
                 textureID = GL.GenTexture();
             }
-            if (drawnhorizontally == vertical || drawnvertically != vertical || drawntext != Text)
+            if (drawnhorizontally == vertical || drawnvertically != vertical || drawntext != Text || drawnfont != Font)
             {
                 PaintText();
                 drawnvertically = vertical;
@@ -101,7 +109,7 @@ namespace DGScope
             }
             GL.BindTexture(TextureTarget.Texture2D, textureID);
             GL.Begin(PrimitiveType.Quads);
-            if (Enabled)
+            if (enabled)
                 GL.Color3(mouseInside ? ForeColorDwell : ForeColor);
             else
                 GL.Color3(ForeColorDisabled);
@@ -131,11 +139,13 @@ namespace DGScope
                     mouseInside = false;
                     mousePressed = false;
                 }
+                base.Enabled = value;
             }
         }
+        public bool Disabled { get; set; }
         public override void MouseMove(Point position)
         {
-            if (!Enabled) return;
+            if (!enabled) return;
             if (DrawnBounds.Contains(position))
             {
                 mouseInside = true;
@@ -147,7 +157,7 @@ namespace DGScope
         }
         public override void MouseDown()
         {
-            if (!Enabled) return;
+            if (!enabled) return;
             if (mouseInside)
             {
                 mousePressed = true;
@@ -155,7 +165,7 @@ namespace DGScope
         }
         public override void MouseUp()
         {
-            if (!Enabled) return;
+            if (!enabled) return;
             if (mouseInside && mousePressed) 
             {
                 OnClick(new EventArgs());
@@ -172,6 +182,7 @@ namespace DGScope
     {
         public event EventHandler ClickOff;
         public event EventHandler ClickOn;
+        
         public override void OnClick(EventArgs e)
         {
             if (Active)
@@ -188,6 +199,36 @@ namespace DGScope
 
     internal class DCBAdjustmentButton : DCBButton
     {
+        public event EventHandler Down;
+        public event EventHandler Up;
+        bool active;
+        public override void OnClick(EventArgs e)
+        {
+            active = !Active;
+            if (active)
+            {
+                ParentMenu.Enabled = false;
+                Enabled = true;
+                Active = true;
+            }
+            else
+            {
+                ParentMenu.Enabled = true;
+                Active = false;
+            }
+        }
+        public void MouseWheel(int delta)
+        {
+            if (!Active) return;
+            if (delta < 0)
+            {
+                Down?.Invoke(this, null);
+            }
+            else
+            {
+                Up?.Invoke(this, null);
+            }
+        }
     }
 
     internal class DCBSubmenuButton : DCBButton
@@ -206,6 +247,8 @@ namespace DGScope
             {
                 Submenu.Height = DrawnBounds.Height;
             }
+            if (Submenu.Font != Font) 
+                Submenu.Font = Font;
             Submenu.LayoutButtons(vertical);
             GL.PushMatrix();
             if (vertical)
@@ -255,7 +298,25 @@ namespace DGScope
 
     internal class DCBActionButton : DCBButton
     {
-     
+        public override void OnClick(EventArgs e)
+        {
+            Active = !Active;
+            if (Active)
+            {
+                ParentMenu.Enabled = false;
+                Enabled = true;
+            }
+            else
+            {
+                ParentMenu.Enabled = true;
+            }
+            base.OnClick(e);
+        }
+        public void ActionDone()
+        {
+            Active = false;
+            ParentMenu.Enabled = true;
+        }
     }
 
     internal class DCBRadioButton : DCBButton

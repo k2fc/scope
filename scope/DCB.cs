@@ -7,6 +7,8 @@ namespace DGScope
 {
     internal class DCB
     {
+        DCBMenu activemenu;
+        Font font = new Font("Consolas", 10);
         public DCBLocation Location { get; set; } = DCBLocation.Top;
         public int Size { get; set; } = 80;
         public bool Vertical
@@ -18,7 +20,24 @@ namespace DGScope
         }
         
         public bool Visible { get; set; }
-        public DCBMenu ActiveMenu { get; set; }
+        public DCBMenu ActiveMenu 
+        { 
+            get => activemenu;
+            set
+            {
+                activemenu = value;
+                activemenu.Font = font;
+            } 
+        }
+        public Font Font { 
+            get => font;
+            set
+            {
+                font = value;
+                if (activemenu != null)
+                    activemenu.Font = font;
+            }
+        }
         public List<DCBMenuItem> Items { get; set; } = new List<DCBMenuItem>();
         public void Draw(int width, int height, ref Matrix4 pixelTransform)
         {

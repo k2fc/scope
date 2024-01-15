@@ -17,11 +17,22 @@ namespace DGScope
     {
         bool laidoutvertical;
         bool laidouthorizontal;
+        Font font;
         protected List<DCBMenuItem> Buttons { get; set; } = new List<DCBMenuItem>();
         public void AddButton(DCBMenuItem button)
         {
             Buttons.Add(button);
             button.ParentMenu = this;
+            laidouthorizontal = false;
+            laidoutvertical = false;
+            button.Font = font;
+        }
+        public void RemoveButton(DCBMenuItem button)
+        {
+            Buttons.Remove(button);
+            button.ParentMenu = null;
+            laidouthorizontal = false;
+            laidoutvertical = false;
         }
         public new bool RotateIfVertical { get => true; }
         public new bool Enabled
@@ -35,6 +46,15 @@ namespace DGScope
                 }
                 base.Enabled = value;
                 Buttons.ForEach(x => x.Enabled = value);
+            }
+        }
+        public override Font Font
+        {
+            get => font;
+            set
+            {
+                Buttons.ForEach(x => x.Font = value);
+                font = value;
             }
         }
         public override void Draw(bool vertical)
@@ -149,6 +169,7 @@ namespace DGScope
         public bool Enabled { get; set; } = true;
         public DCBMenu ParentMenu { get; set; }
         public bool RotateIfVertical { get; set; }
+        public abstract Font Font { get; set; }
         public Rectangle DrawnBounds { get; protected set; }
         public abstract void Draw(bool vertical);
         public abstract void MouseMove(Point position);

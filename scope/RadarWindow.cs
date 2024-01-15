@@ -702,6 +702,18 @@ namespace DGScope
         [XmlElement("FontSizeUnit")]
         [Browsable(false)]
         public GraphicsUnit FontSizeUnit { get { return Font.Unit; } set { Font = new Font(Font.FontFamily, Font.Size, value); } }
+        [DisplayName("DCB Font")]
+        [XmlIgnore]
+        public Font DCBFont { get => dcb.Font; set => dcb.Font = value; }
+        [XmlElement("DBCFontName")]
+        [Browsable(false)]
+        public string DCBFontName { get { return DCBFont.FontFamily.Name; } set { DCBFont = new Font(value, DCBFont.Size, DCBFont.Unit); } }
+        [XmlElement("DBCFontSize")]
+        [Browsable(false)]
+        public int DCBFontSize { get { return (int)DCBFont.Size; } set { DCBFont = new Font(DCBFont.FontFamily, value, DCBFont.Unit); } }
+        [XmlElement("DCBFontSizeUnit")]
+        [Browsable(false)]
+        public GraphicsUnit DCBFontSizeUnit { get { return DCBFont.Unit; } set { DCBFont = new Font(DCBFont.FontFamily, DCBFont.Size, value); } }
         [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
         [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
@@ -1124,8 +1136,7 @@ namespace DGScope
                     {
                         RangeRingCenter = HomeLocation;
                     }
-                    activeDcbButton.Active = false;
-                    activeDcbButton = null;
+                    ReleaseDCBButton();
                 }
                 else if (tempLine == null)
                 {
@@ -1181,7 +1192,11 @@ namespace DGScope
         }
         private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            var oldscale = scale;
+            var button = activeDcbButton as DCBAdjustmentButton;
+            if (button != null)
+            {
+                button.MouseWheel(e.Delta);
+            }
             if (e.Delta > 0 && Range > 5)
                 Range -= 5;
             else if (e.Delta < 0)
@@ -2996,6 +3011,7 @@ namespace DGScope
                     case Key.Escape:
                         Preview.Clear();
                         previewmessage = null;
+                        ReleaseDCBButton();
                         if (tempLine != null)
                         {
                             lock (rangeBearingLines)
@@ -3058,7 +3074,7 @@ namespace DGScope
         }
         
         private int fps = 0;
-        private DCB dcb;
+        private DCB dcb = new DCB();
         private DCBMenu dcbMainMenu = new DCBMenu();
         private DCBButton activeDcbButton;
         private DCBAdjustmentButton dcbRangeButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
@@ -3068,27 +3084,52 @@ namespace DGScope
         private DCBActionButton dcbPlaceRRButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nRR" };
         private DCBToggleButton dcbRRCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
         private DCBSubmenuButton dcbMapsButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "MAPS" };
+        private DCBMenu dcbMapsMenu = new DCBMenu();
         private DCBActionButton dcbMapsSubmenuDoneButton = new DCBActionButton() { Height = 40, Width = 80, Text = "DONE" };
         private DCBActionButton dcbClearAllMapsButton = new DCBActionButton() { Height = 40, Width = 80, Text = "CLR ALL" };
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
-        private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
+        private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE", Disabled = true };
         private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
-        private DCBMenu dcbMapsMenu = new DCBMenu();
+
+        private DCBButton dcbShiftButton = new DCBButton() { Height = 80, Width = 80, Text = "SHIFT" };
+        private DCBButton dcbShiftButton2 = new DCBButton() { Height = 80, Width = 80, Text = "SHIFT" };
+        
+        private DCBMenu dcbShiftMenu = new DCBMenu();
+        private DCBButton dcbVolumeButton = new DCBButton() { Height = 80, Width = 80, Text = "VOL\r\nN/A", Disabled = true };
+        private DCBAdjustmentButton dcbHistoryNumButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBAdjustmentButton dcbHistoryRateButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBButton dcbCursorHomeButton = new DCBButton() { Height = 80, Width = 80, Text = "CURSOR\r\nHOME", Disabled = true };
+        private DCBAdjustmentButton dcbCursorSpeedButton = new DCBAdjustmentButton() { Height = 80, Width = 80, Text = "CSR SPD\r\nN/A", Disabled = true };
+        private DCBButton dcbMapUncorButton = new DCBButton() { Height = 80, Width = 80, Text = "MAP\r\nUNCOR", Disabled = true };
+        private DCBButton dcbUncorButton = new DCBButton() { Height = 80, Width = 80, Text = "UNCOR", Disabled = true };
+        private DCBButton dcbBeaconModeButton = new DCBButton() { Height = 80, Width = 80, Text = "BEACON\r\nMODE-2", Disabled = true };
+        private DCBButton dcbRtqcButton = new DCBButton() { Height = 80, Width = 80, Text = "RTQC", Disabled = true };
+        private DCBButton dcbMcpButton = new DCBButton() { Height = 80, Width = 80, Text = "MCP", Disabled = true };
+        private DCBButton dcbDcbTopButton = new DCBButton() { Height = 40, Width = 80, Text = "DCB\r\nTOP" };
+        private DCBButton dcbDcbLeftButton = new DCBButton() { Height = 40, Width = 80, Text = "DCB\r\nLEFT" };
+        private DCBButton dcbDcbRightButton = new DCBButton() { Height = 40, Width = 80, Text = "DCB\r\nRIGHT" };
+        private DCBButton dcbDcbBottomButton = new DCBButton() { Height = 40, Width = 80, Text = "DCB\r\nBOTTOM" };
+        private DCBAdjustmentButton dcbPtlLengthButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
+        private DCBToggleButton dcbPtlOwnButton = new DCBToggleButton { Height = 40, Width = 80, Text = "PTL OWN" };
+        private DCBToggleButton dcbPtlAllButton = new DCBToggleButton { Height = 40, Width = 80, Text = "PTL ALL" };
 
         public TCP TCP { get; set; } = new TCP();
 
         private void SetupDCB()
         {
             dcbMainMenu.AddButton(dcbRangeButton);
+            dcbRangeButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbPlaceCntrButton);
             dcbPlaceCntrButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbOffCntrButton);
             dcbMainMenu.AddButton(dcbRRButton);
+            dcbRRButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbPlaceRRButton);
             dcbPlaceRRButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbRRCntrButton);
+            
             dcbMainMenu.AddButton(dcbMapsButton);
             dcbMapsButton.Submenu = dcbMapsMenu;
             for (int i = 0; i < 6; i++)
@@ -3115,14 +3156,71 @@ namespace DGScope
             }
             dcbMainMenu.AddButton(dcbBriteButton);
             dcbMainMenu.AddButton(dcbLdrDirButton);
+            dcbLdrDirButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbLdrLenButton);
-            dcb = new DCB()
-            {
-                Location = DCBLocation.Top,
-                Visible = true,
-                ActiveMenu = dcbMainMenu
-            };
+            dcbLdrLenButton.Click += DcbScopeActionButtonClick;
+            dcbMainMenu.AddButton(dcbShiftButton);
+            dcbShiftButton.Click += DcbButtonClick;
+
+            //Auxiliary DCB Menu
+            dcbShiftMenu.AddButton(dcbVolumeButton);
+            dcbShiftMenu.AddButton(dcbHistoryNumButton);
+            dcbShiftMenu.AddButton(dcbHistoryRateButton);
+            dcbShiftMenu.AddButton(dcbCursorHomeButton);
+            dcbShiftMenu.AddButton(dcbCursorSpeedButton);
+            dcbShiftMenu.AddButton(dcbMapUncorButton);
+            dcbShiftMenu.AddButton(dcbUncorButton);
+            dcbShiftMenu.AddButton(dcbBeaconModeButton);
+            dcbShiftMenu.AddButton(dcbRtqcButton);
+            dcbShiftMenu.AddButton(dcbMcpButton);
+            dcbShiftMenu.AddButton(dcbDcbTopButton);
+            dcbShiftMenu.AddButton(dcbDcbLeftButton);
+            dcbShiftMenu.AddButton(dcbDcbRightButton);
+            dcbShiftMenu.AddButton(dcbDcbBottomButton);
+            dcbShiftMenu.AddButton(dcbPtlLengthButton);
+            dcbShiftMenu.AddButton(dcbPtlOwnButton);
+            dcbShiftMenu.AddButton(dcbPtlAllButton);
+            dcbShiftMenu.AddButton(dcbShiftButton2);
+            dcbDcbTopButton.Click += DcbButtonClick;
+            dcbDcbLeftButton.Click += DcbButtonClick;
+            dcbDcbRightButton.Click += DcbButtonClick;
+            dcbDcbBottomButton.Click += DcbButtonClick;
+            dcbShiftButton2.Click += DcbButtonClick;
+            dcb.Location = DCBLocation.Top;
+            dcb.Visible = true;
+            dcb.ActiveMenu = dcbMainMenu;
             
+        }
+
+        private void DcbButtonClick(object sender, EventArgs e)
+        {
+            if (sender == dcbShiftButton)
+            {
+                dcb.ActiveMenu = dcbShiftMenu;
+            }
+            else if (sender == dcbShiftButton2)
+            {
+                dcb.ActiveMenu = dcbMainMenu;
+            }
+            else if (sender == dcbDcbTopButton)
+            {
+                dcb.Location = DCBLocation.Top;
+            }
+
+            else if (sender == dcbDcbLeftButton)
+            {
+                dcb.Location = DCBLocation.Left;
+            }
+
+            else if (sender == dcbDcbBottomButton)
+            {
+                dcb.Location = DCBLocation.Bottom;
+            }
+
+            else if (sender == dcbDcbRightButton)
+            {
+                dcb.Location = DCBLocation.Right;
+            }
         }
 
         private void DcbClearAllMapsButton_Click(object sender, EventArgs e)
@@ -3138,7 +3236,9 @@ namespace DGScope
         private void DcbScopeActionButtonClick(object sender, EventArgs e)
         {
             activeDcbButton = sender as DCBButton;
-            activeDcbButton.Active = true;
+            if (activeDcbButton.GetType() == typeof(DCBActionButton))
+                activeDcbButton.Active = true;
+            
         }
 
         private void DcbMapButtonClick(object sender, EventArgs e)
@@ -3168,10 +3268,16 @@ namespace DGScope
             }
             Nexrad.RecomputeVertices();
         }
-
+        private void ReleaseDCBButton()
+        {
+            //if (activeDcbButton.GetType() != typeof(DCBAdjustmentButton))
+            //    activeDcbButton.Active = false;
+            if (activeDcbButton.GetType() == typeof(DCBActionButton))
+                ((DCBActionButton)activeDcbButton).ActionDone();
+            activeDcbButton = null;
+        }
         private void UpdateDCB()
         {
-            dcb.Location = DCBLocation.Top;
             dcbRangeButton.Text = "RANGE\r\n" + Range;
             dcbOffCntrButton.Active = ScreenCenterPoint != HomeLocation;
             dcbRRButton.Text = "RR\r\n" + (int)RangeRingInterval;
@@ -3183,7 +3289,7 @@ namespace DGScope
                 var map = VideoMaps.Where(x => x.Number == TCP.DCBMapList[i]).FirstOrDefault();
                 if (map == null)
                     continue;
-                dcbMapButton[i].Text = map.Mnemonic + "\r\n" + map.Number;
+                dcbMapButton[i].Text = map.Number + "\r\n" + map.Mnemonic;
                 dcbMapButton[i].Active = map.Visible;
             }
             for (int i = 0; i < dcbWxButton.Length; i++)
@@ -3199,6 +3305,15 @@ namespace DGScope
             }
             dcbLdrDirButton.Text = "LDR DIR\r\n" + UnownedLeaderDirection;
             dcbLdrLenButton.Text = "LDR LEN\r\n" + (int)LeaderLength;
+            dcbDcbTopButton.Active = dcb.Location == DCBLocation.Top;
+            dcbDcbBottomButton.Active = dcb.Location == DCBLocation.Bottom;
+            dcbDcbLeftButton.Active = dcb.Location == DCBLocation.Left;
+            dcbDcbRightButton.Active = dcb.Location == DCBLocation.Right;
+            dcbHistoryNumButton.Text = "HISTORY\r\n" + NumHistory;
+            dcbHistoryRateButton.Text = "H_RATE\r\n" + HistoryInterval;
+            dcbPtlLengthButton.Text = "PTL\r\nLNTH\r\n" + PTLlength;
+            dcbPtlOwnButton.Active = PTLOwn;
+            dcbPtlAllButton.Active = PTLAll;
         } 
 
         private Matrix4 geoToScreen;
