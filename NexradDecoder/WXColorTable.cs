@@ -44,6 +44,10 @@ namespace DGScope
             Colors = colors;
             LevelsEnabled = new bool[colors.Count];
             LevelsAvailable = new bool[colors.Count];
+            for (int i = 0; i < colors.Count; i++)
+            {
+                LevelsEnabled[i] = true;
+            }
         }
     }
 
