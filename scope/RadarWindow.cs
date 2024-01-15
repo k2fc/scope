@@ -3085,7 +3085,7 @@ namespace DGScope
         private DCBToggleButton dcbRRCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "RR\r\nCNTR" };
         private DCBSubmenuButton dcbMapsButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "MAPS" };
         private DCBMenu dcbMapsMenu = new DCBMenu();
-        private DCBActionButton dcbMapsSubmenuDoneButton = new DCBActionButton() { Height = 40, Width = 80, Text = "DONE" };
+        private DCBButton dcbMapsSubmenuDoneButton = new DCBButton() { Height = 40, Width = 80, Text = "DONE" };
         private DCBActionButton dcbClearAllMapsButton = new DCBActionButton() { Height = 40, Width = 80, Text = "CLR ALL" };
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];

@@ -252,10 +252,17 @@ namespace DGScope
             Submenu.LayoutButtons(vertical);
             GL.PushMatrix();
             if (vertical)
+            {
                 Submenu.Top = DrawnBounds.Bottom;
+                Submenu.Left = DrawnBounds.Left;
+            }
             else
+            {
                 Submenu.Left = DrawnBounds.Right;
+                Submenu.Top = DrawnBounds.Top;
+            }
             Submenu.Draw(vertical);
+            Submenu.Enabled = true;
             GL.PopMatrix();
         }
         public override void MouseDown()

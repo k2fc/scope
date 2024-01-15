@@ -92,13 +92,13 @@ namespace DGScope
                 button.Top = top;
                 button.Left = left;
                 top += height;
-                if (!vertical && button.Bottom >= this.Bottom)
+                if (!vertical && button.Bottom >= Height)
                 {
                     left = button.Right;
                     Width = button.Right;
                     top = 0;
                 }
-                else if (button.Bottom >= this.Bottom)
+                else if (button.Bottom >= Height)
                 {
                     Height = button.Bottom;
                 }

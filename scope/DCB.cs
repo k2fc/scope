@@ -46,13 +46,22 @@ namespace DGScope
             vec *= pixelTransform;
             GL.PushMatrix();
             GL.MultMatrix(ref pixelTransform);
+            GL.PushMatrix();
             if (Location == DCBLocation.Bottom)
             {
                 GL.Translate(0, height - Size, 0);
+                ActiveMenu.Top = height - Size;
+                ActiveMenu.Left = 0;
             }
             else if (Location == DCBLocation.Right)
             {
                 GL.Translate(width - Size, 0, 0);
+                ActiveMenu.Top = 0;
+                ActiveMenu.Left = width - Size;
+            }
+            else
+            {
+                ActiveMenu.Location = new Point(0, 0);
             }
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(Color.FromArgb(0, 35, 15)) ;
@@ -71,6 +80,7 @@ namespace DGScope
                 GL.Vertex2(width, 0);
             }
             GL.End();
+            GL.PopMatrix();
             if (Vertical)
             {
                 ActiveMenu.Width = Size;
