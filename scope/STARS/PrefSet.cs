@@ -6,6 +6,8 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+
 
 namespace DGScope.STARS
 {
@@ -16,14 +18,22 @@ namespace DGScope.STARS
     {
         public GeoPoint ScreenCenterPoint { get; set; } = new GeoPoint();
         public PointF PreviewAreaLocation { get; set; }
-        public List<int> DisplayedMaps { get; set; } = new List<int>();
+        public PointF StatusAreaLocation { get; set; }
+        public int[] DisplayedMaps { get; set; }
         public bool RangeRingsDisplayed { get; set; }
         public GeoPoint RangeRingLocation { get; set; } = new GeoPoint();
-        public int RangeRingSpacing { get; set; }
+        public int RangeRingSpacing { get; set; } = 5;
         public List<string> QuickLookedTCPs { get; set; } = new List<string>();
         public DCBLocation DCBLocation { get; set; } = DCBLocation.Top;
         public bool RangeRingsCentered { get; set; }
         public bool ScopeCentered { get; set; }
+        public double PTLLength { get; set; } = 1;
+        public bool PTLOwn { get; set; }
+        public bool PTLAll { get; set; }
+        public int HistoryNum { get; set; } = 10;
+        public double HistoryRate { get; set; } = 4.5;
+        public int LeaderLength { get; set; } = 1;
+        public int Range { get; set; } = 6;
         public int AltitudeFilterAssociatedMax { get; set; } = 99900;
         public int AltitudeFilterAssociatedMin { get; set; } = -9900;
         public int AltitudeFilterUnAssociatedMax { get; set; } = 99900;

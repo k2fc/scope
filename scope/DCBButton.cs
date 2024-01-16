@@ -216,6 +216,7 @@ namespace DGScope
                 ParentMenu.Enabled = true;
                 Active = false;
             }
+            base.OnClick(e);
         }
         public void MouseWheel(int delta)
         {

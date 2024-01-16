@@ -251,10 +251,6 @@ namespace DGScope
 
         [DisplayName("Fade Time"), Description("The number of seconds the target is faded out over.  A higher number is a slower fade."), Category("Display Properties")]
         public double FadeTime { get; set; } = 30;
-        [DisplayName("History Rate"), Description("The interval at which history is drawn.  Lower numbers mean more frequent history.  Set to 0 for a history at every location"), Category("Display Properties")]
-        public double HistoryInterval { get; set; } = 4.5;
-        [DisplayName("History Number"), Description("The number of histories to draw."), Category("Display Properties")]
-        public int NumHistory { get; set; } = 5;
         [DisplayName("Lost Target Seconds"), Description("The number of seconds before a target's data block is removed from the scope."), Category("Display Properties")]
         public int LostTargetSeconds { get; set; } = 30;
         [DisplayName("Aircraft Database Cleanup Interval"), Description("The number of seconds between removing aircraft from memory."), Category("Display Properties")]
@@ -375,24 +371,8 @@ namespace DGScope
         [Editor(typeof(VideoMapCollectionEditor), typeof(UITypeEditor))]
         [XmlIgnore]
         public VideoMapList VideoMaps { get; set; } = new VideoMapList();
-        private int[] visibleMaps = new int[0];
-        [Browsable(false)]
-        public int[] VisibleMaps
-        {
-            get
-            {
-                if (VideoMaps.Count > 0)
-                    return (VideoMaps.Where(x => x.Visible).Select(y => y.Number).ToArray());
-                else
-                    return visibleMaps;
-            }
-            set
-            {
-                visibleMaps = value;
-                if (VideoMaps.Count > 0)
-                    VideoMaps.ForEach(x => x.Visible = visibleMaps.Contains(x.Number));
-            }
-        }
+
+
         private string videoMapFilename = null;
         [Browsable(false)]
         public string VideoMapFilename
@@ -409,7 +389,6 @@ namespace DGScope
                 {
                     VideoMaps = VideoMapList.DeserializeFromJsonFile(value);
                     videoMapFilename = value;
-                    VideoMaps.ForEach(x => x.Visible = visibleMaps.Contains(x.Number));
                 }
                 catch (Exception ex)
                 {
@@ -463,7 +442,7 @@ namespace DGScope
         [DisplayName("Active 2.5 nm Approach Volumes"), Category("ATPA")]
         [XmlIgnore]
         public List<ATPAVolume> ActiveATPATwoPointFive { get; set; } = new List<ATPAVolume>();
-        float scale => (float)(Range / Math.Sqrt(2));
+        float scale => (float)(CurrentPrefSet.Range / Math.Sqrt(2));
         float pixelScale; 
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
         //float yPixelScale;// => pixelScale; // 2f / window.ClientSize.Height;
@@ -477,8 +456,6 @@ namespace DGScope
         [DisplayName("Selected Beacon Code Character"), Category("Display Properties")]
         public char SelectedBeaconCodeChar { get; set; } = '□';
 
-        [DisplayName("Range Ring Interval"), Category("Display Properties")]
-        public double RangeRingInterval { get; set; } = 5;
         private string cps = "NONE";
         [XmlIgnore]
         [DisplayName("This Position Indicator"), Category("Display Properties")]
@@ -572,10 +549,6 @@ namespace DGScope
                 OrderWaypoints();
             }
         }
-        private double _startingRange = 20;
-        [DisplayName("Scope Range"), Category("Display Properties")]
-        public int Range { get; set; }
-        
         [DisplayName("Unassociated Max Altitude"), Category("Altitude Filters"), Description("The maximum altitude of unassociated targets.")]
         public int MaxAltitude { get; set; }
 
@@ -659,12 +632,6 @@ namespace DGScope
         [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
         public float TPAConeWidth { get; set; } = 10; 
         
-        [DisplayName("PTL Length"), Description("Length of Predicted Track Lines, in minutes"), Category("Predicted Track Lines")]
-        public float PTLlength { get; set; } = 0;
-        [DisplayName("PTL Own"), Description("Display Predicted Track Lines for Owned tracks"), Category("Predicted Track Lines")]
-        public bool PTLOwn { get; set; } = false;
-        [DisplayName("PTL All"), Description("Display Predicted Track Lines for all FDBs"), Category("Predicted Track Lines")]
-        public bool PTLAll { get; set; } = false;
         [DisplayName("Nexrad Weather Radar")]
         public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
         [Browsable(false)]
@@ -695,8 +662,6 @@ namespace DGScope
         public GraphicsUnit DCBFontSizeUnit { get { return DCBFont.Unit; } set { DCBFont = new Font(DCBFont.FontFamily, DCBFont.Size, value); } }
         [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
-        [DisplayName("Leader Length"), Description("The number of pixels to offset the data block from the target"), Category("Data Blocks")]
-        public float LeaderLength { get; set; } = 1;
         [DisplayName("Owned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
         public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
         [DisplayName("Unowned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
@@ -752,9 +717,18 @@ namespace DGScope
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
         [DisplayName("Pref Set"), Category("Display Properties")]
-        public PrefSet CurrentPrefSet { get; set; } = new PrefSet();
+        public PrefSet CurrentPrefSet 
+        {
+            get => prefSet;
+            set
+            {
+                prefSet = value;
+                VideoMaps.ForEach(x => x.Visible = value.DisplayedMaps.Contains(x.Number));
+            }
+        }
         char?[] atises = new char?[10];
         string?[] gentexts = new string?[10];
+        private PrefSet prefSet = new PrefSet();
         private GameWindow window;
         private bool isScreenSaver = false;
         private bool tpasize = true;
@@ -1060,6 +1034,8 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
+                if (centeredmouse)
+                    return;
                 float xMove = e.XDelta * pixelScale;
                 float yMove = e.YDelta * pixelScale;
                 var center = new Vector4((float)ScreenCenterPoint.Longitude, (float)ScreenCenterPoint.Latitude, 0.0f, 1.0f);
@@ -1106,15 +1082,16 @@ namespace DGScope
                 }
                 else if (activeDcbButton != null)
                 {
-                    if (activeDcbButton == dcbPlaceCntrButton)
-                    { 
-                        CurrentPrefSet.ScreenCenterPoint = ScreenToGeoPoint(e.Position);
-                        CurrentPrefSet.ScopeCentered = false;
-                    }
-                    else if (activeDcbButton == dcbPlaceRRButton)
+                    if (activeDcbButton == dcbPlaceRRButton)
                     {
                         CurrentPrefSet.RangeRingLocation = ScreenToGeoPoint(e.Position);
                         CurrentPrefSet.RangeRingsCentered = false;
+                    }
+                    else if (activeDcbButton.GetType() == typeof(DCBAdjustmentButton))
+                    {
+                        var loc = new Point(window.Location.X + activeDcbButton.DrawnBounds.X + activeDcbButton.Width / 2, window.Location.Y + activeDcbButton.DrawnBounds.Y + activeDcbButton.Height / 2);
+                        Mouse.SetPosition(loc.X, loc.Y);
+                        window.CursorVisible = true;
                     }
                     ReleaseDCBButton();
                 }
@@ -1177,10 +1154,10 @@ namespace DGScope
             {
                 button.MouseWheel(e.Delta);
             }
-            if (e.Delta > 0 && Range > 5)
-                Range -= 5;
+            if (e.Delta > 0 && CurrentPrefSet.Range > 6)
+                CurrentPrefSet.Range -= 1;
             else if (e.Delta < 0)
-                Range += 5;
+                CurrentPrefSet.Range += 1;
             
         }
 
@@ -2157,7 +2134,6 @@ namespace DGScope
                             if (double.TryParse(KeysToString(Preview.ToArray()), out double interval))
                             {
                                 CurrentPrefSet.RangeRingSpacing = (int)interval;
-                                RangeRingInterval = interval;
                             }
                         }
                         Preview.Clear();
@@ -2571,7 +2547,7 @@ namespace DGScope
                 }
                 StatusArea.Text += "\r\n";
             }
-            StatusArea.Text += (int)Range + "NM" + " PTL: " + PTLlength.ToString("0.0") + "\r\n";
+            StatusArea.Text += (int)CurrentPrefSet.Range + "NM" + " PTL: " + CurrentPrefSet.PTLLength.ToString("0.0") + "\r\n";
             StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
                 + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
             if (ATPA.Active)
@@ -2991,6 +2967,8 @@ namespace DGScope
                         Preview.Clear();
                         previewmessage = null;
                         ReleaseDCBButton();
+                        centeredmouse = true;
+                        window.CursorVisible = true;
                         if (tempLine != null)
                         {
                             lock (rangeBearingLines)
@@ -3057,7 +3035,7 @@ namespace DGScope
         private DCBMenu dcbMainMenu = new DCBMenu();
         private DCBButton activeDcbButton;
         private DCBAdjustmentButton dcbRangeButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
-        private DCBActionButton dcbPlaceCntrButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nCNTR" };
+        private DCBAdjustmentButton dcbPlaceCntrButton = new DCBAdjustmentButton() { Height = 40, Width = 80, Text = "PLACE\r\nCNTR" };
         private DCBToggleButton dcbOffCntrButton = new DCBToggleButton() { Height = 40, Width = 80, Text = "OFF\r\nCNTR" };
         private DCBAdjustmentButton dcbRRButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
         private DCBActionButton dcbPlaceRRButton = new DCBActionButton() { Height = 40, Width = 80, Text = "PLACE\r\nRR" };
@@ -3069,7 +3047,7 @@ namespace DGScope
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
         private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE", Disabled = true };
-        private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80, Disabled = true };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
 
         private DCBButton dcbShiftButton = new DCBButton() { Height = 80, Width = 80, Text = "SHIFT" };
@@ -3099,13 +3077,13 @@ namespace DGScope
         private void SetupDCB()
         {
             dcbMainMenu.AddButton(dcbRangeButton);
-            dcbRangeButton.Click += DcbScopeActionButtonClick;
+            dcbRangeButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbPlaceCntrButton);
-            dcbPlaceCntrButton.Click += DcbScopeActionButtonClick;
+            dcbPlaceCntrButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbOffCntrButton);
             dcbOffCntrButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbRRButton);
-            dcbRRButton.Click += DcbScopeActionButtonClick;
+            dcbRRButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbPlaceRRButton);
             dcbPlaceRRButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbRRCntrButton);
@@ -3139,7 +3117,7 @@ namespace DGScope
             dcbMainMenu.AddButton(dcbLdrDirButton);
             dcbLdrDirButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbLdrLenButton);
-            dcbLdrLenButton.Click += DcbScopeActionButtonClick;
+            dcbLdrLenButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbShiftButton);
             dcbShiftButton.Click += DcbButtonClick;
 
@@ -3162,17 +3140,22 @@ namespace DGScope
             dcbShiftMenu.AddButton(dcbPtlOwnButton);
             dcbShiftMenu.AddButton(dcbPtlAllButton);
             dcbShiftMenu.AddButton(dcbShiftButton2);
+            dcbHistoryNumButton.Click += DcbButtonClick;
+            dcbHistoryRateButton.Click += DcbButtonClick;
             dcbDcbTopButton.Click += DcbButtonClick;
             dcbDcbLeftButton.Click += DcbButtonClick;
             dcbDcbRightButton.Click += DcbButtonClick;
             dcbDcbBottomButton.Click += DcbButtonClick;
+            dcbPtlOwnButton.Click += DcbButtonClick;
+            dcbPtlAllButton.Click += DcbButtonClick;
+            dcbPtlLengthButton.Click += DcbButtonClick;
             dcbShiftButton2.Click += DcbButtonClick;
             dcb.Location = DCBLocation.Top;
             dcb.Visible = true;
             dcb.ActiveMenu = dcbMainMenu;
             
         }
-
+        
         private void DcbButtonClick(object sender, EventArgs e)
         {
             if (sender == dcbShiftButton)
@@ -3214,7 +3197,26 @@ namespace DGScope
                     CurrentPrefSet.ScopeCentered = true;
                 }
             }
+            else if (sender == dcbPtlOwnButton)
+            {
+                CurrentPrefSet.PTLOwn = !CurrentPrefSet.PTLOwn;
+                if (CurrentPrefSet.PTLOwn)
+                    CurrentPrefSet.PTLAll = false;
+            }
+            else if (sender == dcbPtlAllButton)
+            {
+                CurrentPrefSet.PTLAll = !CurrentPrefSet.PTLAll; 
+                if (CurrentPrefSet.PTLAll)
+                    CurrentPrefSet.PTLOwn = false;
+            }
+            else if (sender.GetType() == typeof(DCBAdjustmentButton))
+            {
+                window.CursorVisible = false;
+                CenterMouse();
+                activeDcbButton = sender as DCBAdjustmentButton;
+            }
         }
+        
 
         private void DcbClearAllMapsButton_Click(object sender, EventArgs e)
         {
@@ -3276,9 +3278,9 @@ namespace DGScope
         }
         private void UpdateDCB()
         {
-            dcbRangeButton.Text = "RANGE\r\n" + Range;
+            dcbRangeButton.Text = "RANGE\r\n" + CurrentPrefSet.Range;
             dcbOffCntrButton.Active = ScreenCenterPoint != HomeLocation;
-            dcbRRButton.Text = "RR\r\n" + (int)RangeRingInterval;
+            dcbRRButton.Text = "RR\r\n" + (int)CurrentPrefSet.RangeRingSpacing;
             dcbRRCntrButton.Active = RangeRingCenter == HomeLocation;
             for (int i = 0; i < dcbMapButton.Length; i++)
             {
@@ -3302,25 +3304,36 @@ namespace DGScope
                 dcbWxButton[i].BackColorInactive = Nexrad.LevelsAvailable[i] ? Color.DarkSlateBlue : Color.FromArgb(0, 80, 0);
             }
             dcbLdrDirButton.Text = "LDR DIR\r\n" + UnownedLeaderDirection;
-            dcbLdrLenButton.Text = "LDR LEN\r\n" + (int)LeaderLength;
+            dcbLdrLenButton.Text = "LDR LEN\r\n" + CurrentPrefSet.LeaderLength;
             dcbDcbTopButton.Active = dcb.Location == DCBLocation.Top;
             dcbDcbBottomButton.Active = dcb.Location == DCBLocation.Bottom;
             dcbDcbLeftButton.Active = dcb.Location == DCBLocation.Left;
             dcbDcbRightButton.Active = dcb.Location == DCBLocation.Right;
-            dcbHistoryNumButton.Text = "HISTORY\r\n" + NumHistory;
-            dcbHistoryRateButton.Text = "H_RATE\r\n" + HistoryInterval;
-            dcbPtlLengthButton.Text = "PTL\r\nLNTH\r\n" + PTLlength;
-            dcbPtlOwnButton.Active = PTLOwn;
-            dcbPtlAllButton.Active = PTLAll;
+            dcbHistoryNumButton.Text = "HISTORY\r\n" + CurrentPrefSet.HistoryNum;
+            dcbHistoryRateButton.Text = "H_RATE\r\n" + CurrentPrefSet.HistoryRate;
+            dcbPtlLengthButton.Text = "PTL\r\nLNTH\r\n" + CurrentPrefSet.PTLLength;
+            dcbPtlOwnButton.Active = CurrentPrefSet.PTLOwn;
+            dcbPtlAllButton.Active = CurrentPrefSet.PTLAll;
         } 
 
         private Matrix4 geoToScreen;
         private Matrix4 rotscale;
         private Matrix4 arscale;
         private Matrix4 pixeltransform;
+        private bool centeredlast;
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
+            var state = Mouse.GetState();
+            var mousecurrent = new Vector4(state.X, state.Y, 0, 1);
+            if (!centeredlast)
+                mousemove = mousecurrent - mouseprev;
+            centeredlast = centeredmouse;
+            centeredmouse = false;
+            ProcessMouse();
+
+            mouseprev = mousecurrent;
             DeleteTextures();
+            
             if (window.WindowState == WindowState.Minimized)
                 return;
             aspect_ratio = (float)window.ClientSize.Width / (float)window.ClientSize.Height;
@@ -3381,6 +3394,198 @@ namespace DGScope
                     ADSBtoFlightPlanCallsigns(Aircraft.ToList());
             }
             oldar = aspect_ratio;
+            
+        }
+        bool centeredmouse;
+        Vector4 mouseprev = Vector4.Zero;
+        Vector4 mousemove = Vector4.Zero;
+        Vector4 mouse_cumulative = Vector4.Zero;
+        private void ProcessMouse()
+        {
+            var button = activeDcbButton as DCBAdjustmentButton;
+            if (button != null)
+            {
+                int mousethreshold = 35;
+                mouse_cumulative += mousemove;
+                if (button == dcbPlaceCntrButton)
+                {
+                    CurrentPrefSet.ScopeCentered = false;
+                    var centervec = new Vector4((float)ScreenCenterPoint.Longitude, (float)ScreenCenterPoint.Latitude, 0, 1);
+                    var mousevec = mousemove * pixeltransform;
+                    mousevec *= geoToScreen.Inverted();
+                    mousevec *= 0.5f;
+                    centervec += mousevec;
+                    CurrentPrefSet.ScreenCenterPoint = new GeoPoint(centervec.Y, centervec.X);
+                }
+                else if(button == dcbHistoryNumButton)
+                {
+                    int d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 1;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -1;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    var newnum = CurrentPrefSet.HistoryNum + d;
+                    if (newnum > 10)
+                    {
+                        CurrentPrefSet.HistoryNum = 10;
+                    }
+                    else if (newnum < 0)
+                    {
+                        CurrentPrefSet.HistoryNum = 0;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.HistoryNum = newnum;
+                    }
+                }
+                else if (button == dcbHistoryRateButton)
+                {
+                    double d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 0.5;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -0.5;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    var newnum = CurrentPrefSet.HistoryRate + d;
+                    if (newnum > 4.5)
+                    {
+                        CurrentPrefSet.HistoryRate = 4.5;
+                    }
+                    else if (newnum < 0)
+                    {
+                        CurrentPrefSet.HistoryRate = 0;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.HistoryRate = newnum;
+                    }
+                }
+                else if (button == dcbLdrLenButton)
+                {
+                    int d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 1;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -1;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    var newnum = CurrentPrefSet.LeaderLength + d;
+                    if (newnum > 8)
+                    {
+                        CurrentPrefSet.LeaderLength = 8;
+                    }
+                    else if (newnum < 0)
+                    {
+                        CurrentPrefSet.LeaderLength = 0;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.LeaderLength = newnum;
+                    }
+                }
+                else if (button == dcbPtlLengthButton)
+                {
+                    double d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 0.5;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -0.5;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    var newnum = CurrentPrefSet.PTLLength + d;
+                    if (newnum > 5)
+                    {
+                        CurrentPrefSet.PTLLength = 5;
+                    }
+                    else if (newnum < 0)
+                    {
+                        CurrentPrefSet.PTLLength = 0;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.PTLLength = newnum;
+                    }
+                }
+                else if (button == dcbRangeButton)
+                {
+                    int d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 1;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -1;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    var newnum = CurrentPrefSet.Range + d;
+                    if (newnum > 512)
+                    {
+                        CurrentPrefSet.Range = 512;
+                    }
+                    else if (newnum < 6)
+                    {
+                        CurrentPrefSet.Range = 6;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Range = (int)newnum;
+                    }
+                }
+
+                else if (button == dcbRRButton)
+                {
+                    int d = 0;
+                    if (mouse_cumulative.Y > mousethreshold)
+                        d = 1;
+                    else if (mouse_cumulative.Y < -mousethreshold)
+                        d = -1;
+                    else return;
+                    mouse_cumulative = Vector4.Zero;
+                    if (d != 0)
+                    {
+                        switch (CurrentPrefSet.RangeRingSpacing)
+                        {
+                            case 2 when d > 0:
+                                CurrentPrefSet.RangeRingSpacing = 5;
+                                break;
+                            case 5 when d > 0:
+                                CurrentPrefSet.RangeRingSpacing = 10;
+                                break;
+                            case 5 when d < 0:
+                                CurrentPrefSet.RangeRingSpacing = 2;
+                                break;
+                            case 10 when d > 0:
+                                CurrentPrefSet.RangeRingSpacing = 20;
+                                break;
+                            case 10 when d < 0:
+                                CurrentPrefSet.RangeRingSpacing = 5;
+                                break;
+                            case 20 when d < 0:
+                                CurrentPrefSet.RangeRingSpacing = 10;
+                                break;
+                            case 20 when d > 0:
+                                break;
+                            default:
+                                CurrentPrefSet.RangeRingSpacing = 2;
+                                break;
+                        }
+                    }
+                }
+                CenterMouse();
+            }
+            else
+            {
+                mouse_cumulative = Vector4.Zero;
+            }
+        }
+        private void CenterMouse()
+        {
+            if (centeredlast)
+                return;
+            Point mousecenter = new Point(window.Location.X + window.Width / 2, window.Location.Y + window.Height / 2);
+            Mouse.SetPosition(mousecenter.X, mousecenter.Y);
+            centeredmouse = true;
         }
         private PointF GeoToScreenPoint(GeoPoint geoPoint)
         {
@@ -3388,6 +3593,14 @@ namespace DGScope
             
             vec *= geoToScreen;
             return new PointF(vec.X, vec.Y);
+        }
+
+        private Point GeoToPixel(GeoPoint geoPoint)
+        {
+            Vector4 vec = new Vector4((float)geoPoint.Longitude, (float)geoPoint.Latitude, 0, 1);
+            vec *= geoToScreen;
+            vec *= pixeltransform.Inverted();
+            return new Point((int)vec.X, (int)vec.Y);
         }
 
         private GeoPoint ScreenToGeoPoint(PointF Point)
@@ -3744,14 +3957,14 @@ namespace DGScope
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             */
             double distance = ScreenCenterPoint.DistanceTo(RangeRingCenter);
-            var rrr = (aspect_ratio > 1 ? Range * aspect_ratio : Range / aspect_ratio) + distance;
+            var rrr = (aspect_ratio > 1 ? CurrentPrefSet.Range * aspect_ratio : CurrentPrefSet.Range / aspect_ratio) + distance;
             var x = RangeRingCenter.Longitude;
             var y = RangeRingCenter.Latitude;
             var latfactor = Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude));
             GL.PushMatrix();
             GL.MultMatrix(ref geoToScreen);
 
-            for (double i = RangeRingInterval; i <= rrr && RangeRingInterval > 0; i += RangeRingInterval)
+            for (double i = CurrentPrefSet.RangeRingSpacing; i <= rrr && CurrentPrefSet.RangeRingSpacing > 0; i += CurrentPrefSet.RangeRingSpacing)
             {
                 DrawCircle(x,y, (i / 60d) / latfactor, latfactor, 1000, AdjustedColor(RangeRingColor, CurrentPrefSet.Brightness.RangeRings));
             }
@@ -3985,18 +4198,23 @@ namespace DGScope
         private void DrawVideoMapLines()
         {
             List<Line> lines = new List<Line>();
+            CurrentPrefSet.DisplayedMaps = VideoMaps.Where(x => x.Visible).Select(x=>x.Number).ToArray();
             foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.A))
             {
-                if (map.Visible)
+                if (CurrentPrefSet.DisplayedMaps.Contains(map.Number))
+                {
                     lines.AddRange(map.Lines);
+                }
             }
             var colora = AdjustedColor(VideoMapLineColor, CurrentPrefSet.Brightness.MapA);
             DrawLines(lines, colora);
             lines.Clear();
             foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.B))
             {
-                if (map.Visible)
+                if (CurrentPrefSet.DisplayedMaps.Contains(map.Number))
+                {
                     lines.AddRange(map.Lines);
+                }
             }
             var colorb = AdjustedColor(VideoMapBLineColor, CurrentPrefSet.Brightness.MapB);
             DrawLines(lines, colorb);
@@ -4177,7 +4395,7 @@ namespace DGScope
             //if (location.X == 0 || location.Y == 0)
              //   return;
             if (aircraft.LastHistoryTimes.ContainsKey(radar) && 
-                (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= HistoryInterval)
+                (radar.SweptTimes[aircraft] - aircraft.LastHistoryTimes[radar]).TotalSeconds >= CurrentPrefSet.HistoryRate)
             {
                 aircraft.TargetReturn.ForeColor = HistoryColors[0];
                 //aircraft.TargetReturn.ShapeHeight = HistoryHeight;
@@ -4228,7 +4446,7 @@ namespace DGScope
             {
                 aircraft.RedrawTarget(extrapolatedpos, radar);
                 aircraft.PTL.End1 = aircraft.SweptLocation(radar);
-                double ptldistance = (aircraft.SweptSpeed(radar) / 60) * PTLlength;
+                double ptldistance = (aircraft.SweptSpeed(radar) / 60) * CurrentPrefSet.PTLLength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
 
                 if (InFilter(aircraft) ||
@@ -4374,12 +4592,6 @@ namespace DGScope
             }    
             generating = false;
         }
-        private bool inRange (Aircraft plane)
-        {
-            if (plane.Location == null)
-                return false;
-            return plane.Location.DistanceTo(radar.Location) <= Range;
-        }
 
         private PointF OffsetDatablockLocation(Aircraft thisAircraft, LeaderDirection direction)
         {
@@ -4387,7 +4599,7 @@ namespace DGScope
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
             var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
-            var offset = (1 + LeaderLength) * offsetScale;
+            var offset = (1 + CurrentPrefSet.LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
@@ -4668,12 +4880,12 @@ namespace DGScope
                 return;
             if (target.ParentAircraft.Location == null)
                 return;
-            if ((target.LastDrawnScreenCenter != ScreenCenterPoint || target.LastDrawnRange != Range || target.LastDrawnScreenRotation != ScreenRotation) && target.GeoLocation != null)
+            if ((target.LastDrawnScreenCenter != ScreenCenterPoint || target.LastDrawnRange != CurrentPrefSet.Range || target.LastDrawnScreenRotation != ScreenRotation) && target.GeoLocation != null)
             {
                 target.LocationF = GeoToScreenPoint(target.GeoLocation);
                 target.LastDrawnScreenRotation = ScreenRotation;
                 target.LastDrawnScreenCenter = ScreenCenterPoint;
-                target.LastDrawnRange = Range;
+                target.LastDrawnRange = CurrentPrefSet.Range;
                 if (target.ParentAircraft != null && target == target.ParentAircraft.TargetReturn)
                 {
                     target.ParentAircraft.LocationF = target.LocationF;
@@ -4685,7 +4897,7 @@ namespace DGScope
             {
                 if (!InFilter(target.ParentAircraft) && !target.ParentAircraft.FDB)
                     return;
-                if (Array.IndexOf(target.ParentAircraft.History, target) >= NumHistory)
+                if (Array.IndexOf(target.ParentAircraft.History, target) >= CurrentPrefSet.HistoryNum)
                     return;
             }
             var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
@@ -4878,7 +5090,7 @@ namespace DGScope
                 {
                     if (block.ParentAircraft == debugPlane)
                         debugPlane = null; 
-                    if (PTLlength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && PTLOwn) || (block.ParentAircraft.FDB && PTLAll)))
+                    if (CurrentPrefSet.PTLLength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && CurrentPrefSet.PTLOwn) || (block.ParentAircraft.FDB && CurrentPrefSet.PTLAll)))
                     {
                         DrawLine(block.ParentAircraft.PTL, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
                     }
@@ -5017,7 +5229,7 @@ namespace DGScope
                 GL.Begin(PrimitiveType.Lines);
                 GL.Color4(color);
             }
-            if (Label.ParentAircraft != null && LeaderLength > 0)
+            if (Label.ParentAircraft != null && CurrentPrefSet.LeaderLength > 0)
             {
                 if (Label == Label.ParentAircraft.DataBlock || Label == Label.ParentAircraft.DataBlock2 || Label == Label.ParentAircraft.DataBlock3)
                 {
