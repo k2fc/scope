@@ -3399,14 +3399,22 @@ namespace DGScope
         bool centeredmouse;
         Vector4 mouseprev = Vector4.Zero;
         Vector4 mousemove = Vector4.Zero;
-        Vector4 mouse_cumulative = Vector4.Zero;
+        int mousescrollcount;
         private void ProcessMouse()
         {
             var button = activeDcbButton as DCBAdjustmentButton;
             if (button != null)
             {
-                int mousethreshold = 35;
-                mouse_cumulative += mousemove;
+                int mousethreshold = 20;
+                if ((mousemove.Y >= 0) == (mousescrollcount >= 0) || (mousemove.Y <= 0) == (mousescrollcount <= 0))
+                {
+                    mousescrollcount += (int)mousemove.Y;
+                }
+                else
+                {
+                    mousescrollcount = 0;
+                }
+                Console.WriteLine((int)mousemove.Y + " " + mousescrollcount);
                 if (button == dcbPlaceCntrButton)
                 {
                     CurrentPrefSet.ScopeCentered = false;
@@ -3420,12 +3428,12 @@ namespace DGScope
                 else if(button == dcbHistoryNumButton)
                 {
                     int d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 1;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     var newnum = CurrentPrefSet.HistoryNum + d;
                     if (newnum > 10)
                     {
@@ -3443,12 +3451,12 @@ namespace DGScope
                 else if (button == dcbHistoryRateButton)
                 {
                     double d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 0.5;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -0.5;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     var newnum = CurrentPrefSet.HistoryRate + d;
                     if (newnum > 4.5)
                     {
@@ -3466,12 +3474,12 @@ namespace DGScope
                 else if (button == dcbLdrLenButton)
                 {
                     int d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 1;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     var newnum = CurrentPrefSet.LeaderLength + d;
                     if (newnum > 8)
                     {
@@ -3489,12 +3497,12 @@ namespace DGScope
                 else if (button == dcbPtlLengthButton)
                 {
                     double d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 0.5;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -0.5;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     var newnum = CurrentPrefSet.PTLLength + d;
                     if (newnum > 5)
                     {
@@ -3512,12 +3520,12 @@ namespace DGScope
                 else if (button == dcbRangeButton)
                 {
                     int d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 1;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     var newnum = CurrentPrefSet.Range + d;
                     if (newnum > 512)
                     {
@@ -3536,12 +3544,12 @@ namespace DGScope
                 else if (button == dcbRRButton)
                 {
                     int d = 0;
-                    if (mouse_cumulative.Y > mousethreshold)
+                    if (mousescrollcount > mousethreshold)
                         d = 1;
-                    else if (mouse_cumulative.Y < -mousethreshold)
+                    else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    else return;
-                    mouse_cumulative = Vector4.Zero;
+                    
+                    
                     if (d != 0)
                     {
                         switch (CurrentPrefSet.RangeRingSpacing)
@@ -3572,11 +3580,13 @@ namespace DGScope
                         }
                     }
                 }
+                if (Math.Abs(mousescrollcount) > mousethreshold)
+                    mousescrollcount = 0;
                 CenterMouse();
             }
             else
             {
-                mouse_cumulative = Vector4.Zero;
+                
             }
         }
         private void CenterMouse()
