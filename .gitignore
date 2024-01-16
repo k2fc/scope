@@ -344,3 +344,4 @@ healthchecksdb
 /ScopeServer/version.txt
 /ScopeServer/receivers.json
 /NexradDecoder/NexradDecoder.dll
+/NexradDecoder/net7.0

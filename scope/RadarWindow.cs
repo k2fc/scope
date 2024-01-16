@@ -3500,13 +3500,13 @@ namespace DGScope
                 }
                 if (button == dcbPlaceCntrButton)
                 {
-                    CurrentPrefSet.ScopeCentered = false;
                     var centervec = new Vector4((float)ScreenCenterPoint.Longitude, (float)ScreenCenterPoint.Latitude, 0, 1);
                     var mousevec = mousemove * pixeltransform;
                     mousevec *= geoToScreen.Inverted();
                     mousevec *= 0.5f;
                     centervec += mousevec;
                     CurrentPrefSet.ScreenCenterPoint = new GeoPoint(centervec.Y, centervec.X);
+                    CurrentPrefSet.ScopeCentered = false;
                 }
                 else if (button == dcbHistoryNumButton)
                 {
