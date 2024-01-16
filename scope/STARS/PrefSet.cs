@@ -25,6 +25,7 @@ namespace DGScope.STARS
         public int RangeRingSpacing { get; set; } = 5;
         public List<string> QuickLookedTCPs { get; set; } = new List<string>();
         public DCBLocation DCBLocation { get; set; } = DCBLocation.Top;
+        public bool DCBVisible { get; set; } = true;
         public bool RangeRingsCentered { get; set; }
         public bool ScopeCentered { get; set; }
         public double PTLLength { get; set; } = 1;

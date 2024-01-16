@@ -2911,7 +2911,7 @@ namespace DGScope
                         selector.Focus();
                         break;
                     case Key.F8:
-                        dcb.Visible = !dcb.Visible;
+                        CurrentPrefSet.DCBVisible = !CurrentPrefSet.DCBVisible;
                         break;
                     case Key.F9:
                         Preview.Clear();
@@ -3208,8 +3208,6 @@ namespace DGScope
             briteDoneButton.Click += DcbButtonClick;
 
 
-            dcb.Location = DCBLocation.Top;
-            dcb.Visible = true;
             dcb.ActiveMenu = dcbMainMenu;
             
         }
@@ -3227,19 +3225,19 @@ namespace DGScope
             }
             else if (sender == dcbDcbTopButton)
             {
-                dcb.Location = DCBLocation.Top;
+                CurrentPrefSet.DCBLocation = DCBLocation.Top;
             }
             else if (sender == dcbDcbLeftButton)
             {
-                dcb.Location = DCBLocation.Left;
+                CurrentPrefSet.DCBLocation = DCBLocation.Left;
             }
             else if (sender == dcbDcbBottomButton)
             {
-                dcb.Location = DCBLocation.Bottom;
+                CurrentPrefSet.DCBLocation = DCBLocation.Bottom;
             }
             else if (sender == dcbDcbRightButton)
             {
-                dcb.Location = DCBLocation.Right;
+                CurrentPrefSet.DCBLocation = DCBLocation.Right;
             }
             else if (sender == dcbRRCntrButton)
             {
@@ -3344,6 +3342,8 @@ namespace DGScope
         }
         private void UpdateDCB()
         {
+            dcb.Location = CurrentPrefSet.DCBLocation;
+            dcb.Visible = CurrentPrefSet.DCBVisible;
             dcbRangeButton.Text = "RANGE\r\n" + CurrentPrefSet.Range;
             dcbOffCntrButton.Active = ScreenCenterPoint != HomeLocation;
             dcbRRButton.Text = "RR\r\n" + (int)CurrentPrefSet.RangeRingSpacing;
