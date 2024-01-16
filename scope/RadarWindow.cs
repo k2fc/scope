@@ -3046,7 +3046,7 @@ namespace DGScope
         private DCBButton dcbClearAllMapsButton = new DCBButton() { Height = 40, Width = 80, Text = "CLR ALL" };
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
-        private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE", Disabled = true };
+        private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
         private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80, Disabled = true };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
 
@@ -3071,6 +3071,26 @@ namespace DGScope
         private DCBAdjustmentButton dcbPtlLengthButton = new DCBAdjustmentButton() { Height = 80, Width = 80 };
         private DCBToggleButton dcbPtlOwnButton = new DCBToggleButton { Height = 40, Width = 80, Text = "PTL OWN" };
         private DCBToggleButton dcbPtlAllButton = new DCBToggleButton { Height = 40, Width = 80, Text = "PTL ALL" };
+
+        private DCBMenu briteMenu = new DCBMenu();
+        private DCBAdjustmentButton briteDCBbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteBKCbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteMPAbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteMPBbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteFDBbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteLSTbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton britePOSbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteLDBbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteOTHbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteTLSbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteRRbutton  = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteCMPbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteBCNbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton britePRIbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteHSTbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteWXbutton  = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBAdjustmentButton briteWXCbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
+        private DCBButton briteDoneButton = new DCBButton { Width = 80, Height = 40, Text = "DONE" };
 
         public TCP TCP { get; set; } = new TCP();
 
@@ -3099,7 +3119,7 @@ namespace DGScope
             }
             dcbMapsMenu.AddButton(dcbMapsSubmenuDoneButton);
             dcbMapsMenu.AddButton(dcbClearAllMapsButton);
-            dcbMapsSubmenuDoneButton.Click += DcbMapsSubmenuDoneButton_Click;
+            dcbMapsSubmenuDoneButton.Click += DcbButtonClick;
             dcbClearAllMapsButton.Click += DcbClearAllMapsButton_Click;
             for (int i = 6; i < dcbMapButton.Length; i++)
             {
@@ -3114,6 +3134,7 @@ namespace DGScope
                 dcbWxButton[i].Click += DcbWxButtonClick;
             }
             dcbMainMenu.AddButton(dcbBriteButton);
+            dcbBriteButton.Submenu = briteMenu;
             dcbMainMenu.AddButton(dcbLdrDirButton);
             dcbLdrDirButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbLdrLenButton);
@@ -3150,12 +3171,52 @@ namespace DGScope
             dcbPtlAllButton.Click += DcbButtonClick;
             dcbPtlLengthButton.Click += DcbButtonClick;
             dcbShiftButton2.Click += DcbButtonClick;
+
+            briteMenu.AddButton(briteDCBbutton);
+            briteMenu.AddButton(briteBKCbutton);
+            briteMenu.AddButton(briteMPAbutton);
+            briteMenu.AddButton(briteMPBbutton);
+            briteMenu.AddButton(briteFDBbutton);
+            briteMenu.AddButton(briteLSTbutton);
+            briteMenu.AddButton(britePOSbutton);
+            briteMenu.AddButton(briteLDBbutton);
+            briteMenu.AddButton(briteOTHbutton);
+            briteMenu.AddButton(briteTLSbutton);
+            briteMenu.AddButton(briteRRbutton);
+            briteMenu.AddButton(briteCMPbutton);
+            briteMenu.AddButton(briteBCNbutton);
+            briteMenu.AddButton(britePRIbutton);
+            briteMenu.AddButton(briteHSTbutton);
+            briteMenu.AddButton(briteWXbutton);
+            briteMenu.AddButton(briteWXCbutton);
+            briteMenu.AddButton(briteDoneButton);
+            briteDCBbutton.Click += DcbButtonClick;
+            briteBKCbutton.Click += DcbButtonClick; 
+            briteMPAbutton.Click += DcbButtonClick; 
+            briteMPBbutton.Click += DcbButtonClick; 
+            briteFDBbutton.Click += DcbButtonClick; 
+            briteLSTbutton.Click += DcbButtonClick; 
+            britePOSbutton.Click += DcbButtonClick; 
+            briteLDBbutton.Click += DcbButtonClick; 
+            briteOTHbutton.Click += DcbButtonClick; 
+            briteTLSbutton.Click += DcbButtonClick; 
+            briteRRbutton. Click += DcbButtonClick; 
+            briteCMPbutton.Click += DcbButtonClick; 
+            briteBCNbutton.Click += DcbButtonClick; 
+            britePRIbutton.Click += DcbButtonClick; 
+            briteHSTbutton.Click += DcbButtonClick; 
+            briteWXbutton. Click += DcbButtonClick;
+            briteWXCbutton.Click += DcbButtonClick; 
+            briteDoneButton.Click += DcbButtonClick;
+
+
             dcb.Location = DCBLocation.Top;
             dcb.Visible = true;
             dcb.ActiveMenu = dcbMainMenu;
             
         }
-        
+
+
         private void DcbButtonClick(object sender, EventArgs e)
         {
             if (sender == dcbShiftButton)
@@ -3215,6 +3276,14 @@ namespace DGScope
                 CenterMouse();
                 activeDcbButton = sender as DCBAdjustmentButton;
             }
+            else if (sender == dcbMapsSubmenuDoneButton)
+            {
+                dcbMapsButton.OnClick(e);
+            }
+            else if (sender == briteDoneButton)
+            {
+                dcbBriteButton.OnClick(e);
+            }
         }
         
 
@@ -3225,7 +3294,6 @@ namespace DGScope
 
         private void DcbMapsSubmenuDoneButton_Click(object sender, EventArgs e)
         {
-            dcbMapsButton.OnClick(null);
         }
 
         private void DcbScopeActionButtonClick(object sender, EventArgs e)
@@ -3314,6 +3382,24 @@ namespace DGScope
             dcbPtlLengthButton.Text = "PTL\r\nLNTH\r\n" + CurrentPrefSet.PTLLength;
             dcbPtlOwnButton.Active = CurrentPrefSet.PTLOwn;
             dcbPtlAllButton.Active = CurrentPrefSet.PTLAll;
+            briteDCBbutton.Text = "DCB " + CurrentPrefSet.Brightness.DCB;
+            briteBKCbutton.Text = "BKC " + CurrentPrefSet.Brightness.Background;
+            briteMPAbutton.Text = "MPA " + CurrentPrefSet.Brightness.MapA;
+            briteMPBbutton.Text = "MPB " + CurrentPrefSet.Brightness.MapB;
+            briteFDBbutton.Text = "FDB " + CurrentPrefSet.Brightness.FullDataBlocks;
+            briteLSTbutton.Text = "LST " + CurrentPrefSet.Brightness.Lists;
+            britePOSbutton.Text = "POS " + CurrentPrefSet.Brightness.PositionSymbols;
+            briteLDBbutton.Text = "LDB " + CurrentPrefSet.Brightness.LimitedDataBlocks;
+            briteOTHbutton.Text = "OTH " + CurrentPrefSet.Brightness.OtherFDBs;
+            briteTLSbutton.Text = "TLS " + CurrentPrefSet.Brightness.Tools;
+            briteRRbutton .Text = "RR "  + CurrentPrefSet.Brightness.RangeRings;
+            briteCMPbutton.Text = "CMP " + CurrentPrefSet.Brightness.Compass;
+            briteBCNbutton.Text = "BCN " + CurrentPrefSet.Brightness.BeaconTargets;
+            britePRIbutton.Text = "PRI " + CurrentPrefSet.Brightness.PrimaryTargets;
+            briteHSTbutton.Text = "HST " + CurrentPrefSet.Brightness.History;
+            briteWXbutton .Text = "WX "  + CurrentPrefSet.Brightness.Weather;
+            briteWXCbutton.Text = "WXC " + CurrentPrefSet.Brightness.WeatherContrast;
+
         } 
 
         private Matrix4 geoToScreen;
@@ -3414,7 +3500,6 @@ namespace DGScope
                 {
                     mousescrollcount = 0;
                 }
-                Console.WriteLine((int)mousemove.Y + " " + mousescrollcount);
                 if (button == dcbPlaceCntrButton)
                 {
                     CurrentPrefSet.ScopeCentered = false;
@@ -3425,15 +3510,15 @@ namespace DGScope
                     centervec += mousevec;
                     CurrentPrefSet.ScreenCenterPoint = new GeoPoint(centervec.Y, centervec.X);
                 }
-                else if(button == dcbHistoryNumButton)
+                else if (button == dcbHistoryNumButton)
                 {
                     int d = 0;
                     if (mousescrollcount > mousethreshold)
                         d = 1;
                     else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    
-                    
+
+
                     var newnum = CurrentPrefSet.HistoryNum + d;
                     if (newnum > 10)
                     {
@@ -3455,8 +3540,8 @@ namespace DGScope
                         d = 0.5;
                     else if (mousescrollcount < -mousethreshold)
                         d = -0.5;
-                    
-                    
+
+
                     var newnum = CurrentPrefSet.HistoryRate + d;
                     if (newnum > 4.5)
                     {
@@ -3478,8 +3563,8 @@ namespace DGScope
                         d = 1;
                     else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    
-                    
+
+
                     var newnum = CurrentPrefSet.LeaderLength + d;
                     if (newnum > 8)
                     {
@@ -3501,8 +3586,8 @@ namespace DGScope
                         d = 0.5;
                     else if (mousescrollcount < -mousethreshold)
                         d = -0.5;
-                    
-                    
+
+
                     var newnum = CurrentPrefSet.PTLLength + d;
                     if (newnum > 5)
                     {
@@ -3524,8 +3609,8 @@ namespace DGScope
                         d = 1;
                     else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    
-                    
+
+
                     var newnum = CurrentPrefSet.Range + d;
                     if (newnum > 512)
                     {
@@ -3540,6 +3625,414 @@ namespace DGScope
                         CurrentPrefSet.Range = (int)newnum;
                     }
                 }
+                else if (button == briteDCBbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 25;
+                    var newnum = CurrentPrefSet.Brightness.DCB + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.DCB = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.DCB = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.DCB = newnum;
+                    }
+                }
+                else if (button == briteBKCbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.Background + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.Background = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.Background = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.Background = newnum;
+                    }
+                }
+                else if (button == briteMPAbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 5;
+                    var newnum = CurrentPrefSet.Brightness.MapA + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.MapA = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.MapA = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.MapA = newnum;
+                    }
+                }
+                else if (button == briteMPBbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 5;
+                    var newnum = CurrentPrefSet.Brightness.MapB + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.MapB = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.MapB = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.MapB = newnum;
+                    }
+                }
+                else if (button == briteFDBbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.FullDataBlocks + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.FullDataBlocks = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.FullDataBlocks = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.FullDataBlocks = newnum;
+                    }
+                }
+                else if (button == briteLSTbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 25;
+                    var newnum = CurrentPrefSet.Brightness.Lists + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.Lists = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.Lists = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.Lists = newnum;
+                    }
+                }
+                else if (button == britePOSbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.PositionSymbols + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.PositionSymbols = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.PositionSymbols = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.PositionSymbols = newnum;
+                    }
+                }
+                else if (button == briteLDBbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.LimitedDataBlocks + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.LimitedDataBlocks = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.LimitedDataBlocks = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.LimitedDataBlocks = newnum;
+                    }
+                }
+                else if (button == briteOTHbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.OtherFDBs + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.OtherFDBs = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.OtherFDBs = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.OtherFDBs = newnum;
+                    }
+                }
+                else if (button == briteTLSbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.Tools + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.Tools = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.Tools = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.Tools = newnum;
+                    }
+                }
+                else if (button == briteRRbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.RangeRings + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.RangeRings = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.RangeRings = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.RangeRings = newnum;
+                    }
+                }
+                else if (button == briteCMPbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.Compass + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.Compass = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.Compass = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.Compass = newnum;
+                    }
+                }
+                else if (button == briteBCNbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.BeaconTargets + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.BeaconTargets = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.BeaconTargets = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.BeaconTargets = newnum;
+                    }
+                }
+                else if (button == britePRIbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.PrimaryTargets + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.PrimaryTargets = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.PrimaryTargets = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.PrimaryTargets = newnum;
+                    }
+                }
+                else if (button == briteHSTbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 0;
+                    var newnum = CurrentPrefSet.Brightness.History + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.History = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.History = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.History = newnum;
+                    }
+                }
+                else if (button == briteWXbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 5;
+                    var newnum = CurrentPrefSet.Brightness.Weather + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.Weather = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.Weather = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.Weather = newnum;
+                    }
+                }
+                else if (button == briteWXCbutton)
+                {
+                    int d = 0;
+                    if (mousescrollcount > mousethreshold)
+                        d = 1;
+                    else if (mousescrollcount < -mousethreshold)
+                        d = -1;
+                    var step = 5;
+                    var max = 100;
+                    var min = 5;
+                    var newnum = CurrentPrefSet.Brightness.WeatherContrast + (d * step);
+                    if (newnum > max)
+                    {
+                        CurrentPrefSet.Brightness.WeatherContrast = max;
+                    }
+                    else if (newnum < min)
+                    {
+                        CurrentPrefSet.Brightness.WeatherContrast = min;
+                    }
+                    else
+                    {
+                        CurrentPrefSet.Brightness.WeatherContrast = newnum;
+                    }
+                }
 
                 else if (button == dcbRRButton)
                 {
@@ -3548,8 +4041,8 @@ namespace DGScope
                         d = 1;
                     else if (mousescrollcount < -mousethreshold)
                         d = -1;
-                    
-                    
+
+
                     if (d != 0)
                     {
                         switch (CurrentPrefSet.RangeRingSpacing)
