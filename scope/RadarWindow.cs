@@ -820,7 +820,8 @@ namespace DGScope
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            dcb.ActiveMenu.MouseUp();
+            if (CurrentPrefSet.DCBVisible)
+                dcb.ActiveMenu.MouseUp();
         }
 
         private void Aircraft_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -1017,7 +1018,8 @@ namespace DGScope
         private void Window_MouseMove(object sender, MouseMoveEventArgs e)
         {
             MouseLocation = e.Position;
-            dcb.ActiveMenu.MouseMove(e.Position);
+            if (CurrentPrefSet.DCBVisible)
+                dcb.ActiveMenu.MouseMove(e.Position);
             if (tempLine != null)
                 tempLine.End = LocationFromScreenPoint(e.Position);
             if (!e.Mouse.IsAnyButtonDown)
@@ -1069,7 +1071,8 @@ namespace DGScope
         private void Window_MouseDown(object sender, MouseEventArgs e)
         {
             var clicked = ClickedObject(e.Position);
-            dcb.ActiveMenu.MouseDown();
+            if (CurrentPrefSet.DCBVisible)
+                dcb.ActiveMenu.MouseDown();
             if (e.Mouse.LeftButton == ButtonState.Pressed)
             {
                 if ((Keyboard.GetState().IsKeyDown(Key.ControlLeft) || Keyboard.GetState().IsKeyDown(Key.ControlRight)) &&
