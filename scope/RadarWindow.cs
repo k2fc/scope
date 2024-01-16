@@ -1034,7 +1034,7 @@ namespace DGScope
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
-                if (centeredmouse)
+                /*if (centeredmouse)
                     return;
                 float xMove = e.XDelta * pixelScale;
                 float yMove = e.YDelta * pixelScale;
@@ -1045,10 +1045,7 @@ namespace DGScope
                 center *= trans;
                 CurrentPrefSet.ScopeCentered = false;
                 CurrentPrefSet.ScreenCenterPoint = new GeoPoint(center.Y, center.X);
-                //move *= mtrans.Inverted();
-                //ScreenCenterPoint = new GeoPoint(move.Y, move.X);
-                //ScreenCenterPoint = ScreenCenterPoint.FromPoint(xMove * scale, 270 + ScreenRotation);
-                //ScreenCenterPoint = ScreenCenterPoint.FromPoint(yMove * scale, 0 + ScreenRotation);
+                */
             }
         }
         bool hidewx = false;
@@ -1154,11 +1151,12 @@ namespace DGScope
             {
                 button.MouseWheel(e.Delta);
             }
+            /*
             if (e.Delta > 0 && CurrentPrefSet.Range > 6)
                 CurrentPrefSet.Range -= 1;
             else if (e.Delta < 0)
                 CurrentPrefSet.Range += 1;
-            
+            */
         }
 
         public enum KeyCode
