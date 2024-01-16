@@ -39,7 +39,7 @@ namespace DGScope
             }
         }
         public List<DCBMenuItem> Items { get; set; } = new List<DCBMenuItem>();
-        public void Draw(int width, int height, ref Matrix4 pixelTransform)
+        public void Draw(int width, int height, ref Matrix4 pixelTransform, int brightness)
         {
             if (!Visible) return;
             Vector4 vec = new Vector4(0, 0, 0, 1);
@@ -64,7 +64,7 @@ namespace DGScope
                 ActiveMenu.Location = new Point(0, 0);
             }
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(Color.FromArgb(0, 35, 15)) ;
+            GL.Color4(RadarWindow.AdjustedColor(Color.FromArgb(0, 35, 15), brightness));
             if (Vertical)
             {
                 GL.Vertex2(0, 0);
@@ -89,7 +89,7 @@ namespace DGScope
             {
                 ActiveMenu.Height = Size;
             }
-            ActiveMenu.Draw(Vertical);
+            ActiveMenu.Draw(Vertical, brightness);
             GL.PopMatrix();
         }
         

@@ -56,7 +56,7 @@ namespace DGScope
             drawntext = Text;
             drawnfont = Font;
         }
-        public override void Draw(bool vertical)
+        public override void Draw(bool vertical, int brightness)
         {
             int width = RotateIfVertical && vertical ? Height : Width;
             int height = RotateIfVertical && vertical ? Width : Height;
@@ -67,7 +67,7 @@ namespace DGScope
             GL.Translate(Left, Top, 0);
 
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(!drawactive ? Color.DarkGray : Color.Black);
+            GL.Color4(!drawactive ? RadarWindow.AdjustedColor(Color.DarkGray, brightness) : Color.Black);
             GL.Vertex2(0, 0);
             GL.Vertex2(width, 0);
             GL.Vertex2(width - bordersize, bordersize);
@@ -77,7 +77,7 @@ namespace DGScope
             GL.End();
 
             GL.Begin(PrimitiveType.Polygon);
-            GL.Color4(drawactive ? Color.DarkGray : Color.Black);
+            GL.Color4(drawactive ? RadarWindow.AdjustedColor(Color.DarkGray, brightness) : Color.Black);
             GL.Vertex2(width, height);
             GL.Vertex2(width, 0);
             GL.Vertex2(width - bordersize, bordersize);
@@ -87,9 +87,9 @@ namespace DGScope
             GL.End();
             GL.Begin(PrimitiveType.Polygon);
             if (enabled)
-                GL.Color4(drawactive ? BackColorActive : BackColorInactive);
+                GL.Color4(drawactive ? RadarWindow.AdjustedColor(BackColorActive, brightness) : RadarWindow.AdjustedColor(BackColorInactive, brightness));
             else
-                GL.Color4(BackColorDisabled);
+                GL.Color4(RadarWindow.AdjustedColor(BackColorDisabled, brightness));
             GL.Vertex2(bordersize, bordersize);
             GL.Vertex2(width - bordersize, bordersize);
             GL.Vertex2(width - bordersize, height - bordersize);
@@ -110,9 +110,9 @@ namespace DGScope
             GL.BindTexture(TextureTarget.Texture2D, textureID);
             GL.Begin(PrimitiveType.Quads);
             if (enabled)
-                GL.Color3(mouseInside ? ForeColorDwell : ForeColor);
+                GL.Color3(mouseInside ? RadarWindow.AdjustedColor(ForeColorDwell, brightness) : RadarWindow.AdjustedColor(ForeColor, brightness));
             else
-                GL.Color3(ForeColorDisabled);
+                GL.Color3(RadarWindow.AdjustedColor(ForeColorDisabled, brightness));
             GL.TexCoord2(0, 0);
             GL.Vertex2(0, 0);
             GL.TexCoord2(1, 0);
@@ -235,9 +235,9 @@ namespace DGScope
     internal class DCBSubmenuButton : DCBButton
     {
         public DCBMenu Submenu { get; set; }
-        public override void Draw(bool vertical)
+        public override void Draw(bool vertical, int brightness)
         {
-            base.Draw(vertical);
+            base.Draw(vertical, brightness);
             if (!Active)
                 return;
             if (vertical)
@@ -261,7 +261,7 @@ namespace DGScope
                 Submenu.Left = DrawnBounds.Right;
                 Submenu.Top = DrawnBounds.Top;
             }
-            Submenu.Draw(vertical);
+            Submenu.Draw(vertical, brightness);
             Submenu.Enabled = true;
         }
         public override void MouseDown()

@@ -57,14 +57,14 @@ namespace DGScope
                 font = value;
             }
         }
-        public override void Draw(bool vertical)
+        public override void Draw(bool vertical, int brightness)
         {
             LayoutButtons(vertical);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
             for (int i = Buttons.Count - 1; i >= 0; i--)
             {
-                Buttons[i].Draw(vertical);
+                Buttons[i].Draw(vertical, brightness);
             }
             DrawnBounds = new Rectangle(Left, Top, Width, Height);
             GL.PopMatrix();
@@ -171,7 +171,7 @@ namespace DGScope
         public bool RotateIfVertical { get; set; }
         public abstract Font Font { get; set; }
         public Rectangle DrawnBounds { get; protected set; }
-        public abstract void Draw(bool vertical);
+        public abstract void Draw(bool vertical, int brightness);
         public abstract void MouseMove(Point position);
         public virtual void MouseDown() { }
         public virtual void MouseUp() { }

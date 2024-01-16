@@ -3459,7 +3459,7 @@ namespace DGScope
             DrawCompass();
             DrawRBLs();
             UpdateDCB();
-            dcb.Draw(window.ClientSize.Width, window.ClientSize.Height, ref pixeltransform);
+            dcb.Draw(window.ClientSize.Width, window.ClientSize.Height, ref pixeltransform, CurrentPrefSet.Brightness.DCB);
             if (ATPA.Active)
             {
                 ATPA.Calculate(Aircraft, radar);
