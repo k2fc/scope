@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using OpenTK.Input;
 using System.Drawing.Imaging;
-using System.Diagnostics;
 using System.IO;
 using System.Xml.Serialization;
 using System.ComponentModel;
@@ -22,7 +21,6 @@ using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
 using System.Xml;
 using DGScope.MapImporter.CRC;
-using static System.Windows.Forms.LinkLabel;
 
 namespace DGScope
 {
@@ -4076,18 +4074,19 @@ namespace DGScope
                 }
                 if (Math.Abs(mousescrollcount) > mousethreshold)
                     mousescrollcount = 0;
+                if (activeDcbButton != dcbPlaceCntrButton)
+                    System.Windows.Forms.Cursor.Clip = activeDcbButton.DrawnBounds;
                 CenterMouse();
-            }
-            else
-            {
-                
             }
         }
         private void CenterMouse()
         {
             if (centeredlast)
                 return;
-            Point mousecenter = new Point(window.Location.X + window.Width / 2, window.Location.Y + window.Height / 2);
+            Rectangle clip = window.Bounds;
+            if (activeDcbButton != null && activeDcbButton.GetType() == typeof(DCBAdjustmentButton) && activeDcbButton != dcbPlaceCntrButton)
+                clip = System.Windows.Forms.Cursor.Clip;
+            Point mousecenter = new Point(clip.Location.X + clip.Width / 2, clip.Location.Y + clip.Height / 2);
             Mouse.SetPosition(mousecenter.X, mousecenter.Y);
             centeredmouse = true;
         }

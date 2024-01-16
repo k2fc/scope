@@ -4,6 +4,7 @@ using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace DGScope
 {
@@ -218,6 +219,11 @@ namespace DGScope
             }
             base.OnClick(e);
         }
+        public override void MouseDown()
+        {
+            if (!Active)
+                base.MouseDown();
+        }
         public void MouseWheel(int delta)
         {
             if (!Active) return;
@@ -255,7 +261,7 @@ namespace DGScope
             GL.Translate(Left, Top, 0);
             Submenu.Draw(new Point(location.X + Left, location.Y + Top), vertical, brightness);
             //Submenu.DrawnBounds = new Rectangle(new Point(DrawnBounds.Left + Submenu.Left, DrawnBounds.Top + Submenu.Top), Submenu.Size);
-            
+            Cursor.Clip = Submenu.DrawnBounds;
             GL.PopMatrix();
             Submenu.Enabled = true;
         }
