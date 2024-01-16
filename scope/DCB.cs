@@ -47,22 +47,31 @@ namespace DGScope
             GL.PushMatrix();
             GL.MultMatrix(ref pixelTransform);
             GL.PushMatrix();
+            var drawloc = new Point(0, 0);
             if (Location == DCBLocation.Bottom)
             {
                 GL.Translate(0, height - Size, 0);
-                ActiveMenu.Top = height - Size;
-                ActiveMenu.Left = 0;
+                drawloc = new Point(0, height - Size);
             }
             else if (Location == DCBLocation.Right)
             {
                 GL.Translate(width - Size, 0, 0);
-                ActiveMenu.Top = 0;
-                ActiveMenu.Left = width - Size;
+                drawloc = new Point(width - Size, 0);
             }
             else
             {
-                ActiveMenu.Location = new Point(0, 0);
+                drawloc = new Point(0, 0);
             }
+
+            if (Vertical)
+            {
+                ActiveMenu.Width = Size;
+            }
+            else
+            {
+                ActiveMenu.Height = Size;
+            }
+            ActiveMenu.Location = new Point(0, 0);
             GL.Begin(PrimitiveType.Polygon);
             GL.Color4(RadarWindow.AdjustedColor(Color.FromArgb(0, 35, 15), brightness));
             if (Vertical)
@@ -80,16 +89,8 @@ namespace DGScope
                 GL.Vertex2(width, 0);
             }
             GL.End();
+            ActiveMenu.Draw(drawloc, Vertical, brightness);
             GL.PopMatrix();
-            if (Vertical)
-            {
-                ActiveMenu.Width = Size;
-            }
-            else
-            {
-                ActiveMenu.Height = Size;
-            }
-            ActiveMenu.Draw(Vertical, brightness);
             GL.PopMatrix();
         }
         

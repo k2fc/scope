@@ -57,22 +57,23 @@ namespace DGScope
                 font = value;
             }
         }
-        public override void Draw(bool vertical, int brightness)
+        public override void Draw(Point location, bool vertical, int brightness)
         {
             LayoutButtons(vertical);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
+            var newloc = new Point(location.X + Left, location.Y + Top);
+            DrawnBounds = new Rectangle(newloc.X, newloc.Y, Width, Height);
             for (int i = Buttons.Count - 1; i >= 0; i--)
             {
-                Buttons[i].Draw(vertical, brightness);
+                var button = Buttons[i];
+                button.Draw(newloc, vertical, brightness);
             }
-            DrawnBounds = new Rectangle(Left, Top, Width, Height);
             GL.PopMatrix();
         }
         protected void OnClick(Point clickedPoint)
         {
-            var diff = new Point(clickedPoint.X - DrawnBounds.X, clickedPoint.Y - DrawnBounds.Y);
-            var clicked = Buttons.Where(x => x.DrawnBounds.Contains(diff)).ToList();
+            var clicked = Buttons.Where(x => x.DrawnBounds.Contains(clickedPoint)).ToList();
             if (clicked.Count == 0)
                 return;
             //else
@@ -110,7 +111,7 @@ namespace DGScope
         public override void MouseMove(Point position)
         {
             var diff = new Point(position.X - DrawnBounds.X, position.Y - DrawnBounds.Y);
-            Buttons.ForEach(x=> x.MouseMove(diff));
+            Buttons.ForEach(x=> x.MouseMove(position));
         }
         public override void MouseDown()
         {
@@ -170,8 +171,8 @@ namespace DGScope
         public DCBMenu ParentMenu { get; set; }
         public bool RotateIfVertical { get; set; }
         public abstract Font Font { get; set; }
-        public Rectangle DrawnBounds { get; protected set; }
-        public abstract void Draw(bool vertical, int brightness);
+        public Rectangle DrawnBounds { get; set; }
+        public abstract void Draw(Point location, bool vertical, int brightness);
         public abstract void MouseMove(Point position);
         public virtual void MouseDown() { }
         public virtual void MouseUp() { }

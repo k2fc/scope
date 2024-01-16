@@ -56,13 +56,13 @@ namespace DGScope
             drawntext = Text;
             drawnfont = Font;
         }
-        public override void Draw(bool vertical, int brightness)
+        public override void Draw(Point location, bool vertical, int brightness)
         {
             int width = RotateIfVertical && vertical ? Height : Width;
             int height = RotateIfVertical && vertical ? Width : Height;
             var drawactive = Active != (mousePressed && mouseInside);
             internalrectangle = new Rectangle(0, 0, width, height);
-            DrawnBounds = new Rectangle(Left, Top, width, height);
+            DrawnBounds = new Rectangle(location.X + Left, location.Y + Top, width, height);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
 
@@ -235,9 +235,9 @@ namespace DGScope
     internal class DCBSubmenuButton : DCBButton
     {
         public DCBMenu Submenu { get; set; }
-        public override void Draw(bool vertical, int brightness)
+        public override void Draw(Point location, bool vertical, int brightness)
         {
-            base.Draw(vertical, brightness);
+            base.Draw(location, vertical, brightness);
             if (!Active)
                 return;
             if (vertical)
@@ -251,17 +251,12 @@ namespace DGScope
             if (Submenu.Font != Font) 
                 Submenu.Font = Font;
             Submenu.LayoutButtons(vertical);
-            if (vertical)
-            {
-                Submenu.Top = DrawnBounds.Bottom;
-                Submenu.Left = DrawnBounds.Left;
-            }
-            else
-            {
-                Submenu.Left = DrawnBounds.Right;
-                Submenu.Top = DrawnBounds.Top;
-            }
-            Submenu.Draw(vertical, brightness);
+            GL.PushMatrix();
+            GL.Translate(Left, Top, 0);
+            Submenu.Draw(new Point(location.X + Left, location.Y + Top), vertical, brightness);
+            //Submenu.DrawnBounds = new Rectangle(new Point(DrawnBounds.Left + Submenu.Left, DrawnBounds.Top + Submenu.Top), Submenu.Size);
+            
+            GL.PopMatrix();
             Submenu.Enabled = true;
         }
         public override void MouseDown()
