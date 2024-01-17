@@ -1080,7 +1080,7 @@ namespace DGScope
                 {
                     System.Windows.Forms.Clipboard.SetText(ScreenToGeoPoint(e.Position).ToString());
                 }
-                else if (activeDcbButton != null)
+                else if (activeDcbButton != null && activeDcbButton.GetType() != typeof(DCBSubmenuButton))
                 {
                     if (activeDcbButton == dcbPlaceRRButton)
                     {
