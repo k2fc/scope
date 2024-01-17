@@ -3219,6 +3219,7 @@ namespace DGScope
         {
             var button = sender as DCBSubmenuButton;
             button.SetScreenLocation(window.Location);
+            activeDcbButton = button;
         }
 
         private void DcbButtonClick(object sender, EventArgs e)
