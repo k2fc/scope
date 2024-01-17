@@ -3110,7 +3110,7 @@ namespace DGScope
             
             dcbMainMenu.AddButton(dcbMapsButton);
             dcbMapsButton.Submenu = dcbMapsMenu;
-            dcbMapsButton.Click += DcbButtonClick;
+            dcbMapsButton.Click += DcbSubmenuButtonClick;
             for (int i = 0; i < 6; i++)
             {
                 dcbMapButton[i] = new DCBToggleButton { Height = 40, Width = 80, Text = "MAP\r\n" + (i + 1) };
@@ -3134,7 +3134,7 @@ namespace DGScope
                 dcbWxButton[i].Click += DcbWxButtonClick;
             }
             dcbMainMenu.AddButton(dcbBriteButton);
-            dcbBriteButton.Click += DcbButtonClick;
+            dcbBriteButton.Click += DcbSubmenuButtonClick;
             dcbBriteButton.Submenu = briteMenu;
             dcbMainMenu.AddButton(dcbLdrDirButton);
             dcbLdrDirButton.Click += DcbScopeActionButtonClick;
@@ -3215,6 +3215,11 @@ namespace DGScope
             
         }
 
+        private void DcbSubmenuButtonClick(object sender, EventArgs e)
+        {
+            var button = sender as DCBSubmenuButton;
+            button.SetScreenLocation(window.Location);
+        }
 
         private void DcbButtonClick(object sender, EventArgs e)
         {
@@ -4079,7 +4084,10 @@ namespace DGScope
                 if (Math.Abs(mousescrollcount) > mousethreshold)
                     mousescrollcount = 0;
                 if (activeDcbButton != dcbPlaceCntrButton)
-                    System.Windows.Forms.Cursor.Clip = activeDcbButton.DrawnBounds;
+                {
+                    var relativeloc = new Point(window.Location.X + activeDcbButton.DrawnBounds.X, window.Location.Y + activeDcbButton.DrawnBounds.Y);
+                    System.Windows.Forms.Cursor.Clip = new Rectangle(relativeloc, activeDcbButton.DrawnBounds.Size);
+                }
                 CenterMouse();
             }
         }

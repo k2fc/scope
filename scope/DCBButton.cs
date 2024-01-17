@@ -4,7 +4,6 @@ using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
-using System.Windows.Forms;
 
 namespace DGScope
 {
@@ -240,6 +239,8 @@ namespace DGScope
 
     internal class DCBSubmenuButton : DCBButton
     {
+        private Point windowLocation;
+        
         public DCBMenu Submenu { get; set; }
         public override void Draw(Point location, bool vertical, int brightness)
         {
@@ -270,7 +271,9 @@ namespace DGScope
                 Submenu.Draw(new Point(location.X + Right, location.Y + Top), vertical, brightness);
             }
             //Submenu.DrawnBounds = new Rectangle(new Point(DrawnBounds.Left + Submenu.Left, DrawnBounds.Top + Submenu.Top), Submenu.Size);
-            Cursor.Clip = Submenu.DrawnBounds;
+            var newpoint = new Point(windowLocation.X + Submenu.DrawnBounds.Location.X, windowLocation.Y + Submenu.DrawnBounds.Location.Y);
+            System.Windows.Forms.Cursor.Clip = new Rectangle(newpoint, Submenu.DrawnBounds.Size);
+
             GL.PopMatrix();
             Submenu.Enabled = true;
         }
@@ -308,8 +311,12 @@ namespace DGScope
             else
             {
                 ParentMenu.Enabled = true;
-                Cursor.Clip = new Rectangle();
             }
+            base.OnClick(e);
+        }
+        public void SetScreenLocation(Point point)
+        {
+            windowLocation = point;
         }
     }
 
