@@ -311,6 +311,7 @@ namespace DGScope
             else
             {
                 ParentMenu.Enabled = true;
+                System.Windows.Forms.Cursor.Clip = new Rectangle();
             }
             base.OnClick(e);
         }
