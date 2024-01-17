@@ -311,6 +311,8 @@ namespace DGScope
         [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
             "If false, they retain their direction with respect to the receiving radar site."), Category("Display Properties")]
         public bool HistoryDirectionAngle { get; set; } = false;
+        [DisplayName("Invert Mouse"), Description ("Invert the direction the mouse will move adjustments in the DCB"), Category("Display Properties")]
+        public bool InvertMouse { get; set; } = false;
         [DisplayName("Window State"), Category("Display Properties")]
         public WindowState WindowState
         {
@@ -3421,7 +3423,13 @@ namespace DGScope
             var state = Mouse.GetState();
             var mousecurrent = new Vector4(state.X, state.Y, 0, 1);
             if (!centeredlast)
+            {
                 mousemove = mousecurrent - mouseprev;
+                if (InvertMouse)
+                {
+                    mousemove *= -1;
+                }
+            }
             centeredlast = centeredmouse;
             centeredmouse = false;
             ProcessMouse();
