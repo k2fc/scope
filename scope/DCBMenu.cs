@@ -19,6 +19,7 @@ namespace DGScope
         bool laidouthorizontal;
         Font font;
         protected List<DCBMenuItem> Buttons { get; set; } = new List<DCBMenuItem>();
+        public DCBSubmenuButton SubmenuButton { get; set; }
         public void AddButton(DCBMenuItem button)
         {
             Buttons.Add(button);

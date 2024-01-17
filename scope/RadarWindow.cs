@@ -3348,9 +3348,14 @@ namespace DGScope
                 ((DCBActionButton)activeDcbButton).ActionDone();
             activeDcbButton.Active = false;
             if (activeDcbButton.ParentMenu != null)
+            {
                 activeDcbButton.ParentMenu.Enabled = true;
-            activeDcbButton = null;
-
+                activeDcbButton = activeDcbButton.ParentMenu.SubmenuButton;
+            }
+            else
+            {
+                activeDcbButton = null;
+            }
             System.Windows.Forms.Cursor.Clip = new Rectangle();
         }
         private void UpdateDCB()

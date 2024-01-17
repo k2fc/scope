@@ -276,6 +276,7 @@ namespace DGScope
 
             GL.PopMatrix();
             Submenu.Enabled = true;
+            Submenu.SubmenuButton = this;
         }
         public override void MouseDown()
         {
