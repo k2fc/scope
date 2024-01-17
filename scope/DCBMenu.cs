@@ -85,6 +85,7 @@ namespace DGScope
                 return;
             int top = 0;
             int left = 0;
+            int right = 0;
             foreach (var button in Buttons)
             {
                 var rotate = button.RotateIfVertical && vertical;
@@ -92,6 +93,13 @@ namespace DGScope
                 int height = rotate ? button.Width : button.Height;
                 button.Top = top;
                 button.Left = left;
+                if (!vertical && button.Bottom > Height && top > 0)
+                {
+                    top = 0;
+                    left = right;
+                    button.Top = 0;
+                    button.Left = right;
+                }
                 top += height;
                 if (!vertical && button.Bottom >= Height)
                 {
@@ -103,6 +111,7 @@ namespace DGScope
                 {
                     Height = button.Bottom;
                 }
+                right = button.Right;
             }
 
             laidoutvertical = vertical;

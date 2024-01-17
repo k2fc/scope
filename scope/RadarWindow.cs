@@ -3089,7 +3089,7 @@ namespace DGScope
         private DCBAdjustmentButton briteHSTbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
         private DCBAdjustmentButton briteWXbutton  = new DCBAdjustmentButton() { Width = 80, Height = 40 };
         private DCBAdjustmentButton briteWXCbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
-        private DCBButton briteDoneButton = new DCBButton { Width = 80, Height = 40, Text = "DONE" };
+        private DCBButton briteDoneButton = new DCBButton { Width = 80, Height = 80, Text = "DONE" };
 
         public TCP TCP { get; set; } = new TCP();
 
