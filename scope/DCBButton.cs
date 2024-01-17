@@ -259,9 +259,17 @@ namespace DGScope
             Submenu.LayoutButtons(vertical);
             GL.PushMatrix();
             GL.Translate(Left, Top, 0);
-            Submenu.Draw(new Point(location.X + Left, location.Y + Top), vertical, brightness);
+            if (vertical)
+            {
+                GL.Translate(0, Height, 0);
+                Submenu.Draw(new Point(location.X + Left, location.Y + Bottom), vertical, brightness);
+            }
+            else
+            {
+                GL.Translate(Width, 0, 0);
+                Submenu.Draw(new Point(location.X + Right, location.Y + Top), vertical, brightness);
+            }
             //Submenu.DrawnBounds = new Rectangle(new Point(DrawnBounds.Left + Submenu.Left, DrawnBounds.Top + Submenu.Top), Submenu.Size);
-            
             Cursor.Clip = Submenu.DrawnBounds;
             GL.PopMatrix();
             Submenu.Enabled = true;
@@ -300,6 +308,7 @@ namespace DGScope
             else
             {
                 ParentMenu.Enabled = true;
+                Cursor.Clip = new Rectangle();
             }
         }
     }

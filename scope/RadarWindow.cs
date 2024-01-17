@@ -3110,7 +3110,6 @@ namespace DGScope
             
             dcbMainMenu.AddButton(dcbMapsButton);
             dcbMapsButton.Submenu = dcbMapsMenu;
-            dcbMapsButton.Click += DcbButtonClick;
             for (int i = 0; i < 6; i++)
             {
                 dcbMapButton[i] = new DCBToggleButton { Height = 40, Width = 80, Text = "MAP\r\n" + (i + 1) };
@@ -3134,7 +3133,6 @@ namespace DGScope
                 dcbWxButton[i].Click += DcbWxButtonClick;
             }
             dcbMainMenu.AddButton(dcbBriteButton);
-            dcbBriteButton.Click += DcbButtonClick;
             dcbBriteButton.Submenu = briteMenu;
             dcbMainMenu.AddButton(dcbLdrDirButton);
             dcbLdrDirButton.Click += DcbScopeActionButtonClick;
@@ -3275,10 +3273,6 @@ namespace DGScope
                 CenterMouse();
                 activeDcbButton = sender as DCBAdjustmentButton;
             }
-            else if (sender.GetType() == typeof(DCBSubmenuButton))
-            {
-                activeDcbButton = sender as DCBSubmenuButton;
-            }
             else if (sender == dcbMapsSubmenuDoneButton)
             {
                 dcbMapsButton.OnClick(e);
@@ -3346,6 +3340,8 @@ namespace DGScope
             if (activeDcbButton.ParentMenu != null)
                 activeDcbButton.ParentMenu.Enabled = true;
             activeDcbButton = null;
+
+            System.Windows.Forms.Cursor.Clip = new Rectangle();
         }
         private void UpdateDCB()
         {
