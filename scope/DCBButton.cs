@@ -261,6 +261,7 @@ namespace DGScope
             GL.Translate(Left, Top, 0);
             Submenu.Draw(new Point(location.X + Left, location.Y + Top), vertical, brightness);
             //Submenu.DrawnBounds = new Rectangle(new Point(DrawnBounds.Left + Submenu.Left, DrawnBounds.Top + Submenu.Top), Submenu.Size);
+            
             Cursor.Clip = Submenu.DrawnBounds;
             GL.PopMatrix();
             Submenu.Enabled = true;
