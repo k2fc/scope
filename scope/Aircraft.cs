@@ -497,7 +497,16 @@ namespace DGScope
                     DataBlock.Text += fdb1line2;
                     DataBlock2.Text += fdb2line2;
                     DataBlock3.Text += fdb3line2;
-                    if (ATPAMileageNow != null)
+                    string assigned = "";
+                    if (!string.IsNullOrEmpty(AssignedSquawk))
+                        assigned = AssignedSquawk.PadLeft(4, '0');
+                    if (!string.IsNullOrEmpty(assigned) && Squawk != assigned)
+                    {
+                        DataBlock.Text += "\r\n" + Squawk + " " + assigned;
+                        DataBlock2.Text += "\r\n" + Squawk + " " + assigned;
+                        DataBlock3.Text += "\r\n" + Squawk + " " + assigned;
+                    }
+                    else if (ATPAMileageNow != null)
                     {
                         var miles = (double)ATPAMileageNow;
                         DataBlock.Text += "\r\n" + miles.ToString("0.00");
