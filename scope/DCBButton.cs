@@ -275,7 +275,6 @@ namespace DGScope
             System.Windows.Forms.Cursor.Clip = new Rectangle(newpoint, Submenu.DrawnBounds.Size);
 
             GL.PopMatrix();
-            Submenu.Enabled = true;
             Submenu.SubmenuButton = this;
         }
         public override void MouseDown()
