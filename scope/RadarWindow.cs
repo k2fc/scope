@@ -1930,10 +1930,16 @@ namespace DGScope
                                 if((keys[0].Length >= 4 || keys[0].Length <= 6) && enter)
                                 {
                                     var qlstring = KeysToString(keys[0]).Substring(1);
-                                    var qlplus = qlstring.Last() == '+';
+                                    bool qlplus = false;
+                                    if (!string.IsNullOrEmpty(qlstring))
+                                        qlplus = qlstring.Last() == '+';
                                     string qlpos = qlstring;
-                                    
-                                    if (qlplus)
+
+                                    if (string.IsNullOrEmpty(qlpos)) 
+                                    {
+                                        DisplayPreviewMessage("ILL POS", 10);
+                                    } 
+                                    else if (qlplus)
                                     {
                                         qlpos = qlstring.Substring(0, qlstring.Length - 1);
                                         if (QuickLookList.Contains(qlpos))
@@ -5545,50 +5551,50 @@ namespace DGScope
             List<Aircraft> aclist;
             lock (Aircraft)
             {
-                aclist = Aircraft.ToList();
+                aclist = Aircraft.Where(x=> x.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds)).ToList();
             }
-                aclist.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
-                aclist.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
-                foreach (var handoffPlane in aclist.Where(x => x.PendingHandoff == ThisPositionIndicator))
+            aclist.Where(x => x.PositionInd == ThisPositionIndicator).ToList().ForEach(x => x.Owned = true);
+            aclist.Where(x => x.TPA != null || x.ATPAFollowing != null).ToList().ForEach(x => DrawTPA(x));
+            foreach (var handoffPlane in aclist.Where(x => x.PendingHandoff == ThisPositionIndicator))
+            {
+                if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
+                    continue;
+                handoffPlane.Owned = true;
+                handoffPlane.DataBlock.Flashing = true;
+                handoffPlane.DataBlock2.Flashing = true;
+                //if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                    //GenerateDataBlock(handoffPlane);
+            }
+            foreach (var handedoffPlane in aclist.Where(x => x.PositionInd == x.PendingHandoff))
+            {
+                if (handedoffPlane.PendingHandoff != null)
+                    handedoffPlane.PendingHandoff = null;
+                if (handedoffPlane.DataBlock.Flashing)
                 {
-                    if (handoffPlane.Owned && handoffPlane.DataBlock.Flashing)
-                        continue;
-                    handoffPlane.Owned = true;
-                    handoffPlane.DataBlock.Flashing = true;
-                    handoffPlane.DataBlock2.Flashing = true;
-                    //if (handoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                        //GenerateDataBlock(handoffPlane);
+                    handedoffPlane.DataBlock.Flashing = false;
+                    handedoffPlane.DataBlock2.Flashing = false;
+                    handedoffPlane.DataBlock3.Flashing = false;
+                    //if (handedoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                        //GenerateDataBlock(handedoffPlane);
                 }
-                foreach (var handedoffPlane in aclist.Where(x => x.PositionInd == x.PendingHandoff))
+            }
+            foreach (var flashingPlane in aclist.Where(x => x.DataBlock.Flashing))
+            {
+                if (flashingPlane.PendingHandoff != ThisPositionIndicator)
                 {
-                    if (handedoffPlane.PendingHandoff != null)
-                        handedoffPlane.PendingHandoff = null;
-                    if (handedoffPlane.DataBlock.Flashing)
-                    {
-                        handedoffPlane.DataBlock.Flashing = false;
-                        handedoffPlane.DataBlock2.Flashing = false;
-                        handedoffPlane.DataBlock3.Flashing = false;
-                        //if (handedoffPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                            //GenerateDataBlock(handedoffPlane);
-                    }
+                    flashingPlane.DataBlock.Flashing = false;
+                    flashingPlane.DataBlock2.Flashing = false;
+                    flashingPlane.DataBlock3.Flashing = false;
+                    //if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
+                        //GenerateDataBlock(flashingPlane);
                 }
-                foreach (var flashingPlane in aclist.Where(x => x.DataBlock.Flashing))
-                {
-                    if (flashingPlane.PendingHandoff != ThisPositionIndicator)
-                    {
-                        flashingPlane.DataBlock.Flashing = false;
-                        flashingPlane.DataBlock2.Flashing = false;
-                        flashingPlane.DataBlock3.Flashing = false;
-                        //if (flashingPlane.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds))
-                            //GenerateDataBlock(flashingPlane);
-                    }
-                }
-                foreach (var beaconatorplane in aclist.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
-                {
-                    beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
-                    //GenerateDataBlock(beaconatorplane);
-                    beaconatorplane.RedrawDataBlock(radar);
-                }
+            }
+            foreach (var beaconatorplane in aclist.Where(x=> x.ShowCallsignWithNoSquawk != showAllCallsigns && x.LocationF.X != 0))
+            {
+                beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
+                //GenerateDataBlock(beaconatorplane);
+                beaconatorplane.RedrawDataBlock(radar);
+            }
             aclist.ForEach(x =>
             {
                 if ((!x.PrimaryOnly || x.Associated))
