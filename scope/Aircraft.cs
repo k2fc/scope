@@ -359,8 +359,12 @@ namespace DGScope
             {
                 vfrchar = FlightRules[0].ToString();
             }
-
-            if (!string.IsNullOrEmpty(Category))
+            if (Ident)
+            {
+                vfrchar = "I";
+                catchar = "D";
+            }
+            else if (!string.IsNullOrEmpty(Category))
             {
                 catchar = Category;
             }
