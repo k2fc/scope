@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using OpenTK;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -77,7 +78,7 @@ namespace DGScope.STARS
                         angle = SearchTargets.AzimuthExtent.Sixty;
                     }
                     minsize = ((SearchTargets.AzimuthExtentMinimum / 6076f) * dist) / scale;
-                    size = (dist * Math.Tan(angle * (Math.PI / 180) / 2) * 2) / scale;
+                    size = (dist * Math.Tan(MathHelper.DegreesToRadians(angle) / 2) * 2) / scale;
                     if (minsize > size)
                     {
                         size = minsize;
