@@ -3479,6 +3479,10 @@ namespace DGScope
                 arscale = Matrix4.CreateScale(1.0f, aspect_ratio, 1.0f);
                 pixeltransform *= Matrix4.CreateScale(aspect_ratio, 1, 1);
             }
+            else
+            {
+                arscale = Matrix4.Identity;
+            }
             if (!hidewx)
             {
                 DrawNexrad();
