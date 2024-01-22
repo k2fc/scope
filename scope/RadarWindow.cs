@@ -313,6 +313,8 @@ namespace DGScope
         public bool HistoryDirectionAngle { get; set; } = false;
         [DisplayName("Invert Mouse"), Description ("Invert the direction the mouse will move adjustments in the DCB"), Category("Display Properties")]
         public bool InvertMouse { get; set; } = false;
+        [DisplayName("Invert Keypad"), Description("Invert the direction the keypad will move leader lines"), Category("Display Properties")]
+        public bool InvertKeyboard { get; set; } = false;
         [DisplayName("Window State"), Category("Display Properties")]
         public WindowState WindowState
         {
@@ -442,7 +444,7 @@ namespace DGScope
         [DisplayName("Active 2.5 nm Approach Volumes"), Category("ATPA")]
         [XmlIgnore]
         public List<ATPAVolume> ActiveATPATwoPointFive { get; set; } = new List<ATPAVolume>();
-        float scale => (float)(CurrentPrefSet.Range / Math.Sqrt(2));
+        float scale => (float)(CurrentPrefSet.Range); // Math.Sqrt(2));
         float pixelScale; 
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
         //float yPixelScale;// => pixelScale; // 2f / window.ClientSize.Height;
@@ -1269,7 +1271,10 @@ namespace DGScope
                     case '1' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1277,7 +1282,10 @@ namespace DGScope
                     case '2' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1285,7 +1293,10 @@ namespace DGScope
                     case '3' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1317,7 +1328,10 @@ namespace DGScope
                     case '7' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1325,7 +1339,10 @@ namespace DGScope
                     case '8' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -1333,7 +1350,10 @@ namespace DGScope
                     case '9' when keys[0].Length == 1:
                         if (clickedplane)
                         {
-                            ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
+                            if (!InvertKeyboard)
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
+                            else
+                                ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
                             ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
@@ -4496,7 +4516,7 @@ namespace DGScope
             float y = (float)(Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             */
             double distance = ScreenCenterPoint.DistanceTo(RangeRingCenter);
-            var rrr = (aspect_ratio > 1 ? CurrentPrefSet.Range * aspect_ratio : CurrentPrefSet.Range / aspect_ratio) + distance;
+            var rrr = (aspect_ratio > 1 ? CurrentPrefSet.Range * 1.414 * aspect_ratio : CurrentPrefSet.Range * 1.414 / aspect_ratio) + distance;
             var x = RangeRingCenter.Longitude;
             var y = RangeRingCenter.Latitude;
             var latfactor = Math.Cos(MathHelper.DegreesToRadians(ScreenCenterPoint.Latitude));
