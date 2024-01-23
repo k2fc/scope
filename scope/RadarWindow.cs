@@ -5498,7 +5498,7 @@ namespace DGScope
                 if (Array.IndexOf(target.ParentAircraft.History, target) >= CurrentPrefSet.HistoryNum)
                     return;
             }
-            var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
+            var primarycolor = AdjustedColor(ReturnColor, CurrentPrefSet.Brightness.PrimaryTargets);
             var beaconcolor = AdjustedColor(BeaconTargetColor, CurrentPrefSet.Brightness.BeaconTargets);
             var rt = radar.RadarType;
             if (history)
