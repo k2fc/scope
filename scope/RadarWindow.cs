@@ -1055,7 +1055,11 @@ namespace DGScope
         bool hidewx = false;
         private object ClickedObject(Point ClickedPoint)
         {
-            var clickpoint = LocationFromScreenPoint(ClickedPoint);
+            PointF clickpoint;
+            if (ClickedPoint == null)
+                clickpoint = LocationFromScreenPoint(new Point((int)mouseprev.X, (int)mouseprev.Y));
+            else
+                clickpoint = LocationFromScreenPoint(ClickedPoint);
             object clicked;
             lock (Aircraft)
             {
@@ -1072,10 +1076,22 @@ namespace DGScope
         Aircraft debugPlane;
         private void Window_MouseDown(object sender, MouseEventArgs e)
         {
-            var clicked = ClickedObject(e.Position);
+            object clicked;
+            bool enterclick = false;
+            Point mousepos;
+            if (e != null)
+            {
+                mousepos = e.Position;
+            }
+            else
+            {
+                mousepos = new Point((int)mouseprev.X, (int)mouseprev.Y);
+                enterclick = true;
+            }
+            clicked = ClickedObject(mousepos);
             if (CurrentPrefSet.DCBVisible)
                 dcb.ActiveMenu.MouseDown();
-            if (e.Mouse.LeftButton == ButtonState.Pressed)
+            if (enterclick || e.Mouse.LeftButton == ButtonState.Pressed)
             {
                 if ((Keyboard.GetState().IsKeyDown(Key.ControlLeft) || Keyboard.GetState().IsKeyDown(Key.ControlRight)) &&
                     (Keyboard.GetState().IsKeyDown(Key.ShiftLeft) || Keyboard.GetState().IsKeyDown(Key.ShiftRight)))
@@ -1189,7 +1205,7 @@ namespace DGScope
         {
             bool clickedplane = false;
             bool enter = false;
-            if (KeyList.Count == 0) // no keys, implied command
+            if (KeyList.Count == 0 && clicked != null) // no keys, implied command
             {
                 ProcessImpliedCommand(clicked);
                 return;
@@ -1201,6 +1217,20 @@ namespace DGScope
                 enter = true;
             }
 
+            if (enter && CurrentPrefSet.DCBVisible)
+            {
+                //Window_MouseDown(null, null);
+                //Window_MouseUp(null, null);
+                if (activeDcbButton != null)
+                {
+                    ReleaseDCBButton();
+                }
+                else
+                {
+                    dcb.ActiveMenu.MouseDown();
+                    dcb.ActiveMenu.MouseUp();
+                }
+            }
             if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
                 Aircraft plane = (Aircraft)clicked;
@@ -3394,6 +3424,7 @@ namespace DGScope
             {
                 activeDcbButton = null;
             }
+            window.CursorVisible = true;
             System.Windows.Forms.Cursor.Clip = new Rectangle();
         }
         private void UpdateDCB()
