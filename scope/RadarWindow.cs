@@ -5561,12 +5561,10 @@ namespace DGScope
                     float size;
                     if (!target.ParentAircraft.PrimaryOnly && !history)
                     {
-                        if (!history)
-                        {
-                            size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
-                            target.SizeF = new SizeF(size, size);
-                            DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, primarycolor, true);
-                        }
+                        size = (float)TargetExtentSymbols.TargetWidth(target.ParentAircraft, radar, scale, pixelScale);
+                        target.SizeF = new SizeF(size, size);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, size / 2, 1, 30, primarycolor, true);
+                        
                     }
                     else if (!history)
                     {
