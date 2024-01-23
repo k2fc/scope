@@ -5490,17 +5490,18 @@ namespace DGScope
             }
             if (target.LocationF.X == 0 || target.LocationF.Y == 0)
                 return;
-            if (target != target.ParentAircraft.TargetReturn) // history
+            var history = target != target.ParentAircraft.TargetReturn;
+            if (history) // history
             {
                 if (!InFilter(target.ParentAircraft) && !target.ParentAircraft.FDB)
                     return;
                 if (Array.IndexOf(target.ParentAircraft.History, target) >= CurrentPrefSet.HistoryNum)
                     return;
+                history = true;
             }
             var primarycolor = AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.PrimaryTargets);
             var beaconcolor = AdjustedColor(BeaconTargetColor, CurrentPrefSet.Brightness.BeaconTargets);
             var rt = radar.RadarType;
-            var history = target != target.ParentAircraft.TargetReturn;
             if (history)
                 rt = RadarType.FUSED;
             var location = target.ParentAircraft.SweptLocation(radar);
@@ -5540,7 +5541,7 @@ namespace DGScope
                     GL.Vertex2(-x1, -y1);
                     GL.Vertex2(x1, -y1);
                     GL.End();
-                    if (!target.ParentAircraft.PrimaryOnly)
+                    if (!target.ParentAircraft.PrimaryOnly && !history)
                     {
                         GL.Begin(PrimitiveType.Polygon);
                         GL.Color4(beaconcolor);
@@ -5573,7 +5574,7 @@ namespace DGScope
                             DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.History), true);
                         }
                     }
-                    else
+                    else if (!history)
                     {
                         targetWidth = TargetExtentSymbols.MultiRadarTargets.UncorrSymbolPlotSize * pixelScale;
                         targetHypotenuse = (float)(Math.Sqrt((targetWidth * targetWidth) + (targetWidth * targetWidth)) / 2);
@@ -5599,6 +5600,12 @@ namespace DGScope
 
 
                         GL.PopMatrix();
+                    }
+                    else
+                    {
+                        size = (float)TargetExtentSymbols.FMATargetSymbols.Radius * pixelScale;
+                        target.SizeF = new SizeF(size, size);
+                        DrawCircle(target.LocationF.X, target.LocationF.Y, size, 1, 30, AdjustedColor(target.ForeColor, CurrentPrefSet.Brightness.History), true);
                     }
                     break;
             }
