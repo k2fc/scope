@@ -1871,6 +1871,18 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
+                            case 'D': //Multifunction D
+                                if (keys[0].Length == 3 && (char)keys[0][2] == '*' && !enter)
+                                {
+                                    GeoPoint clickedlocation;
+                                    if (clicked.GetType() == typeof(PointF))
+                                    {
+                                        clickedlocation = ScreenToGeoPoint((PointF)clicked);
+                                        DisplayPreviewMessage(clickedlocation.ToDmsString(), 30);
+                                    }
+                                }
+                                Preview.Clear();
+                                break;
                             case 'F': //Multifunction F: Filters
                                 bool success = false;
                                 if (keys[0].Length == 8)

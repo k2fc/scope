@@ -55,6 +55,19 @@ namespace DGScope
         {
             return Latitude.ToString() + ", " + Longitude.ToString();
         }
+        public string ToDmsString()
+        {
+            var lat_deg = (int)Math.Abs(Latitude);
+            var lat_min = (int)Math.Abs(Latitude * 60) % 60;
+            var lat_sec = (int)Math.Abs(Latitude * 3600) % 60;
+            var lng_deg = (int)Math.Abs(Longitude);
+            var lng_min = (int)Math.Abs(Longitude * 60) % 60;
+            var lng_sec = (int)Math.Abs(Longitude * 3600) % 60;
+            var s = Latitude < 0 ? "S" : "";
+            var e = Longitude > 0 ? "E" : "";
+
+            return string.Format("{0} {1} {2}{3}/{4} {5} {6}{7}", lat_deg, lat_min, lat_sec, s, lng_deg, lng_min, lng_sec, e);
+        }
         public GeoPoint() { }
 
         public double DistanceTo(GeoPoint From, double Altitude = 0)
