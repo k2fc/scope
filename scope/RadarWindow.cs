@@ -1061,6 +1061,10 @@ namespace DGScope
             else
                 clickpoint = LocationFromScreenPoint(ClickedPoint);
             object clicked;
+            if (CurrentPrefSet.DCBVisible && dcb.ActiveMenu.DrawnBounds.Contains(ClickedPoint))
+            {
+                return ClickedPoint;
+            }
             lock (Aircraft)
             {
                 clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint) 
@@ -1219,17 +1223,8 @@ namespace DGScope
 
             if (enter && CurrentPrefSet.DCBVisible)
             {
-                //Window_MouseDown(null, null);
-                //Window_MouseUp(null, null);
-                if (activeDcbButton != null)
-                {
-                    ReleaseDCBButton();
-                }
-                else
-                {
-                    dcb.ActiveMenu.MouseDown();
-                    dcb.ActiveMenu.MouseUp();
-                }
+                dcb.ActiveMenu.MouseDown();
+                dcb.ActiveMenu.MouseUp();
             }
             if (KeyList.Count < 1 && clicked != null && clicked.GetType() == typeof(Aircraft))
             {
