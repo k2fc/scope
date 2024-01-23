@@ -3447,7 +3447,7 @@ namespace DGScope
                 dcbWxButton[i].Active = Nexrad.LevelsEnabled[i];
                 if (Nexrad.LevelsAvailable == null || Nexrad.LevelsAvailable.Length <= i)
                     break;
-                dcbWxButton[i].Text = Nexrad.LevelsAvailable[i]  && i <= 1 ? "WX" + (i + 1) + "\r\nAVL" : "WX" + (i + 1) + "\r\n ";
+                dcbWxButton[i].Text = Nexrad.LevelsAvailable[i] ? "WX" + (i + 1) + "\r\nAVL" : "WX" + (i + 1) + "\r\n ";
                 dcbWxButton[i].BackColorActive = Nexrad.LevelsAvailable[i] ? Color.SlateBlue : Color.Green;
                 dcbWxButton[i].BackColorInactive = Nexrad.LevelsAvailable[i] ? Color.DarkSlateBlue : Color.FromArgb(0, 80, 0);
             }
