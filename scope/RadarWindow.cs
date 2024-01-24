@@ -1196,6 +1196,7 @@ namespace DGScope
             CA = 20,
             SignOn = 21,
             RngRing = 201,
+            WX = 202,
             RecenterEverything = 500
         }
 
@@ -2202,6 +2203,22 @@ namespace DGScope
                         }
                         Preview.Clear();
                         break;
+                    case KeyCode.WX:
+                        if (keys[0].Length == 2 && keys[0][1].GetType() == typeof(char) && enter)
+                        {
+                            string wxlevelstring = ((char)keys[0][1]).ToString();
+                            if (int.TryParse(wxlevelstring, out int level))
+                            {
+                                if (level > 0 && level < 7)
+                                {
+                                    level--;
+                                    Nexrad.LevelsEnabled[level] = !Nexrad.LevelsEnabled[level];
+                                    Nexrad.RecomputeVertices();
+                                }
+                            }
+                            Preview.Clear();
+                        }
+                        break;
                     case KeyCode.RecenterEverything:
                         if (keys.Length == 2)
                         {
@@ -2879,6 +2896,9 @@ namespace DGScope
                         case (int)KeyCode.RngRing:
                             output += "RR";
                             break;
+                        case (int)KeyCode.WX:
+                            output += "WX";
+                            break;
                         case (int)KeyCode.RecenterEverything:
                             output += "RECENTER";
                             break;
@@ -3017,6 +3037,9 @@ namespace DGScope
                     case Key.F15:
                     case Key.F16:
                     case Key.F17:
+                        Preview.Clear();
+                        Preview.Add(KeyCode.WX);
+                        break;
                     case Key.F18:
                     case Key.F19:
                     case Key.F20:
