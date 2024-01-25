@@ -35,6 +35,13 @@ namespace DGScope
             laidouthorizontal = false;
             laidoutvertical = false;
         }
+        public void ClearButtons()
+        {
+            Buttons.ForEach(x=> x.ParentMenu = null);
+            Buttons.Clear();
+            laidouthorizontal = false;
+            laidoutvertical = false;
+        }
         public new bool RotateIfVertical { get => true; }
         public new bool Enabled
         {

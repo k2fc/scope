@@ -20,7 +20,6 @@ using System.Collections.ObjectModel;
 using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
 using System.Xml;
-using DGScope.MapImporter.CRC;
 
 namespace DGScope
 {
@@ -110,7 +109,7 @@ namespace DGScope
         public Color TPAColor { get; set; } = Color.FromArgb(90, 180, 255);
         [XmlIgnore]
         [DisplayName("ATPA Caution Color"), Description("Color of Automated Terminal Proximity Caution"), Category("Colors")]
-        public Color ATPACautionColor { get; set; } = Color.FromArgb(255,255,0);
+        public Color ATPACautionColor { get; set; } = Color.FromArgb(255, 255, 0);
         [XmlIgnore]
         [DisplayName("ATPA Alert Color"), Description("Color of Automated Terminal Proximity Alert"), Category("Colors")]
         public Color ATPAAlertColor { get; set; } = Color.FromArgb(255, 55, 0);
@@ -258,7 +257,7 @@ namespace DGScope
         public double ScreenRotation { get; set; } = 0;
         [DisplayName("Show Range Rings"), Category("Display Properties")]
         public bool ShowRangeRings { get; set; } = true;
-        
+
         [DisplayName("TPA Size"), Description("Show TPA Mileage Values"), Category("Display Properties")]
         public bool TPASize
         {
@@ -311,7 +310,7 @@ namespace DGScope
         [DisplayName("History Direction Angle"), Description("Determines direction of drawing history returns.  If true, they are drawn with respect to the aircraft's track.  " +
             "If false, they retain their direction with respect to the receiving radar site."), Category("Display Properties")]
         public bool HistoryDirectionAngle { get; set; } = false;
-        [DisplayName("Invert Mouse"), Description ("Invert the direction the mouse will move adjustments in the DCB"), Category("Display Properties")]
+        [DisplayName("Invert Mouse"), Description("Invert the direction the mouse will move adjustments in the DCB"), Category("Display Properties")]
         public bool InvertMouse { get; set; } = false;
         [DisplayName("Invert Keypad"), Description("Invert the direction the keypad will move leader lines"), Category("Display Properties")]
         public bool InvertKeyboard { get; set; } = false;
@@ -445,7 +444,7 @@ namespace DGScope
         [XmlIgnore]
         public List<ATPAVolume> ActiveATPATwoPointFive { get; set; } = new List<ATPAVolume>();
         float scale => (float)(CurrentPrefSet.Range); // Math.Sqrt(2));
-        float pixelScale; 
+        float pixelScale;
         //float xPixelScale;// => pixelScale; //2f / window.ClientSize.Width;
         //float yPixelScale;// => pixelScale; // 2f / window.ClientSize.Height;
         float aspect_ratio;// => 1.0f;//(float)window.ClientSize.Width / (float)window.ClientSize.Height;
@@ -461,7 +460,7 @@ namespace DGScope
         private string cps = "NONE";
         [XmlIgnore]
         [DisplayName("This Position Indicator"), Category("Display Properties")]
-        public string ThisPositionIndicator 
+        public string ThisPositionIndicator
         {
             get
             {
@@ -475,7 +474,7 @@ namespace DGScope
                     PositionChange();
                 }
             }
-        } 
+        }
         [DisplayName("Airports file"), Category("Navigation Data")]
         [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
         public string AirportsFileName
@@ -523,7 +522,7 @@ namespace DGScope
         }
         private string waypointsFileName = "";
         [DisplayName("Altimeter Stations"), Category("Display Properties")]
-        public string[] AltimeterStations 
+        public string[] AltimeterStations
         {
             get
             {
@@ -574,7 +573,7 @@ namespace DGScope
                 }
                 else if (value < 0)
                 {
-                    radar = new Radar();
+                    radar = Radar.FUSED;
                 }
                 else
                 {
@@ -584,9 +583,9 @@ namespace DGScope
         }
 
 
-        [DisplayName("Vertical Sync"),Description("Limit FPS to refresh rate of monitor"), Category("Display Properties")]
+        [DisplayName("Vertical Sync"), Description("Limit FPS to refresh rate of monitor"), Category("Display Properties")]
         public VSyncMode VSync
-        { 
+        {
             get
             {
                 return window.VSync;
@@ -632,8 +631,8 @@ namespace DGScope
             }
         };
         [DisplayName("TPA P-Cone Width"), Description("Width of the end of the TPA P-Cone, in pixels"), Category("Display Properties")]
-        public float TPAConeWidth { get; set; } = 10; 
-        
+        public float TPAConeWidth { get; set; } = 10;
+
         [DisplayName("Nexrad Weather Radar")]
         public NexradDisplay Nexrad { get; set; } = new NexradDisplay();
         [Browsable(false)]
@@ -645,7 +644,7 @@ namespace DGScope
         [Browsable(false)]
         public string FontName { get { return Font.FontFamily.Name; } set { Font = new Font(value, Font.Size, Font.Unit); } }
         [XmlElement("FontSize")]
-        [Browsable(false)] 
+        [Browsable(false)]
         public int FontSize { get { return (int)Font.Size; } set { Font = new Font(Font.FontFamily, value, Font.Unit); } }
         [XmlElement("FontSizeUnit")]
         [Browsable(false)]
@@ -719,7 +718,7 @@ namespace DGScope
         [DisplayName("QuickLook"), Description("QuickLook all tracks, including unassociated"), Category("Display Properties")]
         public bool QuickLook { get; set; } = false;
         [DisplayName("Pref Set"), Category("Display Properties")]
-        public PrefSet CurrentPrefSet 
+        public PrefSet CurrentPrefSet
         {
             get => prefSet;
             set
@@ -878,7 +877,7 @@ namespace DGScope
                     deletedPlanes.Add(plane);
             }
         }
-        
+
         private void Aircraft_HandoffInitiated(object sender, HandoffEventArgs e)
         {
             if (e.PositionTo == ThisPositionIndicator)
@@ -910,13 +909,13 @@ namespace DGScope
                 aclist.ForEach(x => x.FDB = false);
             }
             QuickLookList.Remove(ThisPositionIndicator);
-            QuickLookList.Remove(ThisPositionIndicator +"+");
+            QuickLookList.Remove(ThisPositionIndicator + "+");
         }
         private void Aircraft_HandedOff(object sender, HandoffEventArgs e)
         {
             /*e.Aircraft.RedrawDataBlock(false);*/
         }
-            
+
         byte[] settingshash;
         string settingsPath;
         public void Run(bool isScreenSaver, string settingsPath)
@@ -931,16 +930,16 @@ namespace DGScope
             Task.Run(() => wx.GetWeather(true));
         }
 
-        
+
 
         private void cbAircraftGarbageCollectorTimer(object state)
         {
             List<Aircraft> delplane;
-            lock(Aircraft)
+            lock (Aircraft)
                 delplane = Aircraft.Where(x => x.LastMessageTime < CurrentTime.AddSeconds(-AircraftGCInterval)).ToList();
             foreach (var plane in delplane)
             {
-                lock(Aircraft)
+                lock (Aircraft)
                     Aircraft.Remove(plane);
                 DeletePlane(plane, false);
             }
@@ -967,7 +966,7 @@ namespace DGScope
                         plane.DataBlock3.Dispose();
                         plane.PositionIndicator.Dispose();
                     }
-                    lock(plane.History)
+                    lock (plane.History)
                     {
                         for (int i = 0; i < plane.History.Length; i++)
                         {
@@ -1026,15 +1025,15 @@ namespace DGScope
                 tempLine.End = LocationFromScreenPoint(e.Position);
             if (!e.Mouse.IsAnyButtonDown)
             {
-                
-                double move = Math.Sqrt(Math.Pow(e.XDelta,2) + Math.Pow(e.YDelta,2));
+
+                double move = Math.Sqrt(Math.Pow(e.XDelta, 2) + Math.Pow(e.YDelta, 2));
                 if (move > 10 && isScreenSaver && _mousesettled)
                 {
                     StopReceivers();
                     Environment.Exit(0);
                 }
                 _mousesettled = true;
-               
+
             }
             else if (e.Mouse.RightButton == ButtonState.Pressed)
             {
@@ -1067,8 +1066,8 @@ namespace DGScope
             }
             lock (Aircraft)
             {
-                clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint) 
-                && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds) 
+                clicked = Aircraft.Where(x => x.PositionIndicator.BoundsF.Contains(clickpoint)
+                && x.LastPositionTime > CurrentTime.AddSeconds(-LostTargetSeconds)
                 && x.TargetReturn.Intensity > .001).FirstOrDefault();
                 if (clicked == null)
                 {
@@ -1186,7 +1185,7 @@ namespace DGScope
 
         public enum KeyCode
         {
-            Min = 59, 
+            Min = 59,
             InitCntl = 12,
             TermCntl = 13,
             HndOff = 14,
@@ -1266,14 +1265,14 @@ namespace DGScope
                             count++;
                             break;
                         }
-                            
+
                     }
                     keys[i] = command.ToArray();
                 }
                 string lastline = KeysToString(keys[commands - 1]);
                 Aircraft typed;
                 lock (Aircraft)
-                    typed = Aircraft.Where(x=> x.FlightPlanCallsign != null).ToList()
+                    typed = Aircraft.Where(x => x.FlightPlanCallsign != null).ToList()
                         .Find(x => x.FlightPlanCallsign.Trim() == lastline.Trim());
                 if (typed == null)
                 {
@@ -1283,7 +1282,7 @@ namespace DGScope
                 }
                 if (!string.IsNullOrEmpty(lastline.Trim()) && !clickedplane && typed != null)
                 {
-                    if (typed.Squawk != "1200" && typed.Squawk!= null )
+                    if (typed.Squawk != "1200" && typed.Squawk != null)
                     {
                         clicked = typed;
                         clickedplane = true;
@@ -1512,7 +1511,7 @@ namespace DGScope
                                         if (tempLine == null)
                                         {
                                             tempLine = new RangeBearingLine() { StartPlane = (Aircraft)clicked, End = LocationFromScreenPoint(MouseLocation) };
-                                            lock(rangeBearingLines)
+                                            lock (rangeBearingLines)
                                                 rangeBearingLines.Add(tempLine);
                                         }
                                         if (keys[0].Length > 2)
@@ -1601,7 +1600,7 @@ namespace DGScope
                                             {
                                                 if (miles > 0 && (double)miles <= 30)
                                                 {
-                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles,  TPAColor, Font, TPASize);
+                                                    ((Aircraft)clicked).TPA = new TPARing((Aircraft)clicked, miles, TPAColor, Font, TPASize);
                                                 }
                                                 else
                                                 {
@@ -1721,7 +1720,7 @@ namespace DGScope
                         switch (keys[0][1])
                         {
                             case '2': //Multifunction 2
-                                if (keys[0].Length >=6 && KeysToString(keys[0], 2).Substring(0,4) == "ATPA") //ATPA Commands
+                                if (keys[0].Length >= 6 && KeysToString(keys[0], 2).Substring(0, 4) == "ATPA") //ATPA Commands
                                 {
                                     if (keys[0].Length == 7) // Enable system-wide
                                     {
@@ -1812,7 +1811,7 @@ namespace DGScope
                                         }
                                     }
                                 }
-                                else if (keys[0].Length >= 4 && KeysToString(keys[0], 1).Substring(0,3) == "2.5")
+                                else if (keys[0].Length >= 4 && KeysToString(keys[0], 1).Substring(0, 3) == "2.5")
                                 {
                                     if (keys[0].Length >= 6 && keys[0].Length <= 10)
                                     {
@@ -1881,7 +1880,7 @@ namespace DGScope
                                 }
                                 break;
                             case 'B': //Mutlifunction B: Beacons
-                                if (keys[0].Length >= 4 && keys[0].Length <=6 && enter)
+                                if (keys[0].Length >= 4 && keys[0].Length <= 6 && enter)
                                 {
                                     var squawk = KeysToString(keys[0], 2);
                                     if (SelectedBeaconCodes.Contains(squawk))
@@ -1913,7 +1912,7 @@ namespace DGScope
                                 if (keys[0].Length == 8)
                                 {
                                     var alts = KeysToString(keys[0], 2);
-                                    if (int.TryParse(alts.Substring(0,3), out int min))
+                                    if (int.TryParse(alts.Substring(0, 3), out int min))
                                     {
                                         if (int.TryParse(alts.Substring(3), out int max))
                                         {
@@ -1984,7 +1983,7 @@ namespace DGScope
                                 }
                                 break;
                             case 'Q':
-                                if((keys[0].Length >= 4 || keys[0].Length <= 6) && enter)
+                                if ((keys[0].Length >= 4 || keys[0].Length <= 6) && enter)
                                 {
                                     var qlstring = KeysToString(keys[0]).Substring(1);
                                     bool qlplus = false;
@@ -1992,10 +1991,10 @@ namespace DGScope
                                         qlplus = qlstring.Last() == '+';
                                     string qlpos = qlstring;
 
-                                    if (string.IsNullOrEmpty(qlpos)) 
+                                    if (string.IsNullOrEmpty(qlpos))
                                     {
                                         DisplayPreviewMessage("ILL POS", 10);
-                                    } 
+                                    }
                                     else if (qlplus)
                                     {
                                         qlpos = qlstring.Substring(0, qlstring.Length - 1);
@@ -2018,7 +2017,7 @@ namespace DGScope
                                     Preview.Clear();
                                 }
                                 break;
-                            case 'S': 
+                            case 'S':
                                 if (!clickedplane && keys[0].Length == 2)
                                 {
                                     StatusLocation = (PointF)clicked;
@@ -2144,7 +2143,7 @@ namespace DGScope
                                 else if (!clickedplane && keys.Length == 2)
                                 {
                                     var planestring = KeysToString(keys[0], 2);
-                                    var planes = Aircraft.Where(x => 
+                                    var planes = Aircraft.Where(x =>
                                     {
                                         if (x.FlightPlanCallsign != null && x.FlightPlanCallsign.Trim() == planestring)
                                         {
@@ -2260,7 +2259,7 @@ namespace DGScope
                                 Preview.Clear();
                             }
                             else
-                            { 
+                            {
                                 var entered = KeysToString(keys[0]);
                                 var waypoint = Waypoints.Find(x => x.ID == entered);
                                 if (waypoint != null)
@@ -2415,7 +2414,7 @@ namespace DGScope
                 //GenerateDataBlock(plane);
             }
         }
-        private string KeysToString (object[] keys, int start = 0)
+        private string KeysToString(object[] keys, int start = 0)
         {
             string output = "";
             for (int i = start; i < keys.Length; i++)
@@ -2559,7 +2558,7 @@ namespace DGScope
                     output += key;
                 }
             }
-                return output;
+            return output;
         }
 
         private void RenderPreview()
@@ -2604,7 +2603,7 @@ namespace DGScope
             }
             if (SelectedBeaconCodes.Count > 0)
             {
-                
+
                 foreach (var squawk in SelectedBeaconCodes)
                 {
                     StatusArea.Text += squawk + " ";
@@ -2613,7 +2612,7 @@ namespace DGScope
             }
             StatusArea.Text += (int)CurrentPrefSet.Range + "NM" + " PTL: " + CurrentPrefSet.PTLLength.ToString("0.0") + "\r\n";
             StatusArea.Text += ToFilterAltitudeString(MinAltitude) + " " + ToFilterAltitudeString(MaxAltitude) + " U "
-                + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated)+ " A\r\n";
+                + ToFilterAltitudeString(MinAltitudeAssociated) + " " + ToFilterAltitudeString(MaxAltitudeAssociated) + " A\r\n";
             if (ATPA.Active)
             {
                 StatusArea.Text += "INTRAIL ON: ";
@@ -2629,13 +2628,13 @@ namespace DGScope
                 if (tpfv.Count() > 0)
                 {
                     StatusArea.Text += "INTRAIL 2.5 ON: ";
-                    tpfv.ToList().ForEach(v =>  StatusArea.Text += v.VolumeId + " ");
+                    tpfv.ToList().ForEach(v => StatusArea.Text += v.VolumeId + " ");
                     StatusArea.Text += "\r\n";
                 }
             }
             int metarnum = 0;
             bool crlast = false;
-            foreach (var metar in wx.Metars.OrderBy(x=> x.ICAO))
+            foreach (var metar in wx.Metars.OrderBy(x => x.ICAO))
             {
                 metarnum++;
                 if (metar.IsValid)
@@ -2950,7 +2949,7 @@ namespace DGScope
                         properties.Show();
                         break;
                     case Key.Q:
-                        QuickLook = !QuickLook; 
+                        QuickLook = !QuickLook;
                         break;
                     case Key.F1:
                         if (!e.Shift)
@@ -3068,7 +3067,7 @@ namespace DGScope
 
                 }
             }
-            
+
         }
         private void Window_KeyUp(object sender, KeyboardKeyEventArgs e)
         {
@@ -3085,7 +3084,7 @@ namespace DGScope
 
         private void Window_Resize(object sender, EventArgs e)
         {
-            
+
             var oldscale = scale;
             GL.Viewport(0, 0, window.Width, window.Height);
         }
@@ -3093,7 +3092,7 @@ namespace DGScope
         private void Window_UpdateFrame(object sender, FrameEventArgs e)
         {
         }
-        
+
         private int fps = 0;
         private DCB dcb = new DCB();
         private DCBMenu dcbMainMenu = new DCBMenu();
@@ -3113,6 +3112,10 @@ namespace DGScope
         private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
         private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80, Disabled = true };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
+        private DCBSubmenuButton dcbCharSizeButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "CHAR\r\nSIZE", Disabled = true };
+        private DCBButton dcbModeButton = new DCBButton() { Height = 80, Width = 80, Text = "MODE\r\nFSL", Disabled = true };
+        private DCBSubmenuButton dcbSiteButton = new DCBSubmenuButton() { Height = 80, Width = 80 };
+
 
         private DCBButton dcbShiftButton = new DCBButton() { Height = 80, Width = 80, Text = "SHIFT" };
         private DCBButton dcbShiftButton2 = new DCBButton() { Height = 80, Width = 80, Text = "SHIFT" };
@@ -3155,6 +3158,8 @@ namespace DGScope
         private DCBAdjustmentButton briteWXbutton  = new DCBAdjustmentButton() { Width = 80, Height = 40 };
         private DCBAdjustmentButton briteWXCbutton = new DCBAdjustmentButton() { Width = 80, Height = 40 };
         private DCBButton briteDoneButton = new DCBButton { Width = 80, Height = 80, Text = "DONE" };
+
+        private DCBMenu siteMenu = new DCBMenu();
 
         public TCP TCP { get; set; } = new TCP();
 
@@ -3205,6 +3210,11 @@ namespace DGScope
             dcbLdrDirButton.Click += DcbScopeActionButtonClick;
             dcbMainMenu.AddButton(dcbLdrLenButton);
             dcbLdrLenButton.Click += DcbButtonClick;
+            dcbMainMenu.AddButton(dcbCharSizeButton);
+            dcbMainMenu.AddButton(dcbModeButton);
+            dcbMainMenu.AddButton(dcbSiteButton);
+            dcbSiteButton.Submenu = siteMenu;
+            dcbSiteButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbShiftButton);
             dcbShiftButton.Click += DcbButtonClick;
 
@@ -3354,8 +3364,59 @@ namespace DGScope
             {
                 dcbBriteButton.OnClick(e);
             }
+            else if (sender == dcbSiteButton)
+            {
+                activeDcbButton = dcbSiteButton;
+                siteMenu.ClearButtons();
+                int i = 1;
+                RadarSites.ForEach(x =>
+                {
+                    if (x.RadarType != RadarType.SLANT_RANGE)
+                        return;
+                    DCBButton siteButton = new DCBButton()
+                    {
+                        Height = 80,
+                        Width = 80,
+                        Text = x.Char + "\r\n" + x.Name,
+                        Value = x,
+                        Active = radar == x
+                    };
+                    siteMenu.AddButton(siteButton);
+                    siteButton.Click += SiteButton_Click;
+                });
+                var multiButton = new DCBButton()
+                {
+                    Height = 80,
+                    Width = 80,
+                    Text = "MULTI",
+                    Enabled = false,
+                };
+                siteMenu.AddButton(multiButton);
+                multiButton.Click += SiteButton_Click;
+                var fusedButton = new DCBButton()
+                {
+                    Height = 80,
+                    Width = 80,
+                    Text = "FUSED",
+                    Value = Radar.FUSED,
+                    Active = radar == Radar.FUSED
+                };
+                siteMenu.AddButton(fusedButton);
+                fusedButton.Click += SiteButton_Click;
+            }
         }
-        
+
+        private void SiteButton_Click(object sender, EventArgs e)
+        {
+            dcbSiteButton.Active = false;
+            var button = sender as DCBButton;
+            //button.ParentMenu.Enabled = true;
+            if (button == null) { return; }
+            var site = button.Value as Radar;
+            if (site == null) { return; }
+            radar = site;
+            ReleaseDCBButton();
+        }
 
         private void DcbClearAllMapsButton_Click(object sender, EventArgs e)
         {
@@ -3453,6 +3514,7 @@ namespace DGScope
             }
             dcbLdrDirButton.Text = "LDR DIR\r\n" + UnownedLeaderDirection;
             dcbLdrLenButton.Text = "LDR LEN\r\n" + CurrentPrefSet.LeaderLength;
+            dcbSiteButton.Text = "SITE\r\n" + radar.Name;
             dcbDcbTopButton.Active = dcb.Location == DCBLocation.Top;
             dcbDcbBottomButton.Active = dcb.Location == DCBLocation.Bottom;
             dcbDcbLeftButton.Active = dcb.Location == DCBLocation.Left;
@@ -3479,7 +3541,6 @@ namespace DGScope
             briteHSTbutton.Text = "HST " + CurrentPrefSet.Brightness.History;
             briteWXbutton .Text = "WX "  + CurrentPrefSet.Brightness.Weather;
             briteWXCbutton.Text = "WXC " + CurrentPrefSet.Brightness.WeatherContrast;
-
         } 
 
         private Matrix4 geoToScreen;

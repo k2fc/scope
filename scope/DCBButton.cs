@@ -30,6 +30,7 @@ namespace DGScope
         public override Font Font { get; set; }
         public StringFormat StringFormat { get; set; } = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.NoClip };
         public string Text { get; set; }
+        public object Value { get; set; }
         private void PaintText()
         {
             if (DrawnBounds.Size.IsEmpty)
