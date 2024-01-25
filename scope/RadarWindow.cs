@@ -3237,7 +3237,7 @@ namespace DGScope
             dcbMainMenu.AddButton(dcbModeButton);
             dcbMainMenu.AddButton(dcbSiteButton);
             dcbSiteButton.Submenu = siteMenu;
-            dcbSiteButton.Click += DcbButtonClick;
+            dcbSiteButton.Click += DcbSubmenuButtonClick;
             dcbMainMenu.AddButton(dcbShiftButton);
             dcbShiftButton.Click += DcbButtonClick;
 
@@ -3318,6 +3318,48 @@ namespace DGScope
             var button = sender as DCBSubmenuButton;
             button.SetScreenLocation(window.Location);
             activeDcbButton = button;
+
+
+            if (sender == dcbSiteButton)
+            {
+                activeDcbButton = dcbSiteButton;
+                siteMenu.ClearButtons();
+                int i = 1;
+                RadarSites.ForEach(x =>
+                {
+                    if (x.RadarType != RadarType.SLANT_RANGE)
+                        return;
+                    DCBButton siteButton = new DCBButton()
+                    {
+                        Height = 80,
+                        Width = 80,
+                        Text = x.Char + "\r\n" + x.Name,
+                        Value = x,
+                        Active = radar == x
+                    };
+                    siteMenu.AddButton(siteButton);
+                    siteButton.Click += SiteButton_Click;
+                });
+                var multiButton = new DCBButton()
+                {
+                    Height = 80,
+                    Width = 80,
+                    Text = "MULTI",
+                    Enabled = false,
+                };
+                siteMenu.AddButton(multiButton);
+                multiButton.Click += SiteButton_Click;
+                var fusedButton = new DCBButton()
+                {
+                    Height = 80,
+                    Width = 80,
+                    Text = "FUSED",
+                    Value = Radar.FUSED,
+                    Active = radar == Radar.FUSED
+                };
+                siteMenu.AddButton(fusedButton);
+                fusedButton.Click += SiteButton_Click;
+            }
         }
 
         private void DcbButtonClick(object sender, EventArgs e)
@@ -3386,46 +3428,6 @@ namespace DGScope
             else if (sender == briteDoneButton)
             {
                 dcbBriteButton.OnClick(e);
-            }
-            else if (sender == dcbSiteButton)
-            {
-                activeDcbButton = dcbSiteButton;
-                siteMenu.ClearButtons();
-                int i = 1;
-                RadarSites.ForEach(x =>
-                {
-                    if (x.RadarType != RadarType.SLANT_RANGE)
-                        return;
-                    DCBButton siteButton = new DCBButton()
-                    {
-                        Height = 80,
-                        Width = 80,
-                        Text = x.Char + "\r\n" + x.Name,
-                        Value = x,
-                        Active = radar == x
-                    };
-                    siteMenu.AddButton(siteButton);
-                    siteButton.Click += SiteButton_Click;
-                });
-                var multiButton = new DCBButton()
-                {
-                    Height = 80,
-                    Width = 80,
-                    Text = "MULTI",
-                    Enabled = false,
-                };
-                siteMenu.AddButton(multiButton);
-                multiButton.Click += SiteButton_Click;
-                var fusedButton = new DCBButton()
-                {
-                    Height = 80,
-                    Width = 80,
-                    Text = "FUSED",
-                    Value = Radar.FUSED,
-                    Active = radar == Radar.FUSED
-                };
-                siteMenu.AddButton(fusedButton);
-                fusedButton.Click += SiteButton_Click;
             }
         }
 
