@@ -4949,7 +4949,7 @@ namespace DGScope
                 GL.Enable(EnableCap.PolygonStipple);
                 GL.PolygonStipple(polygon.StipplePattern);
                 GL.Begin(PrimitiveType.Polygon);
-                var scolor = AdjustedColor(polygon.StippleColor, CurrentPrefSet.Brightness.WeatherContrast);
+                var scolor = AdjustedColor(polygon.StippleColor, CurrentPrefSet.Brightness.Weather);
                 GL.Color4(scolor);
                 for (int i = 0; i < polygon.vertices.Length; i++)
                 {
