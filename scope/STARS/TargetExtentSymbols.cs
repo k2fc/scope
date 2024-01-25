@@ -15,6 +15,7 @@ namespace DGScope.STARS
     [JsonObject]
     public class TargetExtentSymbols
     {
+        static double acpangle = Math.PI / 2048;
         public SearchTargetParams SearchTargets { get; set; } = new SearchTargetParams();
         public FusedTrackTargetSymbolParams FusedTracks { get; set; } = new FusedTrackTargetSymbolParams();
         public BeaconTargetParams BeaconTargets { get; set; } = new BeaconTargetParams();
@@ -38,47 +39,48 @@ namespace DGScope.STARS
             {
                 case RadarType.SLANT_RANGE:
                     var dist = radar.Location.DistanceTo(loc);
-                    double angle;
+                    double acp;
                     if (dist <= 10)
                     {
-                        angle = SearchTargets.AzimuthExtent.Ten;
+                        acp = SearchTargets.AzimuthExtents.Ten;
                     }
                     else if (dist <= 20)
                     {
-                        var diff = SearchTargets.AzimuthExtent.Twenty - SearchTargets.AzimuthExtent.Ten;
+                        var diff = SearchTargets.AzimuthExtents.Twenty - SearchTargets.AzimuthExtents.Ten;
                         var diffdist = (dist - 10) / 10;
-                        angle = SearchTargets.AzimuthExtent.Ten + (diffdist * diff);
+                        acp = SearchTargets.AzimuthExtents.Ten + (diffdist * diff);
                     }
                     else if (dist <= 30)
                     {
-                        var diff = SearchTargets.AzimuthExtent.Thirty - SearchTargets.AzimuthExtent.Twenty;
+                        var diff = SearchTargets.AzimuthExtents.Thirty - SearchTargets.AzimuthExtents.Twenty;
                         var diffdist = (dist - 20) / 10;
-                        angle = SearchTargets.AzimuthExtent.Twenty + (diffdist * diff);
+                        acp = SearchTargets.AzimuthExtents.Twenty + (diffdist * diff);
                     }
                     else if (dist <= 40)
                     {
-                        var diff = SearchTargets.AzimuthExtent.Forty - SearchTargets.AzimuthExtent.Thirty;
+                        var diff = SearchTargets.AzimuthExtents.Forty - SearchTargets.AzimuthExtents.Thirty;
                         var diffdist = (dist - 30) / 10;
-                        angle = SearchTargets.AzimuthExtent.Thirty + (diffdist * diff);
+                        acp = SearchTargets.AzimuthExtents.Thirty + (diffdist * diff);
                     }
                     else if (dist <= 50)
                     {
-                        var diff = SearchTargets.AzimuthExtent.Fifty - SearchTargets.AzimuthExtent.Forty;
+                        var diff = SearchTargets.AzimuthExtents.Fifty - SearchTargets.AzimuthExtents.Forty;
                         var diffdist = (dist - 40) / 10;
-                        angle = SearchTargets.AzimuthExtent.Forty + (diffdist * diff);
+                        acp = SearchTargets.AzimuthExtents.Forty + (diffdist * diff);
                     }
                     else if (dist <= 60)
                     {
-                        var diff = SearchTargets.AzimuthExtent.Sixty - SearchTargets.AzimuthExtent.Fifty;
+                        var diff = SearchTargets.AzimuthExtents.Sixty - SearchTargets.AzimuthExtents.Fifty;
                         var diffdist = (dist - 50) / 10;
-                        angle = SearchTargets.AzimuthExtent.Fifty + (diffdist * diff);
+                        acp = SearchTargets.AzimuthExtents.Fifty + (diffdist * diff);
                     }
                     else
                     {
-                        angle = SearchTargets.AzimuthExtent.Sixty;
+                        acp = SearchTargets.AzimuthExtents.Sixty;
                     }
+                    var angle = acp * acpangle;
                     minsize = ((SearchTargets.AzimuthExtentMinimum / 6076f) * dist) / scale;
-                    size = (dist * Math.Tan(MathHelper.DegreesToRadians(angle) / 2) * 2) / scale;
+                    size = dist * Math.Tan(angle) / scale;
                     if (minsize > size)
                     {
                         size = minsize;
@@ -105,7 +107,7 @@ namespace DGScope.STARS
         {
             public int RangeExtent { get; set; }
             [DisplayName("Azimuth Extent")]
-            public AzimuthExtentValues AzimuthExtent { get; set; } = new AzimuthExtentValues();
+            public AzimuthExtentValues AzimuthExtents { get; set; } = new AzimuthExtentValues();
             public int AzimuthExtentMinimum { get; set; }
 
             [Serializable()]
@@ -114,17 +116,17 @@ namespace DGScope.STARS
             public class AzimuthExtentValues
             {
                 [DisplayName("0 to 10 nmi")]
-                public double Ten { get; set; }
+                public int Ten { get; set; } = 28;
                 [DisplayName("20 nmi")]
-                public double Twenty { get; set; }
+                public int Twenty { get; set; } = 19;
                 [DisplayName("30 nmi")]
-                public double Thirty { get; set; }
+                public int Thirty { get; set; } = 16;
                 [DisplayName("40 nmi")]
-                public double Forty { get; set; }
+                public int Forty { get; set; } = 12;
                 [DisplayName("50 nmi")]
-                public double Fifty { get; set; }
+                public int Fifty { get; set; } = 11;
                 [DisplayName("60 nmi")]
-                public double Sixty { get; set; }
+                public int Sixty { get; set; } = 9;
             }
         }
         [Serializable()]

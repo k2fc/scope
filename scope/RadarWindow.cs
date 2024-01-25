@@ -601,14 +601,14 @@ namespace DGScope
             SearchTargets = new TargetExtentSymbols.SearchTargetParams()
             {
                 RangeExtent = 5,
-                AzimuthExtent = new TargetExtentSymbols.SearchTargetParams.AzimuthExtentValues()
+                AzimuthExtents = new TargetExtentSymbols.SearchTargetParams.AzimuthExtentValues()
                 {
-                    Ten = 6,
-                    Twenty = 1.6699,
-                    Thirty = 1.40625,
-                    Forty = 1.0547,
-                    Fifty = 0.9668,
-                    Sixty = 0.79101
+                    Ten = 28,
+                    Twenty = 19,
+                    Thirty = 16,
+                    Forty = 12,
+                    Fifty = 11,
+                    Sixty = 9
                 },
                 AzimuthExtentMinimum = 75
             },
