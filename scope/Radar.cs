@@ -17,6 +17,7 @@ namespace DGScope
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class Radar
     {
+        private static Radar _fused;
         public GeoPoint Location { get; set; } = new GeoPoint();
         [Browsable(false)]
         public double Latitude { get => Location.Latitude; }
@@ -204,8 +205,23 @@ namespace DGScope
         public Radar()
         {
         }
-        
+        public static Radar FUSED
+        {
+            get
+            {
+                if (_fused == null)
+                {
+                    _fused = new Radar()
+                    {
+                        RadarType = RadarType.FUSED,
+                        Name = "FUSED"
+                    };
+                }
+                return _fused;
+            }
+        }
     }
+   
     public enum RadarType
     {
         SLANT_RANGE,
