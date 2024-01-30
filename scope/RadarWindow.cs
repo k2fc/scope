@@ -5282,7 +5282,7 @@ namespace DGScope
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
             float offsetScale = thisAircraft.PositionIndicator.Font.Height * pixelScale;
-            var offset = (CurrentPrefSet.LeaderLength) * offsetScale;
+            var offset = (1 + CurrentPrefSet.LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
@@ -5378,7 +5378,7 @@ namespace DGScope
             }*/
             //if (LeaderLength != 0)// && !(direction == LeaderDirection.N || direction == LeaderDirection.NE || direction == LeaderDirection.NW))
             //if (thisAircraft.DataBlock.SizeF.Height * 0.75 <= offset && direction != LeaderDirection.N)
-            blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+            blockLocation.Y -= offsetScale * 2.5f;
             PointF leaderStart = new PointF(thisAircraft.LocationF.X, thisAircraft.LocationF.Y);
             
             switch (direction)
@@ -5420,14 +5420,14 @@ namespace DGScope
             {
                 if (thisAircraft.DataBlock.SizeF.Width > thisAircraft.DataBlock2.SizeF.Width)
                     thisAircraft.ConnectingLine.End = new PointF(blockLocation.X + thisAircraft.DataBlock.SizeF.Width,
-                        blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
+                        blockLocation.Y + (offsetScale * 2.5f));
                 else
                     thisAircraft.ConnectingLine.End = new PointF(blockLocation.X + thisAircraft.DataBlock2.SizeF.Width,
-                        blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
+                        blockLocation.Y + (offsetScale * 2.5f));
             }
             else
             {
-                thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (thisAircraft.DataBlock.SizeF.Height * 0.75f));
+                thisAircraft.ConnectingLine.End = new PointF(blockLocation.X, blockLocation.Y + (offsetScale * 2.5f));
             }
             thisAircraft.ConnectingLine.Start = leaderStart;
             if (direction != thisAircraft.LastDrawnDirection)
