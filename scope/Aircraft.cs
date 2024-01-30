@@ -513,6 +513,12 @@ namespace DGScope
                         DataBlock2.Text += "\r\n" + miles.ToString("0.00");
                         DataBlock3.Text += "\r\n" + miles.ToString("0.00");
                     }
+                    else
+                    {
+                        DataBlock.Text += "\r\n ";
+                        DataBlock2.Text += "\r\n ";
+                        DataBlock3.Text += "\r\n ";
+                    }
                 }
                 else
                 {
@@ -549,13 +555,19 @@ namespace DGScope
                         DataBlock3.Text += "\r\n" + cs.PadRight(9);
                     }
                 }
+                else if (DataBlock.Text.Split('\n').Length < 3)
+                {
+                    DataBlock.Text += "\r\n ";
+                    DataBlock2.Text += "\r\n ";
+                    DataBlock3.Text += "\r\n ";
+                }
             }
             else
             {
                 //This is an LDB
-                DataBlock.Text = altstring + handoffchar + vfrchar + catchar + "\r\n     ";
-                DataBlock2.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
-                DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     ";
+                DataBlock.Text = altstring + handoffchar + vfrchar + catchar + "\r\n     \r\n     ";
+                DataBlock2.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     \r\n     ";
+                DataBlock3.Text = yscratch.PadRight(3) + handoffchar + vfrchar + catchar + "\r\n     \r\n     ";
             }
 
             if (!string.IsNullOrEmpty(PositionInd))

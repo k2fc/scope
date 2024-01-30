@@ -5378,7 +5378,7 @@ namespace DGScope
             }*/
             //if (LeaderLength != 0)// && !(direction == LeaderDirection.N || direction == LeaderDirection.NE || direction == LeaderDirection.NW))
             //if (thisAircraft.DataBlock.SizeF.Height * 0.75 <= offset && direction != LeaderDirection.N)
-                blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
+            blockLocation.Y -= thisAircraft.DataBlock.SizeF.Height * 0.75f;
             PointF leaderStart = new PointF(thisAircraft.LocationF.X, thisAircraft.LocationF.Y);
             
             switch (direction)
