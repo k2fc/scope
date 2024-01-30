@@ -5281,15 +5281,17 @@ namespace DGScope
             PointF blockLocation = new PointF();
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
-            var offsetScale = thisAircraft.PositionIndicator.SizeF.Height;
-            var offset = (1 + CurrentPrefSet.LeaderLength) * offsetScale;
+            float offsetScale = thisAircraft.PositionIndicator.Font.Height * pixelScale;
+            var offset = (CurrentPrefSet.LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
                     blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Bottom + offset;
+                    //blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.S:
                     blockLocation.Y = thisAircraft.PositionIndicator.BoundsF.Top - offset;
+                    //blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right;
                     break;
                 case LeaderDirection.E:
                     blockLocation.X = thisAircraft.PositionIndicator.BoundsF.Right + offset;
