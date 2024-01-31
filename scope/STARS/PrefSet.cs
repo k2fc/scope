@@ -25,6 +25,10 @@ namespace DGScope.STARS
         public int RangeRingSpacing { get; set; } = 5;
         public List<string> QuickLookedTCPs { get; set; } = new List<string>();
         public DCBLocation DCBLocation { get; set; } = DCBLocation.Top;
+        public LeaderDirection OwnedDataBlockPosition { get; set; } = LeaderDirection.N;
+        public LeaderDirection UnownedDataBlockPosition { get; set; } = LeaderDirection.N;
+        public LeaderDirection UnassociatedDataBlockPosition { get; set; } = LeaderDirection.N;
+        public SerializableDictionary<string, LeaderDirection> OtherOwnersLeaderDirections { get; set; } = new SerializableDictionary<string, LeaderDirection>();
         public bool DCBVisible { get; set; } = true;
         public bool RangeRingsCentered { get; set; }
         public bool ScopeCentered { get; set; }

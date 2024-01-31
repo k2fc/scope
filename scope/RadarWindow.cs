@@ -650,13 +650,6 @@ namespace DGScope
         public GraphicsUnit DCBFontSizeUnit { get { return DCBFont.Unit; } set { DCBFont = new Font(DCBFont.FontFamily, DCBFont.Size, value); } }
         [DisplayName("Auto Offset Enabled"), Description("Attempt to deconflict overlapping data blocks"), Category("Data Blocks")]
         public bool AutoOffset { get; set; } = false;
-        [DisplayName("Owned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
-        public LeaderDirection LDRDirection { get; set; } = LeaderDirection.N;
-        [DisplayName("Unowned Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
-        public LeaderDirection UnownedLeaderDirection { get; set; } = LeaderDirection.N;
-        [DisplayName("Unassociated Leader Direction"), Description("The angle to offset the data block from the target for owned tracks"), Category("Data Blocks")]
-        public LeaderDirection UnassociatedLeaderDirection { get; set; } = LeaderDirection.N;
-
         [DisplayName("Server Address"), Category("NTP")]
         public string NTPServerAddress
         {
@@ -1962,6 +1955,88 @@ namespace DGScope
                                 {
                                     DisplayPreviewMessage("FORMAT");
                                 }
+                                break;
+                            case 'L': //Leader Lines
+                                if (keys[0].Length > 2)
+                                {
+                                    if (!int.TryParse((keys[0][2]).ToString(), out int dir))
+                                    {
+                                        Preview.Clear();
+                                        DisplayPreviewMessage("FORMAT");
+                                        break;
+                                    }
+                                    LeaderDirection direction;
+                                    switch (dir)
+                                    {
+                                        case 7 when InvertKeyboard:
+                                            direction = LeaderDirection.NW;
+                                            break;
+                                        case 7 when !InvertKeyboard:
+                                            direction = LeaderDirection.SW;
+                                            break;
+                                        case 8 when InvertKeyboard:
+                                            direction = LeaderDirection.N;
+                                            break;
+                                        case 8 when !InvertKeyboard:
+                                            direction = LeaderDirection.S;
+                                            break;
+                                        case 9 when InvertKeyboard:
+                                            direction = LeaderDirection.NE;
+                                            break;
+                                        case 9 when !InvertKeyboard:
+                                            direction = LeaderDirection.SE;
+                                            break;
+                                        case 4:
+                                            direction = LeaderDirection.W;
+                                            break;
+                                        case 6:
+                                            direction = LeaderDirection.E;
+                                            break;
+                                        case 1 when !InvertKeyboard:
+                                            direction = LeaderDirection.NW;
+                                            break;
+                                        case 1 when InvertKeyboard:
+                                            direction = LeaderDirection.SW;
+                                            break;
+                                        case 2 when !InvertKeyboard:
+                                            direction = LeaderDirection.N;
+                                            break;
+                                        case 2 when InvertKeyboard:
+                                            direction = LeaderDirection.S;
+                                            break;
+                                        case 3 when !InvertKeyboard:
+                                            direction = LeaderDirection.NE;
+                                            break;
+                                        case 3 when InvertKeyboard:
+                                            direction = LeaderDirection.SE;
+                                            break;
+                                        default:
+                                            direction = LeaderDirection.Invalid;
+                                            break;
+                                    }
+                                    if (keys[0].Length == 3)
+                                    {
+                                        if (direction != LeaderDirection.Invalid)
+                                        {
+                                            CurrentPrefSet.OwnedDataBlockPosition = direction;
+                                        }
+                                    }
+                                    else if (keys[0].Length == 4 && (char)keys[0][3] == '*')
+                                    {
+                                        if (direction != LeaderDirection.Invalid)
+                                        {
+                                            CurrentPrefSet.UnownedDataBlockPosition = direction;
+                                        }
+                                    }
+                                    else if (keys[0].Length == 4 && (char)keys[0][3] == 'U')
+                                    {
+                                        if (direction != LeaderDirection.Invalid)
+                                        {
+                                            CurrentPrefSet.UnassociatedDataBlockPosition = direction;
+                                        }
+                                    }
+                                }
+                                Preview.Clear();
                                 break;
                             case 'P':
                                 if (!clickedplane)
@@ -3524,7 +3599,7 @@ namespace DGScope
                 dcbWxButton[i].BackColorActive = Nexrad.LevelsAvailable[i] ? Color.SlateBlue : Color.Green;
                 dcbWxButton[i].BackColorInactive = Nexrad.LevelsAvailable[i] ? Color.DarkSlateBlue : Color.FromArgb(0, 80, 0);
             }
-            dcbLdrDirButton.Text = "LDR DIR\r\n" + UnownedLeaderDirection;
+            dcbLdrDirButton.Text = "LDR DIR\r\n" + CurrentPrefSet.OwnedDataBlockPosition;
             dcbLdrLenButton.Text = "LDR LEN\r\n" + CurrentPrefSet.LeaderLength;
             dcbSiteButton.Text = "SITE\r\n" + radar.Name;
             dcbDcbTopButton.Active = dcb.Location == DCBLocation.Top;
@@ -4747,11 +4822,11 @@ namespace DGScope
             if (plane.LDRDirection != null)
                 ldr = plane.LDRDirection.Value;
             else if (plane.PositionInd == ThisPositionIndicator) // owned LDR direction
-                ldr = LDRDirection;
-            else if (!plane.Associated) // Unowned LDR direction
-                ldr = UnassociatedLeaderDirection;
+                ldr = CurrentPrefSet.OwnedDataBlockPosition;
+            else if (!plane.Associated) // Unassociated LDR direction
+                ldr = CurrentPrefSet.UnassociatedDataBlockPosition;
             else
-                ldr = UnownedLeaderDirection;
+                ldr = CurrentPrefSet.UnownedDataBlockPosition;
 
             switch (ldr)
             {
@@ -5424,8 +5499,8 @@ namespace DGScope
         }
         private PointF OffsetDatablockLocation(Aircraft thisAircraft)
         {
-            LeaderDirection newDirection = UnassociatedLeaderDirection;
-            LeaderDirection oldDirection = UnassociatedLeaderDirection;
+            LeaderDirection newDirection = CurrentPrefSet.UnassociatedDataBlockPosition;
+            LeaderDirection oldDirection = CurrentPrefSet.UnassociatedDataBlockPosition;
             if (thisAircraft.LDRDirection != null)
             {
                 oldDirection = thisAircraft.LDRDirection.Value;
@@ -5438,13 +5513,13 @@ namespace DGScope
             }
             else if (thisAircraft.PositionInd == ThisPositionIndicator)
             {
-                oldDirection = LDRDirection;
-                newDirection = LDRDirection;
+                oldDirection = CurrentPrefSet.OwnedDataBlockPosition;
+                newDirection = CurrentPrefSet.OwnedDataBlockPosition;
             }
             else if (thisAircraft.Associated)
             {
-                oldDirection = UnownedLeaderDirection; 
-                newDirection = UnownedLeaderDirection;
+                oldDirection = CurrentPrefSet.UnownedDataBlockPosition; 
+                newDirection = CurrentPrefSet.UnownedDataBlockPosition;
             }
 
 
