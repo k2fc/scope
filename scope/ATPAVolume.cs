@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using DGScope.STARS;
+using OpenTK;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -40,7 +41,7 @@ namespace DGScope
         public bool TwoPointFiveActive { get; set; }
         //public List<ScratchpadFilter> ScratchpadFilters { get; set; } = new List<ScratchpadFilter>();
         [DisplayName("Leader Line Direction"), Category("Filters")]
-        public List<RadarWindow.LeaderDirection> LeaderFilters { get; set; } = new List<RadarWindow.LeaderDirection>();
+        public List<LeaderDirection> LeaderFilters { get; set; } = new List<LeaderDirection>();
         [DisplayName("Destination"), Category("Filters")]
         public string Destination { get; set; }
         [DisplayName("Distance"), Category("2.5nm Approach")]

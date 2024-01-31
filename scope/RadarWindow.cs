@@ -25,19 +25,6 @@ namespace DGScope
 {
     public class RadarWindow
     {
-        public enum LeaderDirection
-        {
-            NW = 1,
-            N = 2,
-            NE = 3,
-            W = 4,
-            E = 6,
-            SW = 7,
-            S = 8,
-            SE = 9,
-            Invalid = 0
-        }
-
         public static LeaderDirection ParseLDR(string direction)
         {
             if (direction == null)

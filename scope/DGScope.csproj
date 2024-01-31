@@ -249,6 +249,7 @@
     <Compile Include="ScratchpadFilter.cs" />
     <Compile Include="SerializableDictionary.cs" />
     <Compile Include="STARS\ClockPhase.cs" />
+    <Compile Include="STARS\LeaderDirection.cs" />
     <Compile Include="STARS\PrefSet.cs" />
     <Compile Include="STARS\TargetExtentSymbols.cs" />
     <Compile Include="STARS\TCP.cs" />

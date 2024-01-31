@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
-using DGScope.Receivers;
+using DGScope.STARS;
 
 namespace DGScope
 {
@@ -113,8 +112,8 @@ namespace DGScope
         public bool QuickLook { get; set; } = false;
         public bool QuickLookPlus { get; set; } = false;
 
-        public RadarWindow.LeaderDirection? LDRDirection = null;
-        public RadarWindow.LeaderDirection? OwnerLeaderDirection = null;
+        public LeaderDirection? LDRDirection = null;
+        public LeaderDirection? OwnerLeaderDirection = null;
         public bool ShowCallsignWithNoSquawk { get; set; } = false;
         public bool FDB { 
             get
@@ -297,9 +296,9 @@ namespace DGScope
         }
 
         private int dbAlt, dbSpeed = 0;
-        public RadarWindow.LeaderDirection LastDrawnDirection;
+        public LeaderDirection LastDrawnDirection;
 
-        public void RedrawDataBlock(Radar radar, RadarWindow.LeaderDirection? leaderDirection = null)
+        public void RedrawDataBlock(Radar radar, LeaderDirection? leaderDirection = null)
         {
             if (Callsign == null)
                 Callsign = string.Empty;
@@ -449,9 +448,9 @@ namespace DGScope
             {
                 if (!string.IsNullOrEmpty(FlightPlanCallsign) && !ShowCallsignWithNoSquawk)
                 {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    if (leaderDirection == LeaderDirection.W ||
+                leaderDirection == LeaderDirection.NW ||
+                leaderDirection == LeaderDirection.SW)
                     {
                         DataBlock.Text = FlightPlanCallsign.PadLeft(9);
                         DataBlock2.Text = FlightPlanCallsign.PadLeft(9); 
@@ -466,9 +465,9 @@ namespace DGScope
                 }
                 else if (Squawk != null)
                 {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    if (leaderDirection == LeaderDirection.W ||
+                leaderDirection == LeaderDirection.NW ||
+                leaderDirection == LeaderDirection.SW)
                     {
                         DataBlock.Text = Squawk.PadLeft(9);
                         DataBlock2.Text = Squawk.PadLeft(9);
@@ -522,9 +521,9 @@ namespace DGScope
                 }
                 else
                 {
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    if (leaderDirection == LeaderDirection.W ||
+                leaderDirection == LeaderDirection.NW ||
+                leaderDirection == LeaderDirection.SW)
                     {
                         DataBlock.Text += (altstring + handoffchar + vfrchar + catchar).PadLeft(9);
                         DataBlock2.Text += (yscratch.PadRight(3) + handoffchar + vfrchar + catchar).PadLeft(9);
@@ -540,9 +539,9 @@ namespace DGScope
                 if (ShowCallsignWithNoSquawk && Callsign != null && !Associated)
                 {
                     var cs = Callsign;
-                    if (leaderDirection == RadarWindow.LeaderDirection.W ||
-                leaderDirection == RadarWindow.LeaderDirection.NW ||
-                leaderDirection == RadarWindow.LeaderDirection.SW)
+                    if (leaderDirection == LeaderDirection.W ||
+                leaderDirection == LeaderDirection.NW ||
+                leaderDirection == LeaderDirection.SW)
                     {
                         DataBlock.Text += "\r\n" + cs.PadLeft(9);
                         DataBlock2.Text += "\r\n" + cs.PadLeft(9);

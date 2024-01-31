@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DGScope.STARS;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,26 +46,26 @@ namespace DGScope.Receivers.ScopeServer
     }
     public static class LDRDirection
     {
-        public static RadarWindow.LeaderDirection? ParseLDR(int? LDRDirection)
+        public static LeaderDirection? ParseLDR(int? LDRDirection)
         {
             switch (LDRDirection)
             {
                 case 1:
-                    return RadarWindow.LeaderDirection.NW;
+                    return LeaderDirection.NW;
                 case 2:
-                    return RadarWindow.LeaderDirection.N;
+                    return LeaderDirection.N;
                 case 3:
-                    return RadarWindow.LeaderDirection.NE;
+                    return LeaderDirection.NE;
                 case 6:
-                    return RadarWindow.LeaderDirection.E;
+                    return LeaderDirection.E;
                 case 9:
-                    return RadarWindow.LeaderDirection.SE;
+                    return LeaderDirection.SE;
                 case 8:
-                    return RadarWindow.LeaderDirection.S;
+                    return LeaderDirection.S;
                 case 7:
-                    return RadarWindow.LeaderDirection.SW;
+                    return LeaderDirection.SW;
                 case 4:
-                    return RadarWindow.LeaderDirection.W;
+                    return LeaderDirection.W;
                 case 5:
                     return null;
                 default:
