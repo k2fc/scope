@@ -4762,9 +4762,9 @@ namespace DGScope
             else if (plane.PositionInd == ThisPositionIndicator) // owned LDR direction
                 ldr = LDRDirection;
             else if (!plane.Associated) // Unowned LDR direction
-                ldr = UnownedLeaderDirection;
-            else
                 ldr = UnassociatedLeaderDirection;
+            else
+                ldr = UnownedLeaderDirection;
 
             switch (ldr)
             {
@@ -5282,7 +5282,7 @@ namespace DGScope
             blockLocation.X = thisAircraft.LocationF.X;
             blockLocation.Y = thisAircraft.LocationF.Y;
             float offsetScale = thisAircraft.PositionIndicator.Font.Height * pixelScale;
-            var offset = (1 + CurrentPrefSet.LeaderLength) * offsetScale;
+            var offset = (0.5f + CurrentPrefSet.LeaderLength) * offsetScale;
             switch (direction)
             {
                 case LeaderDirection.N:
@@ -5454,7 +5454,7 @@ namespace DGScope
                 oldDirection = LDRDirection;
                 newDirection = LDRDirection;
             }
-            else if (!thisAircraft.Associated)
+            else if (thisAircraft.Associated)
             {
                 oldDirection = UnownedLeaderDirection; 
                 newDirection = UnownedLeaderDirection;
