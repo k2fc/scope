@@ -236,6 +236,14 @@ namespace DGScope
                 Up?.Invoke(this, null);
             }
         }
+        public virtual void OnAdjustUp(EventArgs e)
+        {
+            Up?.Invoke(this, e);
+        }
+        public virtual void OnAdjustDown(EventArgs e)
+        {
+            Down?.Invoke(this, e);
+        }
     }
 
     internal class DCBSubmenuButton : DCBButton

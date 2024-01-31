@@ -3195,7 +3195,7 @@ namespace DGScope
         private DCBToggleButton[] dcbMapButton = new DCBToggleButton[32];
         private DCBToggleButton[] dcbWxButton = new DCBToggleButton[6];
         private DCBSubmenuButton dcbBriteButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "BRITE" };
-        private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80, Disabled = true };
+        private DCBAdjustmentButton dcbLdrDirButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
         private DCBAdjustmentButton dcbLdrLenButton = new DCBAdjustmentButton() { Height = 40, Width = 80 };
         private DCBSubmenuButton dcbCharSizeButton = new DCBSubmenuButton() { Height = 80, Width = 80, Text = "CHAR\r\nSIZE", Disabled = true };
         private DCBButton dcbModeButton = new DCBButton() { Height = 80, Width = 80, Text = "MODE\r\nFSL", Disabled = true };
@@ -3292,7 +3292,9 @@ namespace DGScope
             dcbBriteButton.Click += DcbSubmenuButtonClick;
             dcbBriteButton.Submenu = briteMenu;
             dcbMainMenu.AddButton(dcbLdrDirButton);
-            dcbLdrDirButton.Click += DcbScopeActionButtonClick;
+            dcbLdrDirButton.Click += DcbButtonClick;
+            dcbLdrDirButton.Up += DcbLdrDirButton_Up;
+            dcbLdrDirButton.Down += DcbLdrDirButton_Down;
             dcbMainMenu.AddButton(dcbLdrLenButton);
             dcbLdrLenButton.Click += DcbButtonClick;
             dcbMainMenu.AddButton(dcbCharSizeButton);
@@ -3373,6 +3375,68 @@ namespace DGScope
 
             dcb.ActiveMenu = dcbMainMenu;
             
+        }
+
+        private void DcbLdrDirButton_Down(object sender, EventArgs e)
+        {
+            switch (CurrentPrefSet.OwnedDataBlockPosition)
+            {
+                case LeaderDirection.NW:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.W;
+                    break;
+                case LeaderDirection.N:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.NW;
+                    break;
+                case LeaderDirection.NE:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.N;
+                    break;
+                case LeaderDirection.E:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.NE;
+                    break;
+                case LeaderDirection.SE:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.E;
+                    break;
+                case LeaderDirection.S:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.SE;
+                    break;
+                case LeaderDirection.SW:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.S;
+                    break;
+                case LeaderDirection.W:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.SW;
+                    break;
+            }
+        }
+
+        private void DcbLdrDirButton_Up(object sender, EventArgs e)
+        {
+            switch (CurrentPrefSet.OwnedDataBlockPosition)
+            {
+                case LeaderDirection.NW:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.N;
+                    break;
+                case LeaderDirection.N:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.NE;
+                    break;
+                case LeaderDirection.NE:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.E;
+                    break;
+                case LeaderDirection.E:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.SE;
+                    break;
+                case LeaderDirection.SE:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.S;
+                    break;
+                case LeaderDirection.S:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.SW;
+                    break;
+                case LeaderDirection.SW:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.W;
+                    break;
+                case LeaderDirection.W:
+                    CurrentPrefSet.OwnedDataBlockPosition = LeaderDirection.NW;
+                    break;
+            }
         }
 
         private void DcbSubmenuButtonClick(object sender, EventArgs e)
@@ -4311,6 +4375,11 @@ namespace DGScope
                         }
                     }
                 }
+                if (mousescrollcount > mousethreshold)
+                    button.OnAdjustUp(null);
+                else if (mousescrollcount < -mousethreshold)
+                    button.OnAdjustDown(null);
+                
                 if (Math.Abs(mousescrollcount) > mousethreshold)
                     mousescrollcount = 0;
                 if (activeDcbButton != dcbPlaceCntrButton)
