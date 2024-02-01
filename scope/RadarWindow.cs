@@ -1959,7 +1959,14 @@ namespace DGScope
                             case 'L': //Leader Lines
                                 if (keys[0].Length > 2)
                                 {
-                                    if (!int.TryParse((keys[0][2]).ToString(), out int dir))
+                                    int dirpos = 2;
+                                    string pos = null;
+                                    if (keys[0].Length == 5)
+                                    {
+                                        dirpos += 2;
+                                        pos = KeysToString(keys[0], 2).Substring(0, 2);
+                                    }
+                                    if (!int.TryParse((keys[0][dirpos]).ToString(), out int dir))
                                     {
                                         Preview.Clear();
                                         DisplayPreviewMessage("FORMAT");
@@ -2033,6 +2040,27 @@ namespace DGScope
                                         if (direction != LeaderDirection.Invalid)
                                         {
                                             CurrentPrefSet.UnassociatedDataBlockPosition = direction;
+                                        }
+                                    }
+                                    else if (pos != null)
+                                    {
+                                        lock (CurrentPrefSet.OtherOwnersLeaderDirections)
+                                        {
+                                            if (CurrentPrefSet.OtherOwnersLeaderDirections.ContainsKey(pos))
+                                            {
+                                                if (dir == 5)
+                                                {
+                                                    CurrentPrefSet.OtherOwnersLeaderDirections.Remove(pos);
+                                                }
+                                                else if (direction != LeaderDirection.Invalid)
+                                                {
+                                                    CurrentPrefSet.OtherOwnersLeaderDirections[pos] = direction;
+                                                }
+                                            }
+                                            else if (direction != LeaderDirection.Invalid)
+                                            {
+                                                CurrentPrefSet.OtherOwnersLeaderDirections.Add(pos, direction);
+                                            }
                                         }
                                     }
                                 }
@@ -5574,6 +5602,10 @@ namespace DGScope
                 oldDirection = thisAircraft.LDRDirection.Value;
                 newDirection = thisAircraft.LDRDirection.Value;
             }
+            else if (thisAircraft.PositionInd == null)
+            {
+
+            }
             else if (thisAircraft.PositionInd == ThisPositionIndicator && thisAircraft.OwnerLeaderDirection != null)
             {
                 oldDirection = thisAircraft.OwnerLeaderDirection.Value;
@@ -5584,6 +5616,11 @@ namespace DGScope
                 oldDirection = CurrentPrefSet.OwnedDataBlockPosition;
                 newDirection = CurrentPrefSet.OwnedDataBlockPosition;
             }
+            else if (CurrentPrefSet.OtherOwnersLeaderDirections.TryGetValue(thisAircraft.PositionInd, out LeaderDirection dir))
+            {
+                oldDirection = dir;
+                newDirection = dir;
+            }
             else if (thisAircraft.Associated)
             {
                 oldDirection = CurrentPrefSet.UnownedDataBlockPosition; 
@@ -5591,10 +5628,6 @@ namespace DGScope
             }
 
 
-            if (newDirection != oldDirection)
-            {
-                thisAircraft.RedrawDataBlock(radar);
-            }
 
             PointF blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
             
@@ -5671,6 +5704,10 @@ namespace DGScope
                     newDirection = bestDirection;
                 }
                 blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
+                if (newDirection != oldDirection)
+                {
+                    thisAircraft.RedrawDataBlock(radar);
+                }
 
             }
             
