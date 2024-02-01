@@ -3733,7 +3733,7 @@ namespace DGScope
             pixeltransform *= Matrix4.CreateScale(2f / window.ClientSize.Width, -2f / window.ClientSize.Height, 1.0f);
             dataBlockOffsetScale = Font.Height * pixelScale;
             dataBlockOffset = (0.5f + CurrentPrefSet.LeaderLength) * dataBlockOffsetScale;
-            dataBlockDiagonalOffset = (float)(dataBlockOffset * Math.Sqrt(2));
+            dataBlockDiagonalOffset = (float)(dataBlockOffset * Math.Sqrt(2)) / 2;
             GL.ClearColor(AdjustedColor(BackColor, CurrentPrefSet.Brightness.Background));
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Enable(EnableCap.Blend);
