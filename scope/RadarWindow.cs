@@ -1280,7 +1280,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock(clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1291,7 +1291,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1302,7 +1302,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1310,7 +1310,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = LeaderDirection.W;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1318,7 +1318,7 @@ namespace DGScope
                         if (clickedplane)
                         {
                             ((Aircraft)clicked).LDRDirection = null;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1337,7 +1337,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.SW;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.NW;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1348,7 +1348,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.S;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.N;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -1359,7 +1359,7 @@ namespace DGScope
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.SE;
                             else
                                 ((Aircraft)clicked).LDRDirection = LeaderDirection.NE;
-                            ((Aircraft)clicked).RedrawDataBlock(radar);
+                            lock (clicked) ((Aircraft)clicked).RedrawDataBlock(radar);
                             Preview.Clear();
                         }
                         break;
@@ -5290,7 +5290,7 @@ namespace DGScope
 
             if (aircraft.LastMessageTime > CurrentTime.AddSeconds(-LostTargetSeconds))
             {
-                aircraft.RedrawTarget(extrapolatedpos, radar);
+                lock(aircraft) aircraft.RedrawTarget(extrapolatedpos, radar);
                 aircraft.PTL.End1 = aircraft.SweptLocation(radar);
                 double ptldistance = (aircraft.SweptSpeed(radar) / 60) * CurrentPrefSet.PTLLength;
                 aircraft.PTL.End2 = extrapolatedpos.FromPoint(ptldistance, aircraft.SweptTrack(radar));
@@ -5589,7 +5589,7 @@ namespace DGScope
             }
             thisAircraft.ConnectingLine.Start = leaderStart;
             if (direction != thisAircraft.LastDrawnDirection)
-                thisAircraft.RedrawDataBlock(radar, direction);
+                lock (thisAircraft) thisAircraft.RedrawDataBlock(radar, direction);
 
             return blockLocation;
         }
@@ -5704,10 +5704,7 @@ namespace DGScope
                     newDirection = bestDirection;
                 }
                 blockLocation = OffsetDatablockLocation(thisAircraft, newDirection);
-                if (newDirection != oldDirection)
-                {
-                    thisAircraft.RedrawDataBlock(radar);
-                }
+                
 
             }
             
@@ -5908,7 +5905,7 @@ namespace DGScope
             {
                 beaconatorplane.ShowCallsignWithNoSquawk = showAllCallsigns;
                 //GenerateDataBlock(beaconatorplane);
-                beaconatorplane.RedrawDataBlock(radar);
+                lock (beaconatorplane) beaconatorplane.RedrawDataBlock(radar);
             }
             aclist.ForEach(x =>
             {
