@@ -166,6 +166,7 @@ namespace DGScope.Library
     {
         Track = 0,
         Flightplan = 1,
-        Deletion = 2
+        Deletion = 2,
+        WeatherRadar = 3
     }
 }

@@ -21,6 +21,7 @@ namespace DGScope.Receivers.ScopeServer
     {
         private List<Track> tracks = new List<Track>();
         private List<FlightPlan> flightPlans = new List<FlightPlan>();
+        private List<WeatherRadar> weatherRadars = new List<WeatherRadar>();
         private UpdateConverter updateConverter = new UpdateConverter();
         private bool stop = true;
         private bool running = false;
@@ -124,6 +125,10 @@ namespace DGScope.Receivers.ScopeServer
                     break;
                 case 2:
                     update = JsonConvert.DeserializeObject<DeletionUpdate>(line, settings);
+                    ProcessUpdate(update);
+                    break;
+                case 3:
+                    update = JsonConvert.DeserializeObject<WeatherRadarUpdate>(line, settings);
                     ProcessUpdate(update);
                     break;
             }
@@ -304,7 +309,14 @@ namespace DGScope.Receivers.ScopeServer
                             aircraft.Remove(plane);
                     }
                     break;
-                    
+                case UpdateType.WeatherRadar:
+                    var wxradarupdate = update as WeatherRadarUpdate;
+                    if (update != null)
+                    {
+                        var radar = GetWeatherRadar(wxradarupdate.RadarID, true);
+                        radar?.Update(update);
+                    }
+                    break;
             }
             if (plane == null)
                 return;
@@ -354,6 +366,19 @@ namespace DGScope.Receivers.ScopeServer
                 plane.ModeSCode = track.ModeSCode;
                 plane.Squawk = track.Squawk;
                 plane.VerticalRate = track.VerticalRate;
+            }
+        }
+        private WeatherRadar GetWeatherRadar(string id, bool addnew = false)
+        {
+            lock (weatherRadars)
+            {
+                var radar = weatherRadars.Where(x => x.RadarID == id).FirstOrDefault();
+                if (radar is null && addnew)
+                {
+                    radar = new WeatherRadar();
+                    weatherRadars.Add(radar);
+                }
+                return radar; 
             }
         }
         public async Task<bool> Send(Update update)

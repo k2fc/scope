@@ -185,6 +185,7 @@
     <Compile Include="Track.cs" />
     <Compile Include="TrackUpdate.cs" />
     <Compile Include="Update.cs" />
+    <Compile Include="WeatherRadar.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\scope\DGScope.csproj">
