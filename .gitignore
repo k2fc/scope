@@ -345,3 +345,4 @@ healthchecksdb
 /ScopeServer/receivers.json
 /NexradDecoder/NexradDecoder.dll
 /NexradDecoder/net7.0
+*imgui.ini
