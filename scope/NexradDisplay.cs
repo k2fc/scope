@@ -129,7 +129,7 @@ namespace DGScope
             {
                 colortable = new WXColorTable(ColorTable);
             }
-            if (!gotdata)
+            if (!gotdata && WxRadarMode == WxRadarMode.NWSNexrad)
                 return;
             var polygons = new List<Polygon>();
             GeoPoint radarLocation;
