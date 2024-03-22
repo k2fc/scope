@@ -966,6 +966,7 @@ namespace DGScope
             foreach (Receiver receiver in Receivers)
             {
                 receiver.SetAircraftList(Aircraft);
+                receiver.SetWeatherRadarDisplay(Nexrad);
                 if (receiver.Enabled)
                     try
                     {
@@ -4473,6 +4474,7 @@ namespace DGScope
         }
 
         private TransparentLabel[] cmp_labels = new TransparentLabel[36];
+        float cmp_ar;
         private void DrawCompass()
         {
             if (CurrentPrefSet.Brightness.Compass == 0)
@@ -4599,8 +4601,9 @@ namespace DGScope
                 }
             }
             GL.PopMatrix();
-            if (oldar != aspect_ratio)
+            if (cmp_ar != aspect_ratio)
             {
+                cmp_ar = aspect_ratio;
                 foreach(var label in cmp_labels)
                 {
                     label.ForceRedraw();

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Numerics;
 using System.Threading;
 using System.Xml.Serialization;
 
@@ -14,7 +15,8 @@ namespace DGScope
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class NexradDisplay
     {
-
+        public WxRadarMode WxRadarMode { get; set; } = WxRadarMode.NWSNexrad;
+        private Dictionary<string, ScopeServerWxRadarReport> scopeServerRadars = new Dictionary<string, ScopeServerWxRadarReport>();
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
         public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
         
@@ -39,9 +41,10 @@ namespace DGScope
         public string URL { get; set; }
         [Description("Product Download Interval (sec.)")]
         public int DownloadInterval { get; set; } = 300;
+        public string SensorID { get; set; }
         [Browsable(false)]
         [XmlIgnore]
-        public bool[] LevelsAvailable => colortable == null ? dummyLevelsA : colortable.LevelsAvailable;
+        public bool[] LevelsAvailable = new bool[6];
         public bool[] LevelsEnabled => colortable == null ? dummyLevelsE : colortable.LevelsEnabled;
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
@@ -129,51 +132,113 @@ namespace DGScope
             if (!gotdata)
                 return;
             var polygons = new List<Polygon>();
-            GeoPoint radarLocation = new GeoPoint(description.Latitude, description.Longitude);
-            int range;
-            switch (description.Code)
+            GeoPoint radarLocation;
+            bool[] availableLevels = new bool[6];
+            switch (WxRadarMode)
             {
-                case 94:
-                    range = 248;
-                    break;
-                case 180:
-                    range = 48;
-                    break;
-                default:
-                    return;
-            }
-            var scanrange = range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180 ));
-            double resolution = scanrange / symbology.LayerNumberOfRangeBins;
-            for (int i = 0; i < symbology.NumberOfRadials; i++)
-            {
-                for (int j = 0; j < symbology.Radials[i].ColorValues.Length; j++)
-                {
-                    if (symbology.Radials[i].ColorValues[j] > 0)
+                case WxRadarMode.NWSNexrad:
+                    radarLocation = new GeoPoint(description.Latitude, description.Longitude);
+                    int range;
+                    switch (description.Code)
                     {
-                        Polygon polygon = new Polygon();
-                        polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle));
-                        polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
-                        polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
-                        polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle));
-                        //var color = Colors[radial.ColorValues[j]];
-                        var color = colortable.GetWXColor(symbology.Radials[i].Values[j]);
-                        if (color != null)
+                        case 94:
+                            range = 248;
+                            break;
+                        case 180:
+                            range = 48;
+                            break;
+                        default:
+                            return;
+                    }
+                    var scanrange = range * Math.Cos(description.ProductSpecific_3 * (Math.PI / 180));
+                    double resolution = scanrange / symbology.LayerNumberOfRangeBins;
+                    for (int i = 0; i < symbology.NumberOfRadials; i++)
+                    {
+                        for (int j = 0; j < symbology.Radials[i].ColorValues.Length; j++)
                         {
-                            polygon.Color = color.MinColor;
-                            if (color.StippleColor != null)
-                                polygon.StippleColor = color.StippleColor;
-                            if (color.StipplePattern != null)
-                                polygon.StipplePattern = color.StipplePattern;
-                            polygon.ComputeVertices();
-                            polygons.Add(polygon);
+                            if (symbology.Radials[i].ColorValues[j] > 0)
+                            {
+                                Polygon polygon = new Polygon();
+                                polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle));
+                                polygon.Points.Add(radarLocation.FromPoint(resolution * j, symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
+                                polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle + symbology.Radials[i].AngleDelta));
+                                polygon.Points.Add(radarLocation.FromPoint(resolution * (j + 1), symbology.Radials[i].StartAngle));
+                                //var color = Colors[radial.ColorValues[j]];
+                                var color = colortable.GetWXColor(symbology.Radials[i].Values[j], ref availableLevels);
+                                if (color != null)
+                                {
+                                    polygon.Color = color.MinColor;
+                                    if (color.StippleColor != null)
+                                        polygon.StippleColor = color.StippleColor;
+                                    if (color.StipplePattern != null)
+                                        polygon.StipplePattern = color.StipplePattern;
+                                    polygon.ComputeVertices();
+                                    polygons.Add(polygon);
+                                }
+                            }
                         }
                     }
-                }
+                    LevelsAvailable = availableLevels;
+                    break;
+                case WxRadarMode.ScopeServer:
+                    if (SensorID is null)
+                    {
+                        break;
+                    }
+                    if (scopeServerRadars.TryGetValue(SensorID, out var radar))
+                    {
+                        const double METER_TO_NM = 0.000539957;
+                        radarLocation = radar.ReferencePoint.FromPoint(radar.OriginOffset.Y * METER_TO_NM, 360).FromPoint(radar.OriginOffset.X * METER_TO_NM, 90);
+                        double rotation = (double)radar.Rotation;
+                        GeoPoint rowStart = radarLocation.FromPoint(radar.GridSize.Y * radar.BoxSize.Y * METER_TO_NM, 360);
+                        for (int y = 0; y < radar.Values.Length; y++)
+                        {
+                            var row = radar.Values[y];
+                            var lastPoint = rowStart;
+                            for (int x = 0; x < row.Length; x++)
+                            {
+                                Polygon polygon = new Polygon();
+                                polygon.Points.Add(lastPoint);
+                                polygon.Points.Add(lastPoint.FromPoint(radar.BoxSize.Y * METER_TO_NM, rotation));
+                                polygon.Points.Add(lastPoint.FromPoint(radar.BoxSize.Y * METER_TO_NM, rotation).FromPoint(radar.BoxSize.X * METER_TO_NM, 90 + rotation));
+                                lastPoint = lastPoint.FromPoint(radar.BoxSize.X * METER_TO_NM, 90 + rotation);
+                                polygon.Points.Add(lastPoint);
+                                var color = colortable.GetWXColor(radar.Values[y][x], ref availableLevels);
+                                if (color != null)
+                                {
+                                    polygon.Color = color.MinColor;
+                                    if (color.StippleColor != null)
+                                        polygon.StippleColor = color.StippleColor;
+                                    if (color.StipplePattern != null)
+                                        polygon.StipplePattern = color.StipplePattern;
+                                    polygon.ComputeVertices();
+                                    polygons.Add(polygon);
+                                }
+                            }
+                            rowStart = rowStart.FromPoint(radar.BoxSize.Y * METER_TO_NM, 180 + rotation);
+                        }
+                    }
+                    break;
             }
+            LevelsAvailable = availableLevels;
             this.polygons = polygons.ToArray();
         }
 
-
+        public void AddWeatherRadarReport(string RadarID, ScopeServerWxRadarReport report)
+        {
+            lock (scopeServerRadars)
+            {
+                if (!scopeServerRadars.ContainsKey(RadarID))
+                {
+                    scopeServerRadars.Add(RadarID, report);
+                }
+                else
+                {
+                    scopeServerRadars[RadarID] = report;
+                }
+            }
+            RecomputeVertices();
+        }
         public override string ToString()
         {
             return Name;
@@ -204,5 +269,19 @@ namespace DGScope
                 vertices[i].Y = (float)points[i].Latitude; // (Math.Cos(bearing * (Math.PI / 180)) * (distance / scale));
             }
         }
+    }
+    public enum WxRadarMode
+    {
+        NWSNexrad,
+        ScopeServer
+    }
+    public struct ScopeServerWxRadarReport
+    {
+        public GeoPoint ReferencePoint { get; set; }
+        public Vector2 OriginOffset { get; set; }
+        public Vector2 BoxSize { get; set; }
+        public Vector2 GridSize { get; set; }
+        public byte[][] Values { get; set; }
+        public decimal Rotation { get; set; }
     }
 }

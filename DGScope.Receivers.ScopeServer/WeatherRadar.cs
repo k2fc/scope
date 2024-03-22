@@ -17,6 +17,7 @@ public class WeatherRadar : IUpdatable
     public Vector2 OffsetToOrigin { get; set; }
     public Vector2 BoxSize { get; set; }
     public byte[] Levels { get; set; }
+    public decimal Rotation { get; set; }
 
     public event EventHandler<UpdateEventArgs> Updated;
     public event EventHandler<UpdateEventArgs> Created;
@@ -74,6 +75,7 @@ public class WeatherRadarUpdate : Update
     public Vector2? OffsetToOrigin { get; set; }
     public Vector2? BoxSize { get; set; }
     public byte[] Levels { get; set; }
+    public decimal? Rotation { get; set; }
     public override UpdateType UpdateType => UpdateType.WeatherRadar;
     public WeatherRadarUpdate(WeatherRadar radar)
     {

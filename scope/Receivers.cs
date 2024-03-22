@@ -53,6 +53,10 @@ namespace DGScope.Receivers
             if (Enabled)
                 Start();
         }
+        public virtual void SetWeatherRadarDisplay(NexradDisplay weatherRadar)
+        {
+
+        }
         
         public Aircraft GetPlane(Guid guid, bool createnew = false)
         {

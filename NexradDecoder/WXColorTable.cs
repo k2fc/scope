@@ -11,8 +11,8 @@ namespace DGScope
         
         public List<WXColor> Colors { get; set; } = new List<WXColor>();
         public bool[] LevelsEnabled;
-        public bool[] LevelsAvailable;
-        public WXColor GetWXColor(double value)
+        //public bool[] LevelsAvailable;
+        public WXColor GetWXColor(double value, ref bool[] availableLevels)
         {
             var colors = Colors.OrderBy(x => x.MinValue).ToArray();
             if (colors.Length < 1)
@@ -21,13 +21,13 @@ namespace DGScope
                 return null;
             if (LevelsEnabled == null || LevelsEnabled.Length != colors.Length)
                 LevelsEnabled = new bool[colors.Length];
-            if (LevelsAvailable == null || LevelsAvailable.Length != colors.Length)
-                LevelsAvailable = new bool[colors.Length];
+            //if (LevelsAvailable == null || LevelsAvailable.Length != colors.Length)
+            //    LevelsAvailable = new bool[colors.Length];
             for (int i = colors.Length - 1; i >= 0; i--)
             {
                 if (value > colors[i].MinValue)
                 {
-                    LevelsAvailable[i] = true;
+                    availableLevels[i] = true;
                     if (LevelsEnabled[i])
                     { 
                         return colors[i];
@@ -36,6 +36,34 @@ namespace DGScope
             }
             return null;
         }
+
+        public WXColor GetWXColor(int value, ref bool[] availableLevels)
+        {
+            var colors = Colors.OrderBy(x => x.MinValue).ToArray();
+            if (colors.Length < 1 || value < 1 || value > 6)
+                return null;
+            if (LevelsEnabled == null || LevelsEnabled.Length != colors.Length)
+                LevelsEnabled = new bool[colors.Length];
+            //if (LevelsAvailable == null || LevelsAvailable.Length != colors.Length)
+            //    LevelsAvailable = new bool[colors.Length];
+            for (int i = colors.Length - 1; i >= 0; i--)
+            {
+                if (value > i)
+                {
+                    availableLevels[i] = true;
+                    if (LevelsEnabled[i])
+                    {
+                        return colors[i];
+                    }
+                }
+            }
+            return null;
+            if (value <= 1)
+                return colors[0];
+            if (value <= colors.Length)
+                return colors[value - 1];
+            return colors.Last();
+        }
         public WXColorTable() 
         {
         }
@@ -43,7 +71,6 @@ namespace DGScope
         { 
             Colors = colors;
             LevelsEnabled = new bool[colors.Count];
-            LevelsAvailable = new bool[colors.Count];
             for (int i = 0; i < colors.Count; i++)
             {
                 LevelsEnabled[i] = true;

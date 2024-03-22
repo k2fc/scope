@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -22,6 +23,7 @@ namespace DGScope.Receivers.ScopeServer
         private List<Track> tracks = new List<Track>();
         private List<FlightPlan> flightPlans = new List<FlightPlan>();
         private List<WeatherRadar> weatherRadars = new List<WeatherRadar>();
+        private NexradDisplay weatherDisplay;
         private UpdateConverter updateConverter = new UpdateConverter();
         private bool stop = true;
         private bool running = false;
@@ -67,7 +69,47 @@ namespace DGScope.Receivers.ScopeServer
             DeletionUpdate del = new DeletionUpdate() { Guid = (sender as Aircraft).FlightPlanGuid };
             Send(del);
         }
-
+        public override void SetWeatherRadarDisplay(NexradDisplay weatherRadar)
+        {
+            weatherDisplay = weatherRadar;
+        }
+        private byte[][] UnpackRLE(byte[] data, int rows, int cols)
+        {
+            if (data == null)
+                return null;
+            byte[][] output = new byte[rows][];
+            for (int y = 0;  y < rows; y++)
+            {
+                output[y] = new byte[cols];
+            }
+            int gridsize = rows > cols ? rows : cols;
+            byte[] unpacked = new byte[gridsize * gridsize];
+            int unpackcount = 0;
+            for (int i = 0; i < data.Length; i+=3)
+            {
+                var value = data[i];
+                var countbytes = new byte[2] { data[i + 1], data[i + 2] };
+                var count = BinaryPrimitives.ReadUInt16BigEndian(countbytes);
+                for (int j = 0; j < count; j++)
+                {
+                    unpacked[unpackcount] = value;
+                    unpackcount++;
+                }
+            }
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    var gridnum = (y * gridsize) + x;
+                    output[y][x] = unpacked[gridnum];
+                    if (unpacked[gridnum] != 0 && unpacked[gridnum] != 15)
+                    {
+                        ;
+                    }
+                }
+            }
+            return output;
+        }
         private void Plane_Update(object sender, EventArgs e)
         {
             Aircraft plane = sender as Aircraft;
@@ -315,6 +357,17 @@ namespace DGScope.Receivers.ScopeServer
                     {
                         var radar = GetWeatherRadar(wxradarupdate.RadarID, true);
                         radar?.Update(update);
+                        var values = UnpackRLE(radar.Levels, radar.Rows, radar.Columns);
+                        ScopeServerWxRadarReport report = new ScopeServerWxRadarReport()
+                        {
+                            BoxSize = radar.BoxSize,
+                            GridSize = new System.Numerics.Vector2(radar.Columns, radar.Rows),
+                            ReferencePoint = radar.ReferencePoint,
+                            OriginOffset = radar.OffsetToOrigin,
+                            Values = values,
+                            Rotation = radar.Rotation
+                        };
+                        weatherDisplay.AddWeatherRadarReport(radar.RadarID, report);
                     }
                     break;
             }
