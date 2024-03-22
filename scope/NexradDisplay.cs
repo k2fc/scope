@@ -188,9 +188,9 @@ namespace DGScope
                     if (scopeServerRadars.TryGetValue(SensorID, out var radar))
                     {
                         const double METER_TO_NM = 0.000539957;
-                        radarLocation = radar.ReferencePoint.FromPoint(radar.OriginOffset.Y * METER_TO_NM, 360).FromPoint(radar.OriginOffset.X * METER_TO_NM, 90);
                         double rotation = (double)radar.Rotation;
-                        GeoPoint rowStart = radarLocation.FromPoint(radar.GridSize.Y * radar.BoxSize.Y * METER_TO_NM, 360);
+                        radarLocation = radar.ReferencePoint.FromPoint(radar.OriginOffset.Y * METER_TO_NM, 360 + rotation).FromPoint(radar.OriginOffset.X * METER_TO_NM, 90 + rotation);
+                        GeoPoint rowStart = radarLocation.FromPoint(radar.GridSize.Y * radar.BoxSize.Y * METER_TO_NM, 360 + rotation);
                         for (int y = 0; y < radar.Values.Length; y++)
                         {
                             var row = radar.Values[y];
@@ -278,9 +278,9 @@ namespace DGScope
     public struct ScopeServerWxRadarReport
     {
         public GeoPoint ReferencePoint { get; set; }
-        public Vector2 OriginOffset { get; set; }
-        public Vector2 BoxSize { get; set; }
-        public Vector2 GridSize { get; set; }
+        public System.Numerics.Vector2 OriginOffset { get; set; }
+        public System.Numerics.Vector2 BoxSize { get; set; }
+        public System.Numerics.Vector2 GridSize { get; set; }
         public byte[][] Values { get; set; }
         public decimal Rotation { get; set; }
     }
