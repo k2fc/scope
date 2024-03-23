@@ -278,9 +278,9 @@ namespace DGScope
     public struct ScopeServerWxRadarReport
     {
         public GeoPoint ReferencePoint { get; set; }
-        public System.Numerics.Vector2 OriginOffset { get; set; }
-        public System.Numerics.Vector2 BoxSize { get; set; }
-        public System.Numerics.Vector2 GridSize { get; set; }
+        public Vector2 OriginOffset { get; set; }
+        public Vector2 BoxSize { get; set; }
+        public Vector2 GridSize { get; set; }
         public byte[][] Values { get; set; }
         public decimal Rotation { get; set; }
     }
