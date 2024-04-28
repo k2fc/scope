@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,6 +27,6 @@ namespace DGScope.Receivers.Falcon
         public GeoPoint Location { get; set; }
         public int? ModeSAddress { get; set; }
         public string BcastFLID { get; set; }
-        
+        public string RawLine { get; set; }
     }
 }

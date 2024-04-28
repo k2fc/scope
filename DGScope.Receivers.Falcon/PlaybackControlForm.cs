@@ -84,7 +84,8 @@ namespace DGScope.Receivers.Falcon
         {
             if (rx != null)
             {
-                label1.Text = rx.CurrentTime.ToShortTimeString();
+                label1.Text = rx.CurrentTime.ToString();
+                checkBox1.Checked = rx.IncludeUncorrelated;
                 var elapsed = rx.CurrentTime - rx.StartOfData;
                 if (elapsed.HasValue && (int)(elapsed.Value.TotalMilliseconds) <= trackBar1.Maximum) 
                 {
@@ -99,6 +100,11 @@ namespace DGScope.Receivers.Falcon
             {
                 rx.CurrentTime = rx.StartOfData.Value + TimeSpan.FromMilliseconds(trackBar1.Value);
             }
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            rx.IncludeUncorrelated = checkBox1.Checked;
         }
     }
 }

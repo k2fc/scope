@@ -17,6 +17,7 @@ namespace DGScope.Receivers.Falcon
         private Stopwatch stopwatch = new Stopwatch();
         private Timer timer;
 
+        public bool IncludeUncorrelated { get; set; } = false;
         internal DateTime CurrentTime
         {
             get => lastUpdate + stopwatch.Elapsed + manualAdjust;
@@ -112,6 +113,10 @@ namespace DGScope.Receivers.Falcon
 
         private void sendUpdate(FalconUpdate update)
         {
+            if (update.TrackID == 0)
+            {
+                return;
+            }
             var plane = GetPlane(update.TrackID);
             plane.FlightPlanCallsign = update.ACID;
             plane.Squawk = update.ReportedBeaconCode;
@@ -119,9 +124,13 @@ namespace DGScope.Receivers.Falcon
             {
                 plane.Altitude = update.Altitude;
             }
-            else
+            else if (IncludeUncorrelated || !string.IsNullOrEmpty(update.ReportedBeaconCode))
             {
                 plane.Altitude = new Altitude() { AltitudeType = AltitudeType.Unknown };
+            }
+            else
+            {
+                return;
             }
             if (update.Track.HasValue)
             {
@@ -137,8 +146,22 @@ namespace DGScope.Receivers.Falcon
             }
             plane.FlightRules = update.FlightRules;
             plane.Category = update.Category;
-            plane.Scratchpad = update.Scratchpad1;
-            plane.Scratchpad2 = update.Scratchpad2;
+            if (!string.IsNullOrWhiteSpace(update.Scratchpad1))
+            {
+                plane.Scratchpad = update.Scratchpad1.Trim().PadRight(3);
+            }
+            else
+            {
+                plane.Scratchpad = string.Empty;
+            }
+            if (!string.IsNullOrWhiteSpace(update.Scratchpad2))
+            {
+                plane.Scratchpad2 = update.Scratchpad2.Trim().PadRight(3);
+            }
+            else
+            {
+                plane.Scratchpad2 = string.Empty;
+            }
             plane.Type = update.Type;
             plane.PendingHandoff = update.PendingHandoff;
             plane.SetLocation(update.Location, update.Time);

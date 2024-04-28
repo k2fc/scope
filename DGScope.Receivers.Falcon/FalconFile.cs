@@ -52,6 +52,7 @@ namespace DGScope.Receivers.Falcon
                             if (items.Length > 0 && DateTime.TryParse(items[0], out DateTime time))
                             {
                                 var fu = new FalconUpdate();
+                                fu.RawLine = line;
                                 fu.Time = time;
                                 if (!int.TryParse(items[15], out int tid))
                                 {
