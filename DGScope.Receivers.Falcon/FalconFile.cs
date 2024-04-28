@@ -91,6 +91,7 @@ namespace DGScope.Receivers.Falcon
                                 fu.Scratchpad1 = items[25].Trim();
                                 fu.Scratchpad2 = items[26].Trim();
                                 fu.Type = items[27].Split('-')[0].Trim();
+                                fu.Destination = items[35].Trim();
                                 fu.PendingHandoff = items[38].Trim();
                                 if (items[40].Length == 7)
                                 {

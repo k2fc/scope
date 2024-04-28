@@ -28,5 +28,6 @@ namespace DGScope.Receivers.Falcon
         public int? ModeSAddress { get; set; }
         public string BcastFLID { get; set; }
         public string RawLine { get; set; }
+        public string Destination { get; set; }
     }
 }

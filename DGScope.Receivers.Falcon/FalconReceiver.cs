@@ -163,6 +163,10 @@ namespace DGScope.Receivers.Falcon
             {
                 plane.Scratchpad2 = string.Empty;
             }
+            if (!string.IsNullOrEmpty(update.Destination))
+            {
+                plane.Destination = update.Destination;
+            }
             plane.Type = update.Type;
             plane.PendingHandoff = update.PendingHandoff;
             plane.SetLocation(update.Location, update.Time);
