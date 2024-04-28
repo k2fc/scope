@@ -5332,7 +5332,7 @@ namespace DGScope
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
                 var posindlocation = GeoToScreenPoint(TargetExtentSymbols.PositionSymbolLocation(aircraft, radar));
                 aircraft.PositionIndicator.CenterOnPoint(posindlocation);
-                if (aircraft.PositionInd != null)
+                if (!string.IsNullOrEmpty(aircraft.PositionInd))
                     aircraft.PositionIndicator.Text = aircraft.PositionInd.Last().ToString();
                 if (aircraft.Marked)
                     aircraft.PositionIndicator.ForeColor = SelectedColor;
