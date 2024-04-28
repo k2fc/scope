@@ -10,6 +10,7 @@ namespace DGScope.Receivers.Falcon
     internal class FalconUpdate
     {
         public DateTime Time { get; set; }
+        public string Site { get; set; }
         public string ACID { get; set; }
         public string ReportedBeaconCode { get; set; }
         public Altitude Altitude { get; set; }

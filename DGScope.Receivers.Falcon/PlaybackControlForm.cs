@@ -14,6 +14,7 @@ namespace DGScope.Receivers.Falcon
             timer.Enabled = true;
             timer.Tick += TimerCallback;
             rx = receiver;
+            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
         }
 
         private void btnLoad_Click(object sender, EventArgs e)
@@ -55,6 +56,13 @@ namespace DGScope.Receivers.Falcon
                 trackBar1.Enabled = true;
 
                 btnPlayPause.Enabled = true;
+
+                comboBox1.Items.Clear();
+                comboBox1.Items.Add("(All)");
+                foreach (var site in rx.Sites)
+                {
+                    comboBox1.Items.Add(site);
+                }
             }
         }
 
@@ -113,6 +121,11 @@ namespace DGScope.Receivers.Falcon
             {
                 rx.Speed = Math.Pow(10, trackBar2.Value / 10.0d);
             }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            rx.SelectedSite = comboBox1.SelectedItem.ToString();
         }
     }
 }

@@ -35,6 +35,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.trackBar2 = new System.Windows.Forms.TrackBar();
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar2)).BeginInit();
             this.SuspendLayout();
@@ -106,11 +107,21 @@
             this.trackBar2.TabIndex = 6;
             this.trackBar2.Scroll += new System.EventHandler(this.trackBar2_Scroll);
             // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Location = new System.Drawing.Point(188, 82);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(121, 21);
+            this.comboBox1.TabIndex = 7;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            // 
             // PlaybackControlForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 145);
+            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.trackBar2);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.label1);
@@ -137,5 +148,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.TrackBar trackBar2;
+        private System.Windows.Forms.ComboBox comboBox1;
     }
 }

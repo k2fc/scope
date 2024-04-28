@@ -28,6 +28,9 @@ namespace DGScope.Receivers.Falcon
             }
         }
 
+        internal List<string> Sites { get; set; } = new List<string>();
+        internal string SelectedSite { get; set; } = string.Empty;
+
         internal bool Playing = false;
         internal DateTime? StartOfData
         {
@@ -76,6 +79,7 @@ namespace DGScope.Receivers.Falcon
                     file.Updates.Sort((x, y) => DateTime.Compare(x.Time, y.Time));
                     stopwatch.Reset();
                     lastUpdate = StartOfData.Value;
+                    Sites = file.Sites;
                 }
             }
         }
@@ -115,6 +119,10 @@ namespace DGScope.Receivers.Falcon
         private void sendUpdate(FalconUpdate update)
         {
             if (update.TrackID == 0)
+            {
+                return;
+            }
+            if (SelectedSite != update.Site && SelectedSite != "(All)")
             {
                 return;
             }

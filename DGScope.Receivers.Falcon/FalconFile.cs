@@ -5,12 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace DGScope.Receivers.Falcon
 {
     internal class FalconFile
     {
         public List<FalconUpdate> Updates { get; } = new List<FalconUpdate>();
+        public List<string> Sites { get; } = new List<string>();
 
         public DateTime StartOfData
         {
@@ -57,6 +59,11 @@ namespace DGScope.Receivers.Falcon
                                 if (!int.TryParse(items[15], out int tid))
                                 {
                                     continue;
+                                }
+                                fu.Site = items[1].Trim();
+                                if (!newFile.Sites.Contains(fu.Site))
+                                {
+                                    newFile.Sites.Add(fu.Site);
                                 }
                                 fu.TrackID = tid;
                                 fu.ACID = items[3].Trim();
