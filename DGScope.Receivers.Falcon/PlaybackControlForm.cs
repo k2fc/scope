@@ -106,5 +106,13 @@ namespace DGScope.Receivers.Falcon
         {
             rx.IncludeUncorrelated = checkBox1.Checked;
         }
+
+        private void trackBar2_Scroll(object sender, EventArgs e)
+        {
+            if (rx != null)
+            {
+                rx.Speed = Math.Pow(10, trackBar2.Value / 10.0d);
+            }
+        }
     }
 }

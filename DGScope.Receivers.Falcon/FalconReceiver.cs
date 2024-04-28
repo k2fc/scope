@@ -18,9 +18,10 @@ namespace DGScope.Receivers.Falcon
         private Timer timer;
 
         public bool IncludeUncorrelated { get; set; } = false;
+        internal double Speed { get; set; } = 1.0d;
         internal DateTime CurrentTime
         {
-            get => lastUpdate + stopwatch.Elapsed + manualAdjust;
+            get => lastUpdate + TimeSpan.FromMilliseconds(stopwatch.Elapsed.TotalMilliseconds * Speed) + manualAdjust;
             set
             {
                 manualAdjust = value - CurrentTime;
