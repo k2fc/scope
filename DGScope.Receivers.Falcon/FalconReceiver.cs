@@ -13,13 +13,17 @@ namespace DGScope.Receivers.Falcon
         private Dictionary<int, Aircraft> trackDictionary = new Dictionary<int, Aircraft>();
 
         private DateTime lastUpdate;
+        private TimeSpan manualAdjust = TimeSpan.Zero;
         private Stopwatch stopwatch = new Stopwatch();
         private Timer timer;
 
         internal DateTime CurrentTime
         {
-            get => lastUpdate + stopwatch.Elapsed;
-            set => lastUpdate = value;
+            get => lastUpdate + stopwatch.Elapsed + manualAdjust;
+            set
+            {
+                manualAdjust = value - CurrentTime;
+            }
         }
 
         internal bool Playing = false;
@@ -101,6 +105,7 @@ namespace DGScope.Receivers.Falcon
             var updates = file.Updates.Where(x => x.Time > lastUpdate && x.Time <= CurrentTime);
             updates.ToList().ForEach(x => sendUpdate(x));
             lastUpdate = CurrentTime;
+            manualAdjust = TimeSpan.Zero;
             stopwatch.Restart();
             PlaybackForm.UpdateCallback();
         }
@@ -126,7 +131,10 @@ namespace DGScope.Receivers.Falcon
             {
                 plane.GroundSpeed = update.Speed.Value;
             }
-            plane.PositionInd = update.Owner;
+            if (plane.PositionInd != update.Owner)
+            {
+                plane.PositionInd = update.Owner;
+            }
             plane.FlightRules = update.FlightRules;
             plane.Category = update.Category;
             plane.Scratchpad = update.Scratchpad1;
