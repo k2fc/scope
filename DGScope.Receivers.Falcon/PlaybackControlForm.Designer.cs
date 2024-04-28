@@ -101,6 +101,7 @@
             // trackBar2
             // 
             this.trackBar2.Location = new System.Drawing.Point(12, 89);
+            this.trackBar2.Maximum = 21;
             this.trackBar2.Minimum = -10;
             this.trackBar2.Name = "trackBar2";
             this.trackBar2.Size = new System.Drawing.Size(104, 45);

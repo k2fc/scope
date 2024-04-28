@@ -80,6 +80,7 @@ namespace DGScope.Receivers.Falcon
                     stopwatch.Reset();
                     lastUpdate = StartOfData.Value;
                     Sites = file.Sites;
+                    aircraft.Clear();
                 }
             }
         }

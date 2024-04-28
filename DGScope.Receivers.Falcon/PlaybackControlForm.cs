@@ -63,6 +63,7 @@ namespace DGScope.Receivers.Falcon
                 {
                     comboBox1.Items.Add(site);
                 }
+                comboBox1.SelectedIndex = 0;
             }
         }
 
