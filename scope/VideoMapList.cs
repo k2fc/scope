@@ -45,7 +45,7 @@ namespace DGScope
         }
         public static void SerializeToJsonFile(VideoMapList videoMaps, string filename)
         {
-            System.Threading.Tasks.Task.Run(() => File.WriteAllText(filename, SerializeToJson(videoMaps)));
+            File.WriteAllText(filename, SerializeToJson(videoMaps));
         }
         public static string SerializeToJson(VideoMapList videoMaps)
         {

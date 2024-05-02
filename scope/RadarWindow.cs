@@ -371,16 +371,10 @@ namespace DGScope
             }
             set
             {
-                if (value == videoMapFilename)
-                    return;
-                try
-                {
-                    VideoMaps = VideoMapList.DeserializeFromJsonFile(value);
                     videoMapFilename = value;
-                }
-                catch (Exception ex)
+                if (string.IsNullOrEmpty(value))
                 {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                    LoadVideoMapFile();
                 }
             }
         }
@@ -757,6 +751,18 @@ namespace DGScope
             var g = (int)(color.G * brightnesslevel);
             var b = (int)(color.B * brightnesslevel);
             return Color.FromArgb(a, r, g, b);
+        }
+        public void LoadVideoMapFile()
+        {
+            try
+            {
+                VideoMaps = VideoMapList.DeserializeFromJsonFile(videoMapFilename);
+                VideoMaps.ForEach(x => x.Visible = CurrentPrefSet.DisplayedMaps.Contains(x.Number));
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
         }
         private void Initialize()
         {
@@ -4765,6 +4771,7 @@ namespace DGScope
             }
             StartReceivers();
             SetupDCB();
+            LoadVideoMapFile();
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
@@ -5047,7 +5054,10 @@ namespace DGScope
         private void DrawVideoMapLines()
         {
             List<Line> lines = new List<Line>();
-            CurrentPrefSet.DisplayedMaps = VideoMaps.Where(x => x.Visible).Select(x=>x.Number).ToArray();
+            if (VideoMaps.Count > 0)
+            {
+                CurrentPrefSet.DisplayedMaps = VideoMaps.Where(x => x.Visible).Select(x => x.Number).ToArray();
+            }
             foreach (var map in VideoMaps.Where(map => map.Category == MapCategory.A))
             {
                 if (CurrentPrefSet.DisplayedMaps.Contains(map.Number))

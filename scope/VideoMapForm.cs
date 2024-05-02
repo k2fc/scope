@@ -127,7 +127,7 @@ namespace DGScope
 
         private void SaveVideoMapsToFile(bool saveas = false)
         {
-            if (string.IsNullOrEmpty(Filename) || saveas)
+            if (string.IsNullOrEmpty(_filename) || saveas)
             {
                 using (SaveFileDialog s = new SaveFileDialog())
                 {
@@ -139,7 +139,7 @@ namespace DGScope
                     s.CreatePrompt = false;
                     if(s.ShowDialog() == DialogResult.OK)
                     {
-                        _filename = s.FileName;
+                        Filename = s.FileName;
                     }
                     else
                     {
@@ -147,12 +147,13 @@ namespace DGScope
                     }
                 }
             }
-            if (_filename == null || _filename == "")
+            if (string.IsNullOrEmpty(_filename))
                 return;
             try
             {
                 VideoMapList.SerializeToJsonFile(maps, _filename);
                 Filename = _filename;
+                adaptation.LoadVideoMapFile();
                 changed = false;
             }
             catch (Exception ex)
@@ -202,6 +203,7 @@ namespace DGScope
             }
             Filename = filename;
             ResetGrid();
+            adaptation.LoadVideoMapFile();
         }
         private bool CheckChange()
         {
@@ -224,7 +226,7 @@ namespace DGScope
         {
             if (!CheckChange())
                 return;
-            Filename = "";
+            _filename = "";
             maps = new VideoMapList();
             ResetGrid();
         }
