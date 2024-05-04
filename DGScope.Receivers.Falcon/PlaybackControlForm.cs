@@ -46,6 +46,7 @@ namespace DGScope.Receivers.Falcon
             if (rx.File == null)
             {
                 trackBar1.Enabled = false;
+                trackBar2.Enabled = false;
                 btnPlayPause.Enabled = false;
             }
             else
@@ -64,7 +65,12 @@ namespace DGScope.Receivers.Falcon
                     comboBox1.Items.Add(site);
                 }
                 comboBox1.SelectedIndex = 0;
+
+                trackBar2.Enabled = true;
             }
+
+            trackBar2.Value = 0;
+            trackBar1.Value = 0;
         }
 
         private void btnPlayPause_Click(object sender, EventArgs e)
@@ -100,6 +106,7 @@ namespace DGScope.Receivers.Falcon
                 {
                     trackBar1.Value = (int)elapsed.Value.TotalMilliseconds;
                 }
+                label2.Text = rx.Speed.ToString("0.0") + "x";
             }
         }
 
