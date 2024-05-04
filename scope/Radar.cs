@@ -60,7 +60,7 @@ namespace DGScope
             return (λ1 + Math.Atan2(Math.Sin(brng) * Math.Sin(d / R) * Math.Cos(φ1),
                                        Math.Cos(d / R) - Math.Sin(φ1) * Math.Sin(LatitudeOfTarget(distance, bearing)))) * (180 / Math.PI);
         }
-        private Stopwatch Stopwatch = new Stopwatch();
+        private DateTime? lastScan;
         private double lastazimuth = 0;
         public async Task Scan(DateTime time)
         {
@@ -68,15 +68,16 @@ namespace DGScope
             List<Task> tasks = new List<Task>();
             if (RadarWindow.Aircraft == null)
                 return;
-            if (!Stopwatch.IsRunning)
-                Stopwatch.Start();
-            double newazimuth = (lastazimuth + ((Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) * 360)) % 360;
+            if (!lastScan.HasValue || lastScan.Value > time)
+                lastScan = time;
+            double elapsed = (time - lastScan).Value.Ticks;
+            double newazimuth = (lastazimuth + ((elapsed / (UpdateRate * 10000000)) * 360)) % 360;
             double slicewidth = (lastazimuth - newazimuth) % 360;
-            if (!Rotating && (Stopwatch.ElapsedTicks / (UpdateRate * 10000000)) < 1)
+            if (!Rotating && (elapsed / (UpdateRate * 10000000)) < 1)
                 return;
             if (RadarWindow.Aircraft == null)
                 return;
-            Stopwatch.Restart();
+            lastScan = time;
             lock (RadarWindow.Aircraft)
                 TargetsScanned.AddRange(from x in RadarWindow.Aircraft
                                         where (BearingIsBetween(x.Bearing(Location), lastazimuth, newazimuth) || !Rotating) && !x.IsOnGround 

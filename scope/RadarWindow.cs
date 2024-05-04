@@ -20,6 +20,7 @@ using System.Collections.ObjectModel;
 using DGScope.STARS;
 using Vector4 = OpenTK.Vector4;
 using System.Xml;
+using System.Diagnostics;
 
 namespace DGScope
 {
@@ -709,7 +710,27 @@ namespace DGScope
         private bool tpasize = true;
         private GeoPoint ScreenCenterPoint => CurrentPrefSet.ScopeCentered ? HomeLocation : CurrentPrefSet.ScreenCenterPoint;
         private GeoPoint RangeRingCenter => CurrentPrefSet.RangeRingsCentered ? HomeLocation : CurrentPrefSet.RangeRingLocation;
-        public static DateTime CurrentTime => timesync.CurrentTime();
+        private static bool timeManual = false;
+        private static DateTime manualTime;
+        private static Stopwatch manualTimer = new Stopwatch();
+        [XmlIgnore]
+        public static DateTime CurrentTime
+        {
+            get
+            {
+                if (timeManual)
+                {
+                    return manualTime + manualTimer.Elapsed;
+                }
+                return timesync.CurrentTime();
+            }
+            set
+            {
+                manualTime = value;
+                manualTimer.Restart();
+                timeManual = true;
+            }
+        }
         private TransparentLabel PreviewArea = new TransparentLabel()
         {
             TextAlign = ContentAlignment.MiddleLeft,
@@ -5321,7 +5342,7 @@ namespace DGScope
                 aircraft.PositionIndicator.SizeF = new SizeF(realWidth, realHeight);
                 var posindlocation = GeoToScreenPoint(TargetExtentSymbols.PositionSymbolLocation(aircraft, radar));
                 aircraft.PositionIndicator.CenterOnPoint(posindlocation);
-                if (aircraft.PositionInd != null)
+                if (!string.IsNullOrEmpty(aircraft.PositionInd))
                     aircraft.PositionIndicator.Text = aircraft.PositionInd.Last().ToString();
                 if (aircraft.Marked)
                     aircraft.PositionIndicator.ForeColor = SelectedColor;
