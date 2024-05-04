@@ -25,6 +25,15 @@ namespace DGScope.Receivers.Falcon
             set
             {
                 manualAdjust = value - CurrentTime;
+                lock (aircraft)
+                {
+                    lock (trackDictionary)
+                    {
+                        aircraft.ToList().ForEach(x => aircraft.Remove(x));
+                        //aircraft.Clear();
+                        trackDictionary.Clear();
+                    }
+                }
             }
         }
 
@@ -100,20 +109,22 @@ namespace DGScope.Receivers.Falcon
         }
         internal void Pause()
         {
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            //timer.Change(Timeout.Infinite, Timeout.Infinite);
             stopwatch.Stop();
             Playing = false;
         }
 
         private void timerCallback(object state)
         {
-            stopwatch.Stop();
             RadarWindow.CurrentTime = CurrentTime;
             var updates = file.Updates.Where(x => x.Time > lastUpdate && x.Time <= CurrentTime);
             updates.ToList().ForEach(x => sendUpdate(x));
-            lastUpdate = CurrentTime;
-            manualAdjust = TimeSpan.Zero;
-            stopwatch.Restart();
+            if (Playing)
+            {
+                lastUpdate = CurrentTime;
+                manualAdjust = TimeSpan.Zero;
+                stopwatch.Restart();
+            }
             PlaybackForm.UpdateCallback();
         }
 
