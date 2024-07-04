@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProtoBuf;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace DGScope
 {
+    [ProtoContract]
     public class Altitude
     {
+        [ProtoMember(1)]
         public int Value { get; set; }
         private AltitudeType _alttype = AltitudeType.Unknown;
+        [ProtoMember(2)]
         public AltitudeType AltitudeType {
             get => _alttype;
             set

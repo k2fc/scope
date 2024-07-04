@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,11 +12,17 @@ using System.Threading.Tasks;
 
 namespace DGScope.Library
 {
+    [ProtoContract]
+    [ProtoInclude(7000, typeof(TrackUpdate))]
+    [ProtoInclude(7001, typeof(FlightPlanUpdate))]
+    [ProtoInclude(7002, typeof(DeletionUpdate))]
+    [ProtoInclude(7003, typeof(WeatherRadarUpdate))]
     public abstract class Update
     {
         [JsonIgnore]
         public IUpdatable Base { get;  protected set; }
         private Guid baseGuid = Guid.NewGuid();
+        [ProtoMember(1, IsRequired = true)]
         public Guid Guid
         {
             get
@@ -28,6 +36,7 @@ namespace DGScope.Library
                 baseGuid = value;
             }
         }
+        [ProtoMember(2, IsRequired = true)]
         public DateTime TimeStamp { get; set; } = DateTime.MinValue;
         public abstract UpdateType UpdateType { get; }
         public void SetAllProperties(Update update)
@@ -111,6 +120,18 @@ namespace DGScope.Library
         public Update DeserializeFromJson(string json)
         {
             throw new NotImplementedException();
+        }
+        public static Update DeserializeFromProto(string protoBase64)
+        {
+            var bytes = Convert.FromBase64String(protoBase64);
+            Update upd;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                ms.Write(bytes, 0, bytes.Length);
+                ms.Seek(0, SeekOrigin.Begin);
+                upd = Serializer.Deserialize<Update>(ms);
+            }
+            return upd;
         }
     }
     public class UpdateConverter : JsonConverter

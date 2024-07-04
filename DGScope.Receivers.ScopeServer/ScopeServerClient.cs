@@ -150,10 +150,15 @@ namespace DGScope.Receivers.ScopeServer
             }
         }
 
-        private async Task ProcessLine(string line)
+        private async Task ProcessLine(string line, bool proto = false)
         {
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line, settings);
+            if (proto)
+            {
+                ProcessUpdate(Update.DeserializeFromProto(line));
+                return;
+            }
             Update update;
             switch (obj.UpdateType)
             {
@@ -178,13 +183,26 @@ namespace DGScope.Receivers.ScopeServer
         private async Task<bool> Receive()
         {
             /// Try some websocket
+            bool proto = false;
             Uri uri;
             if (Url.EndsWith("/updates"))
+            {
                 uri = new Uri(Url);
+            }
+            else if (Url.EndsWith("/updates/"))
+            {
+                uri = new Uri(Url);
+            }
             else if (Url.EndsWith("/"))
-                uri = new Uri(Url + "updates");
+            {
+                uri = new Uri(Url + "proto");
+                proto = true;
+            }
             else
-                uri = new Uri(Url + "/updates");
+            {
+                uri = new Uri(Url + "/proto");
+                proto = true;
+            }
             NetworkCredential credentials = new NetworkCredential(Username, Password);
             
             var scheme = uri.GetLeftPart(UriPartial.Scheme);
@@ -231,7 +249,7 @@ namespace DGScope.Receivers.ScopeServer
                                             var line = reader.ReadLine();
                                             if (line == null)
                                                 continue;
-                                            ProcessLine(line);
+                                            ProcessLine(line, proto);
                                         }
                                         catch (Exception ex)
                                         {

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using ProtoBuf;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -8,13 +9,16 @@ namespace DGScope
     [Serializable()]
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [JsonObject]
+    [ProtoContract]
     public class GeoPoint
     {
         [DisplayName("Latitude")]
         [JsonProperty("Latitude")]
+        [ProtoMember(1)]
         public double Latitude { get; set; }
         [DisplayName("Longitude")]
         [JsonProperty("Longitude")]
+        [ProtoMember(2)]
         public double Longitude { get; set; }
         public double BearingTo(GeoPoint From)
         {

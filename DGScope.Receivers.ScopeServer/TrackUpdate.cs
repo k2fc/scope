@@ -5,20 +5,32 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Reflection;
+using ProtoBuf;
 
 namespace DGScope.Library
 {
+    [ProtoContract]
     public class TrackUpdate : Update
     {
+        [ProtoMember(3)]
         public Altitude Altitude { get; set; }
+        [ProtoMember(4, IsRequired = false)]
         public int? GroundSpeed { get; set; }
+        [ProtoMember(5, IsRequired = false)]
         public int? GroundTrack { get; set; }
+        [ProtoMember(6, IsRequired = false)]
         public bool? Ident { get; set; }
+        [ProtoMember(7, IsRequired = false)]
         public bool? IsOnGround { get; set; }
+        [ProtoMember(8, IsRequired = false)]
         public string Squawk { get; set; }
+        [ProtoMember(9, IsRequired = false)]
         public GeoPoint Location { get; set; }
+        [ProtoMember(10, IsRequired = false)]
         public string Callsign { get; set; }
+        [ProtoMember(11, IsRequired = false)]
         public int? VerticalRate { get; set; }
+        [ProtoMember(12, IsRequired = false)]
         public int? ModeSCode { get; set; }
 
         public override UpdateType UpdateType => UpdateType.Track;

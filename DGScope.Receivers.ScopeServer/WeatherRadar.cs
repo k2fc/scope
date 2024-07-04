@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using System;
+using ProtoBuf;
 
 public class WeatherRadar : IUpdatable
 {
@@ -65,16 +66,24 @@ public class WeatherRadar : IUpdatable
         }
     }
 }
-
+[ProtoContract]
 public class WeatherRadarUpdate : Update
 {
+    [ProtoMember(3, IsRequired = false)]
     public string RadarID { get; set; }
+    [ProtoMember(4, IsRequired = false)]
     public GeoPoint ReferencePoint { get; set; }
+    [ProtoMember(5, IsRequired = false)]
     public int? Rows { get; set; }
+    [ProtoMember(6, IsRequired = false)]
     public int? Columns { get; set; }
+    [ProtoMember(7, IsRequired = false)]
     public Vector2? OffsetToOrigin { get; set; }
+    [ProtoMember(8, IsRequired = false)]
     public Vector2? BoxSize { get; set; }
+    [ProtoMember(9, IsRequired = false)]
     public byte[] Levels { get; set; }
+    [ProtoMember(10, IsRequired = false)]
     public decimal? Rotation { get; set; }
     public override UpdateType UpdateType => UpdateType.WeatherRadar;
     public WeatherRadarUpdate(WeatherRadar radar)
