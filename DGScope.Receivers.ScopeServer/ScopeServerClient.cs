@@ -152,13 +152,13 @@ namespace DGScope.Receivers.ScopeServer
 
         private async Task ProcessLine(string line, bool proto = false)
         {
-            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line, settings);
             if (proto)
             {
                 ProcessUpdate(Update.DeserializeFromProto(line));
                 return;
             }
+            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            JsonUpdate obj = JsonConvert.DeserializeObject<JsonUpdate>(line, settings);
             Update update;
             switch (obj.UpdateType)
             {
