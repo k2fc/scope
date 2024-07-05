@@ -346,3 +346,4 @@ healthchecksdb
 /NexradDecoder/NexradDecoder.dll
 /NexradDecoder/net7.0
 *imgui.ini
+/NexradDecoder/*.dll
