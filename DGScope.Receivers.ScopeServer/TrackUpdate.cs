@@ -12,7 +12,7 @@ namespace DGScope.Library
     [ProtoContract]
     public class TrackUpdate : Update
     {
-        [ProtoMember(3)]
+        [ProtoMember(3, IsRequired = false)]
         public Altitude Altitude { get; set; }
         [ProtoMember(4, IsRequired = false)]
         public int? GroundSpeed { get; set; }

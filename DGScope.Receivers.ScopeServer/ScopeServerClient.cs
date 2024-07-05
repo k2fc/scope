@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using DGScope.Library;
 using DGScope.Receivers;
 using Newtonsoft.Json;
+using ProtoBuf.Meta;
 
 namespace DGScope.Receivers.ScopeServer
 {
@@ -388,6 +389,8 @@ namespace DGScope.Receivers.ScopeServer
                         weatherDisplay.AddWeatherRadarReport(radar.RadarID, report);
                     }
                     break;
+                default:
+                    break;
             }
             if (plane == null)
                 return;
@@ -470,6 +473,15 @@ namespace DGScope.Receivers.ScopeServer
             stop = true;
             if (aircraft != null) 
                 aircraft.CollectionChanged -= Aircraft_CollectionChanged;
+        }
+        static bool added_types;
+        public ScopeServerClient()
+        {
+            if (!added_types)
+            {
+                added_types = true;
+                RuntimeTypeModel.Default.Add(typeof(System.Numerics.Vector2), false).Add(1, "X").Add(2, "Y");
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace DGScope.Library
 {
+    [ProtoContract]
     public class FlightPlanUpdate : Update
     {
         [ProtoMember(3, IsRequired = false)]
