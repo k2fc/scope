@@ -241,6 +241,7 @@
     <Compile Include="DCB.cs" />
     <Compile Include="DCBButton.cs" />
     <Compile Include="DCBMenu.cs" />
+    <Compile Include="ITWSRadarSiteStringConverter.cs" />
     <Compile Include="MapImporter\CRC\CRCARTCC.cs" />
     <Compile Include="FAAMapDATFileParser.cs" />
     <Compile Include="GeoPoint.cs" />

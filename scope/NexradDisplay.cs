@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Threading;
@@ -15,14 +16,14 @@ namespace DGScope
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class NexradDisplay
     {
-        public WxRadarMode WxRadarMode { get; set; } = WxRadarMode.NWSNexrad;
+        public WxRadarMode WxRadarMode { get; set; } = WxRadarMode.ScopeServer;
         private Dictionary<string, ScopeServerWxRadarReport> scopeServerRadars = new Dictionary<string, ScopeServerWxRadarReport>();
         [DisplayName("Color Table"), Description("Weather Radar value to color mapping table")]
         public List<WXColor> ColorTable { get; set; } = new List<WXColor>();
         
         [Browsable(false)]
         public string Name { get; set; }
-        bool enabled = false;
+        bool enabled = true;
         public bool Enabled { 
             get
             {
@@ -41,11 +42,21 @@ namespace DGScope
         public string URL { get; set; }
         [Description("Product Download Interval (sec.)")]
         public int DownloadInterval { get; set; } = 300;
+        [TypeConverter(typeof(ITWSSensorIDStringConverter))]
         public string SensorID { get; set; }
         [Browsable(false)]
         [XmlIgnore]
         public bool[] LevelsAvailable = new bool[6];
         public bool[] LevelsEnabled => colortable == null ? dummyLevelsE : colortable.LevelsEnabled;
+        [Browsable(false)]
+        [XmlIgnore]
+        public List<string> Sensors
+        {
+            get
+            {
+                return new List<string>(scopeServerRadars.Keys);
+            }
+        }
         RadialPacketDecoder decoder = new RadialPacketDecoder();
         RadialSymbologyBlock symbology;
         DescriptionBlock description;
@@ -181,9 +192,13 @@ namespace DGScope
                     LevelsAvailable = availableLevels;
                     break;
                 case WxRadarMode.ScopeServer:
-                    if (SensorID is null)
+                    if (string.IsNullOrEmpty(SensorID))
                     {
-                        break;
+                        if (scopeServerRadars.Count == 0)
+                        {
+                            break;
+                        }
+                        SensorID = scopeServerRadars.Keys.First();
                     }
                     if (scopeServerRadars.TryGetValue(SensorID, out var radar))
                     {
@@ -241,6 +256,10 @@ namespace DGScope
         }
         public override string ToString()
         {
+            if (string.IsNullOrEmpty(Name))
+            {
+                return SensorID;
+            }
             return Name;
         }
 
