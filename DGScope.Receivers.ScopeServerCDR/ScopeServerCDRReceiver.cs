@@ -138,6 +138,11 @@ namespace DGScope.Receivers.Falcon
         {
             client.ProcessUpdate(update);
         }
+
+        public override void SetWeatherRadarDisplay(NexradDisplay weatherRadar)
+        {
+            client.SetWeatherRadarDisplay(weatherRadar);
+        }
         public override void Start()
         {
             client.SetAircraftList(this.aircraft);
