@@ -17,7 +17,7 @@ namespace DGScope.Receivers.Falcon
         {
             get
             {
-                return Updates.First().TimeStamp;
+                return Updates.Where(x => x.TimeStamp != DateTime.MinValue).First().TimeStamp;
             }
         }
         public DateTime EndOfData
