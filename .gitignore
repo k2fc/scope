@@ -347,3 +347,4 @@ healthchecksdb
 /NexradDecoder/net7.0
 *imgui.ini
 /NexradDecoder/*.dll
+/NexradDecoder/ICSharpCode.SharpZipLib.dll
