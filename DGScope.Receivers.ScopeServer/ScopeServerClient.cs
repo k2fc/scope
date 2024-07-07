@@ -306,7 +306,10 @@ namespace DGScope.Receivers.ScopeServer
                         }
                     }
                     track.UpdateTrack(update as TrackUpdate);
-                    flightPlan = flightPlans.Where(x => x.AssociatedTrack == track).FirstOrDefault();
+                    lock (flightPlans)
+                    {
+                        flightPlan = flightPlans.Where(x => x.AssociatedTrack == track).FirstOrDefault();
+                    }
                     plane = GetPlane(updateGuid, true);
                     break;
                 case UpdateType.Flightplan:
@@ -322,7 +325,12 @@ namespace DGScope.Receivers.ScopeServer
                     flightPlan.UpdateFlightPlan(update as FlightPlanUpdate);
                     var associatedTrack = (update as FlightPlanUpdate).AssociatedTrackGuid;
                     if (associatedTrack != null)
-                        flightPlan.AssociateTrack(tracks.Where(x => x.Guid == associatedTrack).FirstOrDefault());
+                    {
+                        lock(tracks)
+                        { 
+                            flightPlan.AssociateTrack(tracks.Where(x => x.Guid == associatedTrack).FirstOrDefault()); 
+                        }
+                    }
                     if (flightPlan.AssociatedTrack != null)
                     {
                         plane = GetPlane(flightPlan.AssociatedTrack.Guid, false);
