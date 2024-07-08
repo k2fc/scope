@@ -96,6 +96,8 @@ namespace DGScope.Receivers.Falcon
                     lastUpdate = StartOfData.Value;
                     Sites = file.Sites;
                     aircraft.Clear();
+                    client.FlightPlans.Clear();
+                    client.Tracks.Clear();
                 }
             }
         }
@@ -123,8 +125,8 @@ namespace DGScope.Receivers.Falcon
         private void timerCallback(object state)
         {
             RadarWindow.CurrentTime = CurrentTime;
-            var updates = file.Updates.Where(x => x.TimeStamp > lastUpdate && x.TimeStamp <= CurrentTime);
-            updates.ToList().ForEach(x => sendUpdate(x));
+            var updates = file.Updates.Where(x => x.TimeStamp > lastUpdate && x.TimeStamp <= CurrentTime).ToList();
+            updates.ForEach(x => sendUpdate(x));
             if (Playing)
             {
                 lastUpdate = CurrentTime;
@@ -136,7 +138,7 @@ namespace DGScope.Receivers.Falcon
 
         private void sendUpdate(Update update)
         {
-            client.ProcessUpdate(update);
+            _ = client.ProcessUpdate(update);
         }
 
         public override void SetWeatherRadarDisplay(NexradDisplay weatherRadar)
@@ -162,25 +164,6 @@ namespace DGScope.Receivers.Falcon
             {
                 PlaybackForm.Hide();
             }
-        }
-
-        private Aircraft GetPlane(int trackID)
-        {
-            Aircraft plane;
-            lock (trackDictionary)
-            {
-                if (!trackDictionary.TryGetValue(trackID, out plane))
-                {
-                    plane = GetNewPlane(trackID);
-                }
-            }
-            return plane;
-        }
-        private Aircraft GetNewPlane(int trackID)
-        {
-            Aircraft plane = GetPlane(Guid.NewGuid(), true);
-            trackDictionary.Add(trackID, plane);
-            return plane;
         }
     }
 }

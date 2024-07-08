@@ -21,9 +21,12 @@ namespace DGScope.Receivers.ScopeServer
 {
     public class ScopeServerClient : Receiver
     {
-        private List<Track> tracks = new List<Track>();
-        private List<FlightPlan> flightPlans = new List<FlightPlan>();
-        private List<WeatherRadar> weatherRadars = new List<WeatherRadar>();
+        [Browsable(false)]
+        public List<Track> Tracks = new List<Track>();
+        [Browsable(false)]
+        public List<FlightPlan> FlightPlans = new List<FlightPlan>();
+        [Browsable(false)]
+        public List<WeatherRadar> WeatherRadars = new List<WeatherRadar>();
         private NexradDisplay weatherDisplay;
         private UpdateConverter updateConverter = new UpdateConverter();
         private bool stop = true;
@@ -115,8 +118,8 @@ namespace DGScope.Receivers.ScopeServer
         {
             Aircraft plane = sender as Aircraft;
             FlightPlan flightPlan;
-            lock (flightPlans)
-                flightPlan = flightPlans.Where(x => x.Guid == plane.FlightPlanGuid).FirstOrDefault();
+            lock (FlightPlans)
+                flightPlan = FlightPlans.Where(x => x.Guid == plane.FlightPlanGuid).FirstOrDefault();
             if (flightPlan == null)
                 return;
             FlightPlanUpdate upd = flightPlan.GetCompleteUpdate() as FlightPlanUpdate;
@@ -296,39 +299,39 @@ namespace DGScope.Receivers.ScopeServer
             switch (update.UpdateType)
             {
                 case UpdateType.Track:
-                    lock (tracks)
+                    lock (Tracks)
                     {
-                        track = tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        track = Tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
                         if (track == null)
                         {
                             track = new Track(updateGuid);
-                            tracks.Add(track);
+                            Tracks.Add(track);
                         }
                     }
                     track.UpdateTrack(update as TrackUpdate);
-                    lock (flightPlans)
+                    lock (FlightPlans)
                     {
-                        flightPlan = flightPlans.Where(x => x.AssociatedTrack == track).FirstOrDefault();
+                        flightPlan = FlightPlans.Where(x => x.AssociatedTrack == track).FirstOrDefault();
                     }
                     plane = GetPlane(updateGuid, true);
                     break;
                 case UpdateType.Flightplan:
-                    lock (flightPlans)
+                    lock (FlightPlans)
                     {
-                        flightPlan = flightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        flightPlan = FlightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
                         if (flightPlan == null)
                         {
                             flightPlan = new FlightPlan(updateGuid);
-                            flightPlans.Add(flightPlan);
+                            FlightPlans.Add(flightPlan);
                         }
                     }
                     flightPlan.UpdateFlightPlan(update as FlightPlanUpdate);
                     var associatedTrack = (update as FlightPlanUpdate).AssociatedTrackGuid;
                     if (associatedTrack != null)
                     {
-                        lock(tracks)
+                        lock(Tracks)
                         { 
-                            flightPlan.AssociateTrack(tracks.Where(x => x.Guid == associatedTrack).FirstOrDefault()); 
+                            flightPlan.AssociateTrack(Tracks.Where(x => x.Guid == associatedTrack).FirstOrDefault()); 
                         }
                     }
                     if (flightPlan.AssociatedTrack != null)
@@ -338,13 +341,13 @@ namespace DGScope.Receivers.ScopeServer
                     }
                     break;
                 case UpdateType.Deletion:
-                    lock (flightPlans)
+                    lock (FlightPlans)
                     {
-                        flightPlan = flightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        flightPlan = FlightPlans.Where(x => x.Guid == updateGuid).FirstOrDefault();
                         if (flightPlan != null)
                         {
                             update = new FlightPlanUpdate();
-                            flightPlans.Remove(flightPlan);
+                            FlightPlans.Remove(flightPlan);
                             if (flightPlan.AssociatedTrack != null)
                             {
                                 plane = GetPlane(flightPlan.AssociatedTrack.Guid, false);
@@ -358,17 +361,17 @@ namespace DGScope.Receivers.ScopeServer
                             }
                         }
                     }
-                    lock (tracks)
+                    lock (Tracks)
                     {
-                        track = tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
+                        track = Tracks.Where(x => x.Guid == updateGuid).FirstOrDefault();
                         if (track != null)
                         {
-                            flightPlans.ToList().ForEach(fp =>
+                            FlightPlans.ToList().ForEach(fp =>
                             {
                                 if (fp.AssociatedTrack == track)
                                     fp.AssociateTrack(null);
                             });
-                            tracks.Remove(track);
+                            Tracks.Remove(track);
                             plane = GetPlane(updateGuid, false);
                         }
                     }
@@ -452,13 +455,13 @@ namespace DGScope.Receivers.ScopeServer
         }
         private WeatherRadar GetWeatherRadar(string id, bool addnew = false)
         {
-            lock (weatherRadars)
+            lock (WeatherRadars)
             {
-                var radar = weatherRadars.Where(x => x.RadarID == id).FirstOrDefault();
+                var radar = WeatherRadars.Where(x => x.RadarID == id).FirstOrDefault();
                 if (radar is null && addnew)
                 {
                     radar = new WeatherRadar();
-                    weatherRadars.Add(radar);
+                    WeatherRadars.Add(radar);
                 }
                 return radar; 
             }
