@@ -5964,13 +5964,20 @@ namespace DGScope
                 DrawTarget(x.TargetReturn);
             });
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB) DrawLabel(x); });
+                posIndicators.ForEach(x => { if (!x.ParentAircraft.FDB && aclist.Contains(x.ParentAircraft)) DrawLabel(x); });
             lock (dataBlocks)
             {
                 foreach (var block in dataBlocks.Where(x => x.ParentAircraft != null && (x.ParentAircraft.FDB || x.ParentAircraft.Associated || !x.ParentAircraft.PrimaryOnly)).ToList().OrderBy(x => x.ParentAircraft.FDB).ThenBy(x => x.ParentAircraft.Owned))
                 {
                     if (block.ParentAircraft == debugPlane)
                         debugPlane = null; 
+                    if (block.ParentAircraft != null && !aclist.Contains(block.ParentAircraft))
+                    {
+                        dataBlocks.Remove(block);
+                        dataBlocks.Remove(block.ParentAircraft.DataBlock2);
+                        dataBlocks.Remove(block.ParentAircraft.DataBlock3);
+                        continue;
+                    }
                     if (CurrentPrefSet.PTLLength > 0 && (block.ParentAircraft.ShowPTL || (block.ParentAircraft.Owned && CurrentPrefSet.PTLOwn) || (block.ParentAircraft.FDB && CurrentPrefSet.PTLAll)))
                     {
                         DrawLine(block.ParentAircraft.PTL, AdjustedColor(RBLColor, CurrentPrefSet.Brightness.Tools));
@@ -5984,7 +5991,11 @@ namespace DGScope
                 }
             }
             lock (posIndicators)
-                posIndicators.ForEach(x => { if (x.ParentAircraft.FDB) DrawLabel(x); });
+                posIndicators.ForEach(x => 
+                { 
+                    if (x.ParentAircraft.FDB && aclist.Contains(x.ParentAircraft)) 
+                        DrawLabel(x); 
+                });
         }
         private void DrawLabel(TransparentLabel Label)
         {
