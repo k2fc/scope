@@ -121,24 +121,33 @@ namespace DGScope.Receivers.Falcon
             stopwatch.Stop();
             Playing = false;
         }
-
+        bool working = false;
         private void timerCallback(object state)
         {
-            RadarWindow.CurrentTime = CurrentTime;
-            var updates = file.Updates.Where(x => x.TimeStamp > lastUpdate && x.TimeStamp <= CurrentTime).ToList();
-            updates.ForEach(x => sendUpdate(x));
-            if (Playing)
+            if (!working)
             {
-                lastUpdate = CurrentTime;
-                manualAdjust = TimeSpan.Zero;
-                stopwatch.Restart();
+                working = true;
+                RadarWindow.CurrentTime = CurrentTime;
+                var updates = file.Updates.Where(x => x.TimeStamp >= lastUpdate && x.TimeStamp <= CurrentTime).ToList();
+                if (Playing)
+                {
+                    lastUpdate = CurrentTime;
+                    manualAdjust = TimeSpan.Zero;
+                    stopwatch.Restart();
+                }
+                updates.ForEach(x => sendUpdate(x));
+                PlaybackForm.UpdateCallback();
+                working = false;
             }
-            PlaybackForm.UpdateCallback();
+            else { }
         }
 
         private void sendUpdate(Update update)
         {
-            _ = client.ProcessUpdate(update);
+            lock (client)
+            {
+                _ = client.ProcessUpdate(update);
+            }
         }
 
         public override void SetWeatherRadarDisplay(NexradDisplay weatherRadar)

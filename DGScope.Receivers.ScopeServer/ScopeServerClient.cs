@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using DGScope.Library;
 using DGScope.Receivers;
 using Newtonsoft.Json;
@@ -22,10 +23,13 @@ namespace DGScope.Receivers.ScopeServer
     public class ScopeServerClient : Receiver
     {
         [Browsable(false)]
+        [XmlIgnore]
         public List<Track> Tracks = new List<Track>();
         [Browsable(false)]
+        [XmlIgnore]
         public List<FlightPlan> FlightPlans = new List<FlightPlan>();
         [Browsable(false)]
+        [XmlIgnore]
         public List<WeatherRadar> WeatherRadars = new List<WeatherRadar>();
         private NexradDisplay weatherDisplay;
         private UpdateConverter updateConverter = new UpdateConverter();

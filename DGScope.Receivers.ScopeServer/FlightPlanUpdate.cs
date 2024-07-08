@@ -57,8 +57,8 @@ namespace DGScope.Library
             {
                 if (AssociatedTrack != null)
                 {
-                    return AssociatedTrack.Guid;
                     associatedTrackGuid = AssociatedTrack.Guid;
+                    return AssociatedTrack.Guid;
                 }
                 return associatedTrackGuid;
             }
