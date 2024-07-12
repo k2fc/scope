@@ -102,7 +102,7 @@ namespace DGScope.Receivers.Falcon
                 label1.Text = rx.CurrentTime.ToString();
                 checkBox1.Checked = rx.IncludeUncorrelated;
                 var elapsed = rx.CurrentTime - rx.StartOfData;
-                if (elapsed.HasValue && (int)(elapsed.Value.TotalMilliseconds) <= trackBar1.Maximum && rx.Playing) 
+                if (elapsed.HasValue && (int)(elapsed.Value.TotalMilliseconds) <= trackBar1.Maximum && (int)(elapsed.Value.TotalMilliseconds) >= trackBar1.Minimum && rx.Playing) 
                 {
                     trackBar1.Value = (int)elapsed.Value.TotalMilliseconds;
                 }

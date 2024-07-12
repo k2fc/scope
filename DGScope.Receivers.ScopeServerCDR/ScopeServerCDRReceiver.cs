@@ -22,6 +22,7 @@ namespace DGScope.Receivers.Falcon
         private TimeSpan manualAdjust = TimeSpan.Zero;
         private Stopwatch stopwatch = new Stopwatch();
         private Timer timer;
+        private bool timereset = false;
 
         public bool IncludeUncorrelated { get; set; } = false;
         internal double Speed { get; set; } = 1.0d;
@@ -30,6 +31,7 @@ namespace DGScope.Receivers.Falcon
             get => lastUpdate + TimeSpan.FromMilliseconds(stopwatch.Elapsed.TotalMilliseconds * Speed) + manualAdjust;
             set
             {
+                timereset = true;
                 manualAdjust = value - CurrentTime;
                 lock (aircraft)
                 {
@@ -91,7 +93,7 @@ namespace DGScope.Receivers.Falcon
                 file = value;
                 if (file != null)
                 {
-                    file.Updates.Sort((x, y) => DateTime.Compare(x.TimeStamp, y.TimeStamp));
+                    //file.Updates.Sort((x, y) => DateTime.Compare(x.TimeStamp, y.TimeStamp));
                     stopwatch.Reset();
                     lastUpdate = StartOfData.Value;
                     Sites = file.Sites;
@@ -121,25 +123,31 @@ namespace DGScope.Receivers.Falcon
             stopwatch.Stop();
             Playing = false;
         }
-        bool working = false;
+        object working = new object();
         private void timerCallback(object state)
         {
-            if (!working)
+            lock (working)
             {
                 working = true;
-                RadarWindow.CurrentTime = CurrentTime;
-                var updates = file.Updates.Where(x => x.TimeStamp >= lastUpdate && x.TimeStamp <= CurrentTime).ToList();
+                var oldtime = lastUpdate;
+                var newtime = CurrentTime;
+                if (timereset)
+                {
+                    oldtime = DateTime.MinValue;
+                    timereset = false;
+                }
+                RadarWindow.CurrentTime = newtime;
                 if (Playing)
                 {
-                    lastUpdate = CurrentTime;
+                    lastUpdate = newtime;
                     manualAdjust = TimeSpan.Zero;
                     stopwatch.Restart();
                 }
+                var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
                 updates.ForEach(x => sendUpdate(x));
                 PlaybackForm.UpdateCallback();
                 working = false;
             }
-            else { }
         }
 
         private void sendUpdate(Update update)
