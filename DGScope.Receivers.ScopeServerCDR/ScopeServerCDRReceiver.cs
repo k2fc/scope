@@ -22,7 +22,6 @@ namespace DGScope.Receivers.Falcon
         private TimeSpan manualAdjust = TimeSpan.Zero;
         private Stopwatch stopwatch = new Stopwatch();
         private Timer timer;
-        private bool timereset = false;
 
         public bool IncludeUncorrelated { get; set; } = false;
         internal double Speed { get; set; } = 1.0d;
@@ -31,16 +30,21 @@ namespace DGScope.Receivers.Falcon
             get => lastUpdate + TimeSpan.FromMilliseconds(stopwatch.Elapsed.TotalMilliseconds * Speed) + manualAdjust;
             set
             {
-                timereset = true;
-                manualAdjust = value - CurrentTime;
-                lock (aircraft)
+                lock (working)
                 {
-                    lock (trackDictionary)
+                    manualAdjust = value - CurrentTime;
+                    lock (aircraft)
                     {
-                        aircraft.ToList().ForEach(x => aircraft.Remove(x));
-                        //aircraft.Clear();
-                        trackDictionary.Clear();
+                        lock (trackDictionary)
+                        {
+                            aircraft.ToList().ForEach(x => aircraft.Remove(x));
+                            //aircraft.Clear();
+                            trackDictionary.Clear();
+                        }
                     }
+                    var updates = file.Updates.Where(x => x.TimeStamp <= value).ToList();
+                    updates.ForEach(x => sendUpdate(x));
+                    PlaybackForm.UpdateCallback();
                 }
             }
         }
@@ -112,7 +116,7 @@ namespace DGScope.Receivers.Falcon
             }
             else
             {
-                timer.Change(10, 10);
+                timer.Change(100, 100);
             }
             stopwatch.Start();
             Playing = true;
@@ -126,27 +130,20 @@ namespace DGScope.Receivers.Falcon
         object working = new object();
         private void timerCallback(object state)
         {
-            lock (working)
+            lock (working)  
             {
-                working = true;
                 var oldtime = lastUpdate;
                 var newtime = CurrentTime;
-                if (timereset)
-                {
-                    oldtime = DateTime.MinValue;
-                    timereset = false;
-                }
                 RadarWindow.CurrentTime = newtime;
                 if (Playing)
                 {
                     lastUpdate = newtime;
                     manualAdjust = TimeSpan.Zero;
                     stopwatch.Restart();
+                    var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
+                    updates.ForEach(x => sendUpdate(x));
+                    PlaybackForm.UpdateCallback();
                 }
-                var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
-                updates.ForEach(x => sendUpdate(x));
-                PlaybackForm.UpdateCallback();
-                working = false;
             }
         }
 
@@ -154,7 +151,7 @@ namespace DGScope.Receivers.Falcon
         {
             lock (client)
             {
-                _ = client.ProcessUpdate(update);
+              _ = client.ProcessUpdate(update);
             }
         }
 
