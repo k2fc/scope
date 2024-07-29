@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace DGScope.Receivers.Falcon
 {
@@ -22,9 +23,22 @@ namespace DGScope.Receivers.Falcon
         private TimeSpan manualAdjust = TimeSpan.Zero;
         private Stopwatch stopwatch = new Stopwatch();
         private Timer timer;
+        private double speed = 1.0;
+        private int timerInverval => (int)(250 / speed);
 
         public bool IncludeUncorrelated { get; set; } = false;
-        internal double Speed { get; set; } = 1.0d;
+        internal double Speed
+        {
+            get=> speed;
+            set
+            {
+                speed = value;
+                if (timer != null)
+                {
+                    timer.Change(timerInverval, timerInverval);
+                }
+            }
+        }
         internal DateTime CurrentTime
         {
             get => lastUpdate + TimeSpan.FromMilliseconds(stopwatch.Elapsed.TotalMilliseconds * Speed) + manualAdjust;
@@ -43,7 +57,8 @@ namespace DGScope.Receivers.Falcon
                         }
                     }
                     var updates = file.Updates.Where(x => x.TimeStamp <= value).ToList();
-                    updates.ForEach(x => sendUpdate(x));
+                    updates.ForEach(x => SendUpdate(x));
+                    client.WeatherRadars.Clear();
                     PlaybackForm.UpdateCallback();
                 }
             }
@@ -107,16 +122,33 @@ namespace DGScope.Receivers.Falcon
                 }
             }
         }
-
+        internal void AddFile(CDRFile file)
+        {
+            if (File == null)
+            {
+                File = file;
+            }
+            else
+            {
+                File.Updates.AddRange(file.Updates);
+                File.Updates.Sort((x, y) => DateTime.Compare(x.TimeStamp, y.TimeStamp));
+                stopwatch.Reset();
+                lastUpdate = StartOfData.Value;
+                Sites = file.Sites;
+                aircraft.Clear();
+                client.FlightPlans.Clear();
+                client.Tracks.Clear();
+            }
+        }
         internal void Play()
         {
             if (timer == null)
             {
-                timer = new Timer(timerCallback, null, 100, 100);
+                timer = new Timer(timerCallback, null, timerInverval, timerInverval);
             }
             else
             {
-                timer.Change(100, 100);
+                timer.Change(timerInverval, timerInverval);
             }
             stopwatch.Start();
             Playing = true;
@@ -130,8 +162,8 @@ namespace DGScope.Receivers.Falcon
         object working = new object();
         private void timerCallback(object state)
         {
-            lock (working)  
-            {
+            //lock (working)  
+            //{
                 var oldtime = lastUpdate;
                 var newtime = CurrentTime;
                 RadarWindow.CurrentTime = newtime;
@@ -141,18 +173,15 @@ namespace DGScope.Receivers.Falcon
                     manualAdjust = TimeSpan.Zero;
                     stopwatch.Restart();
                     var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
-                    updates.ForEach(x => sendUpdate(x));
+                    updates.ForEach(x => SendUpdate(x));
                     PlaybackForm.UpdateCallback();
                 }
-            }
+            //}
         }
 
-        private void sendUpdate(Update update)
+        private void SendUpdate(Update update)
         {
-            lock (client)
-            {
-              _ = client.ProcessUpdate(update);
-            }
+            _ = client.ProcessUpdate(update);
         }
 
         public override void SetWeatherRadarDisplay(NexradDisplay weatherRadar)
