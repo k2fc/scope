@@ -112,6 +112,7 @@ namespace DGScope.Receivers.Falcon
 
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
+            rx.Pause();
             if (rx != null && rx.StartOfData.HasValue)
             {
                 rx.CurrentTime = rx.StartOfData.Value + TimeSpan.FromMilliseconds(trackBar1.Value);

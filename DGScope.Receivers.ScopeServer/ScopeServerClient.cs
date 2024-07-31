@@ -372,8 +372,8 @@ namespace DGScope.Receivers.ScopeServer
                         {
                             FlightPlans.ToList().ForEach(fp =>
                             {
-                                if (fp.AssociatedTrack == track)
-                                    fp.AssociateTrack(null);
+                                if (fp?.AssociatedTrack == track)
+                                    fp?.AssociateTrack(null);
                             });
                             Tracks.Remove(track);
                             plane = GetPlane(updateGuid, false);

@@ -13,7 +13,6 @@ namespace DGScope.Receivers.Falcon
     {
         private PlaybackControlForm PlaybackForm;
         private CDRFile file = null;
-        private Dictionary<int, Aircraft> trackDictionary = new Dictionary<int, Aircraft>();
         private ScopeServerClient client = new ScopeServerClient()
         {
             Enabled = false
@@ -27,6 +26,10 @@ namespace DGScope.Receivers.Falcon
         private int timerInverval => (int)(250 / speed);
 
         public bool IncludeUncorrelated { get; set; } = false;
+        public ScopeServerCDRReceiver() : base()
+        {
+            timer = new Timer(timerCallback, null, timerInverval, timerInverval);
+        }
         internal double Speed
         {
             get=> speed;
@@ -46,19 +49,15 @@ namespace DGScope.Receivers.Falcon
             {
                 lock (working)
                 {
-                    manualAdjust = value - CurrentTime;
                     lock (aircraft)
                     {
-                        lock (trackDictionary)
-                        {
-                            aircraft.ToList().ForEach(x => aircraft.Remove(x));
-                            //aircraft.Clear();
-                            trackDictionary.Clear();
-                        }
+                        aircraft.ToList().ForEach(x => aircraft.Remove(x));
                     }
+                    client.Tracks.Clear();
+                    client.FlightPlans.Clear();
                     var updates = file.Updates.Where(x => x.TimeStamp <= value).ToList();
-                    updates.ForEach(x => SendUpdate(x));
                     client.WeatherRadars.Clear();
+                    SendUpdates(updates);
                     PlaybackForm.UpdateCallback();
                 }
             }
@@ -114,11 +113,16 @@ namespace DGScope.Receivers.Falcon
                 {
                     //file.Updates.Sort((x, y) => DateTime.Compare(x.TimeStamp, y.TimeStamp));
                     stopwatch.Reset();
+                    CurrentTime = StartOfData.Value;
                     lastUpdate = StartOfData.Value;
                     Sites = file.Sites;
                     aircraft.Clear();
                     client.FlightPlans.Clear();
                     client.Tracks.Clear();
+                    if (file.Updates.Count > 0)
+                    {
+                        SendUpdate(file.Updates.First());
+                    }
                 }
             }
         }
@@ -164,19 +168,30 @@ namespace DGScope.Receivers.Falcon
         {
             //lock (working)  
             //{
-                var oldtime = lastUpdate;
-                var newtime = CurrentTime;
+            var oldtime = lastUpdate;
+            var newtime = CurrentTime;
+            if (newtime > DateTime.MinValue)
+            {
                 RadarWindow.CurrentTime = newtime;
-                if (Playing)
-                {
-                    lastUpdate = newtime;
-                    manualAdjust = TimeSpan.Zero;
-                    stopwatch.Restart();
-                    var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
-                    updates.ForEach(x => SendUpdate(x));
-                    PlaybackForm.UpdateCallback();
-                }
+            }
+            if (Playing)
+            {
+                lastUpdate = newtime;
+                manualAdjust = TimeSpan.Zero;
+                stopwatch.Restart();
+                var updates = file.Updates.Where(x => x.TimeStamp > oldtime && x.TimeStamp <= newtime).ToList();
+                updates.ForEach(x => SendUpdate(x));
+                PlaybackForm.UpdateCallback();
+            }
             //}
+        }
+
+        private void SendUpdates(IEnumerable<Update> Updates)
+        {
+            foreach (var update in Updates)
+            {
+                Task.Run(() => SendUpdate(update));
+            }
         }
 
         private void SendUpdate(Update update)
