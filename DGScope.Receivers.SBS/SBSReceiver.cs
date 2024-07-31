@@ -38,11 +38,14 @@ namespace DGScope.Receivers.SBS
         {
             if (!running)
                 return;
+            running = false;
             client.Disconnect();
-            while (client.ConnectionState != EventDrivenTCPClient.ConnectionStatus.DisconnectedByUser) { }
+            while (client.ConnectionState == EventDrivenTCPClient.ConnectionStatus.Connected)
+            {
+                client.Disconnect();
+            }
             //client.DataReceived -= Client_DataReceived;
 
-            running = false;
         }
 
 
